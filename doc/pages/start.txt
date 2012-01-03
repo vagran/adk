@@ -1,5 +1,16 @@
 ====== AST Applications Development Kit library ======
 
-Cross-platform application development framework intended to develop GUI applications for Linux and Windows platforms in Linux development environment. It should implement common classes and APIs for configuration management, GUI creation. 
+Cross-platform application development framework intended to develop GUI applications for Linux and Windows platforms in Linux development environment.
 
-GTK+/Glade should be used for GUI development and rendering. Most functionality from libast should be implemented.
+The following features are provided:
+  * Low-level system services provided by glib and its C++ wrapper glibmm -- http://www.gtkmm.org/.
+  * GUI framework is provided by GTK+ library and its C++ wrapper gtkmm -- http://www.gtkmm.org/. ADK library extends the framework in order to provide additional widgets. [[http://glade.gnome.org/|Glade]] can be used to design the GUI layout. [[http://www.cairographics.org/|cairo]] library used for graphics rendering (with cairomm C++ wrapper).
+  * Configuration framework is provided by ADK library and is XML-based (using libxml2).
+  * Scripting engine using embedded Python.
+  * Building framework provided by ADK allows to use very simple makefiles for building required application type for required platform. It is capable to create Windows installation packages (using [[http://www.jrsoftware.org/isinfo.php|Inno setup]] tool launched under [[http://www.winehq.org/|Wine]]) and Debian packages (using dpkg utility).
+  * Unit testing framework provided by ADK (borrowed from Phoenix project).
+  * Code documentation framework provided by [[http://sourceforge.net/projects/doxygen/files/|Doxygen]] tool.
+
+
+
+

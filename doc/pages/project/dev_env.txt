@@ -64,6 +64,8 @@ The following packages are used:
   * **bison-2.5** from http://ftp.gnu.org/gnu/bison/
   * **gcc-4.7-20111029** //4.7 snapshot taken temporarely until 4.7 release will be available// (gcc-core and gcc-g++ packages required) from http://gcc.gnu.org/
   * **doxygen-1.7.6.1** from http://sourceforge.net/projects/doxygen/files/
+  * **w32api-3.17-2** package from https://sourceforge.net/projects/mingw/files/MinGW/Base/w32api/
+  * **mingwrt-3.20** package from https://sourceforge.net/projects/mingw/files/MinGW/Base/mingw-rt/
 Before each component is built its directory structure should be changed -- directories "src" and "obj" should be created for each of them. Downloaded source files should be placed into "src" directory, the commands below should be run from "obj" directory.
 
 They are built as follows:
@@ -83,7 +85,7 @@ make
 make install
 
 # binutils for Windows:
-../src/configure --prefix=$PREFIX --program-prefix=$WIN_PROG_PREFIX --target=$WIN_TARGET
+../src/configure --prefix=$PREFIX --program-prefix=$WIN_PROG_PREFIX --target=$WIN_TARGET --disable-shared --with-sysroot=$PREFIX
 make
 make install
 
@@ -121,8 +123,17 @@ make install
 make
 make install
 
+# w32api:
+cd $PREFIX/$WIN_TARGET
+tar --lzma -xvf ../../compile/w32api-3.17-2-mingw32-dev.tar.lzma
+
+# mingwrt:
+cd $PREFIX/$WIN_TARGET
+tar -xvzf ../../compile/mingwrt-3.20-mingw32-dll.tar.gz
+tar -xvzf ../../compile/mingwrt-3.20-mingw32-dev.tar.gz
+
 # gcc for Windows:
-../src/configure --prefix=$PREFIX --program-prefix=$WIN_PROG_PREFIX --target=$WIN_TARGET --enable-languages=c,c++ --disable-bootstrap --disable-libada --disable-libssp --disable-libquadmath --disable-libgomp --with-gmp=$PREFIX --with-mpfr=$PREFIX --with-mpc=$PREFIX
+../src/configure --prefix=$PREFIX --program-prefix=$WIN_PROG_PREFIX --target=$WIN_TARGET --enable-languages=c,c++ --disable-bootstrap --disable-libada --disable-libssp --disable-libquadmath --disable-libgomp --with-gmp=$PREFIX --with-mpfr=$PREFIX --with-mpc=$PREFIX --disable-shared --disable-win32-registry --enable-threads=win32 --enable-sjlj-exceptions
 make
 make install
 
