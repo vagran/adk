@@ -1,0 +1,5 @@
+====== AST Applications Development Kit library ======
+
+Cross-platform application development framework intended to develop GUI applications for Linux and Windows platforms in Linux development environment. It should implement common classes and APIs for configuration management, GUI creation. 
+
+GTK+/Glade should be used for GUI development and rendering. Most functionality from libast should be implemented.

@@ -1,0 +1,133 @@
+====== Development environment ======
+
+Linux host is used as development and build environment for ADK-based applications.
+
+Here is described environment used for developing applications using ADK framework.
+
+This script is used to set up ADK environment:
+
+<file bash adk_env_setup>
+#!/bin/bash
+ 
+if [ -z "$ADK_PROJECT_PATH" ]; then
+	export ADK_PROJECT_PATH=$HOME/projects/adk
+	bash --init-file $0
+fi
+ 
+export ADK_PREFIX=$ADK_PROJECT_PATH/usr/local
+export PATH=$ADK_PREFIX/bin:$ADK_PREFIX/sbin:$PATH
+export LD_LIBRARY_PATH=$ADK_PREFIX/lib
+ 
+export PS1='ADK env [\W]$ '
+ 
+echo "Welcome to ADK development environment"
+</file>
+
+For raising privileges with preserving required environment variables this script is used:
+<file bash adk_sudo>
+#!/usr/bin/env perl
+# $Id$
+
+use Getopt::Long;
+use File::Basename;
+
+$ADK_PREFIX = $ENV{ADK_PREFIX};
+$ADK_PROJECT_PATH = $ENV{ADK_PROJECT_PATH};
+
+if (!GetOptions("prefix=s" => \$ADK_PREFIX,
+		"project_path=s" => \$ADK_PROJECT_PATH)
+		|| $#ARGV == -1) {
+	my $script = basename($0);
+	print("Usage: $script <command>\n");
+	exit(1);
+}
+
+if ($>) {
+	exit(system("sudo $0 --prefix=$ADK_PREFIX --project_path=$ADK_PROJECT_PATH -- @ARGV"));
+}
+
+$ENV{ADK_PREFIX} = $ADK_PREFIX;
+$ENV{ADK_PROJECT_PATH} = $ADK_PROJECT_PATH;
+$ENV{PATH} = "$ADK_PREFIX/bin:$ADK_PREFIX/sbin:" . $ENV{PATH};
+$ENV{LD_LIBRARY_PATH} = "$ADK_PREFIX/lib";
+exit(system("@ARGV"));
+</file>
+
+===== Build tools =====
+
+The following packages are used:
+  * **binutils-2.22** from http://ftp.gnu.org/gnu/binutils/
+  * **gmp-5.0.2** from http://gmplib.org/
+  * **mpfr-3.1.0** from http://www.mpfr.org/
+  * **mpc-0.9** from http://www.multiprecision.org/
+  * **flex-2.5.35** from http://flex.sourceforge.net/
+  * **bison-2.5** from http://ftp.gnu.org/gnu/bison/
+  * **gcc-4.7-20111029** //4.7 snapshot taken temporarely until 4.7 release will be available// (gcc-core and gcc-g++ packages required) from http://gcc.gnu.org/
+  * **doxygen-1.7.6.1** from http://sourceforge.net/projects/doxygen/files/
+Before each component is built its directory structure should be changed -- directories "src" and "obj" should be created for each of them. Downloaded source files should be placed into "src" directory, the commands below should be run from "obj" directory.
+
+They are built as follows:
+<code bash>
+export PREFIX=$ADK_PREFIX
+export WIN_TARGET=mingw32
+
+export NAT_PROG_PREFIX=adk-
+export WIN_PROG_PREFIX=adk-win-
+
+export PATH=$PREFIX/bin:$PATH
+export LD_LIBRARY_PATH=$PREFIX/lib
+
+# native binutils
+../src/configure --prefix=$PREFIX --program-prefix=$NAT_PROG_PREFIX
+make
+make install
+
+# binutils for Windows:
+../src/configure --prefix=$PREFIX --program-prefix=$WIN_PROG_PREFIX --target=$WIN_TARGET
+make
+make install
+
+# gmp:
+../src/configure --prefix=$PREFIX
+make
+make check
+make install
+
+# mpfr:
+../src/configure --prefix=$PREFIX --with-gmp=$PREFIX
+make
+make check
+make install
+
+# mpc:
+../src/configure --prefix=$PREFIX --with-gmp=$PREFIX --with-mpfr=$PREFIX
+make
+make check
+make install
+
+# flex:
+../src/configure --prefix=$PREFIX
+make
+make check
+make install
+
+# bison:
+../src/configure --prefix=$PREFIX
+make
+make install
+
+# native gcc:
+../src/configure --prefix=$PREFIX --program-prefix=$NAT_PROG_PREFIX --disable-bootstrap --disable-libada --disable-libssp --disable-libquadmath --disable-libgomp --enable-languages=c,c++ --with-gmp=$PREFIX --with-mpfr=$PREFIX --with-mpc=$PREFIX
+make
+make install
+
+# gcc for Windows:
+../src/configure --prefix=$PREFIX --program-prefix=$WIN_PROG_PREFIX --target=$WIN_TARGET --enable-languages=c,c++ --disable-bootstrap --disable-libada --disable-libssp --disable-libquadmath --disable-libgomp --with-gmp=$PREFIX --with-mpfr=$PREFIX --with-mpc=$PREFIX
+make
+make install
+
+# doxygen:
+./configure --prefix $PREFIX --flex $PREFIX/bin/flex --bison $PREFIX/bin/bison
+make
+make install
+</code>
