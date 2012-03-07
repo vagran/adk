@@ -5,3 +5,6 @@
 # All rights reserved.
 # See COPYING file for copyright details.
 
+include $(ADK_ROOT)/make/makevar.mk
+
+include $(ADK_ROOT)/make/common.mk

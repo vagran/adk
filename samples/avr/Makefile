@@ -5,4 +5,10 @@
 # All rights reserved.
 # See COPYING file for copyright details.
 
-include $(ADK_ROOT)/make/avr.mk
+ADK_PLATFORM = avr
+ADK_APP_TYPE = app
+ADK_APP_NAME = avr_sample_1
+
+SRC_DIRS = pwm
+
+include $(ADK_ROOT)/make/make.mk
