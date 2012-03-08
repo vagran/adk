@@ -21,9 +21,15 @@ Create makefile using the following rules:
   * Define '''ADK_APP_NAME''' variable as a name of resulted binary file without suffix and/or prefix.
   * Include "$(ADK_ROOT)/make/make.mk" file.
 
+Platform specific variables:
+  - For '''avr''' platform:
+    * '''ADK_MCU''' -- target MCU device model. Should be one of the values allowed by '-mmcu' parameter of GCC for AVR target.
+
 Optional variables in the makefile:
   * '''SUBDIRS''' -- list of subdirectories to execute make. It may be specified without specifying application parameters. In such case nothing will be built in this directory but the specified subdirectories will be traversed.
   * '''SRC_DIRS''' -- additional directories to search for source files. By default only current directory is inspected.
+  * '''SRCS''' -- additional particular source files to include in the build.
+  * '''INCLUDE_DIRS''' -- additional directories to specify as include paths.
 
 After that run '''make''' specifying just created makefile. Current directory (and optionally directories specified by '''SRC_DIRS''' variable) will be searched for source files (matching name patterns for supported source file types) and all found files are compiled. The result will be available in '''build''' directory and subdirectory named by target platform and build type.
 
@@ -35,6 +41,10 @@ Currently the following source file types are supported:
 The following make targets available:
   * '''all''' -- build specified application. Default target.
   * '''clean''' -- remove all files created during the build. If '''build''' directory has several subdirectories then only one corresponding to specified platform and build type is removed. If it is the only subdirectory then '''build''' directory is also removed.
+  * '''adk_build_dir''' -- create output directories. Can be used as dependency for custom user targets which produce some output.
+
+The following variables are available in the ADK makefile scope. They can be used when user is writing some extensions for make process in an application makefile.
+  * '''ADK_OBJ_DIR''' -- output directory where all produced files should be stored.
 
 FIXME Doxygen parameters.
 

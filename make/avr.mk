@@ -5,3 +5,20 @@
 # All rights reserved.
 # See COPYING file for copyright details.
 
+################################################################################
+# Executable binary
+
+BINARY = $(ADK_APP_NAME).elf
+
+all: $(BINARY)
+
+$(BINARY): $(OBJS)
+
+# XXX
+
+################################################################################
+# Binary converted to text formats understandable by most firmware uploaders.
+
+.PHONY: text
+
+# XXX
