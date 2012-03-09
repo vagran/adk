@@ -13,6 +13,12 @@
 #ifndef ADK_H_
 #define ADK_H_
 
+#ifdef ADK_PLATFORM_AVR
 
+#include <avr/interrupt.h>
+#include <avr/io.h>
+#include <avr/sleep.h>
+
+#endif /* ADK_PLATFORM_AVR */
 
 #endif /* ADK_H_ */

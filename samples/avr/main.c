@@ -11,3 +11,13 @@
  */
 
 #include <adk.h>
+
+int
+main(void)
+{
+    DDRB = (1 << PB1);
+    PORTB = 0;
+
+    sei();
+    return 0;
+}

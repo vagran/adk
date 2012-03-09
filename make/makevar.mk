@@ -23,5 +23,5 @@ export NAT_LD = $(TOOLS_BIN)/gcc
 export NAT_NM = $(TOOLS_BIN)/nm
 export NAT_CPPFILT = $(TOOLS_BIN)/c++filt
 
-export WARN_CFLAGS = -Wall -Werror
+export WARN_COMP_FLAGS = -Wall -Werror
 

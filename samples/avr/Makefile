@@ -14,5 +14,11 @@ ADK_MCU = attiny2313
 SRC_DIRS = pwm
 # Additional source file
 SRCS = misc/misc.c
+# Additional C compilation flags
+CFLAGS = -Davr_sample_1
+# Additional include directories
+INCLUDE_DIRS = misc
+# Additional defines
+DEFS = AVR_SAMPLE_1 REV=0x0100
 
 include $(ADK_ROOT)/make/make.mk
