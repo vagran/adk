@@ -37,21 +37,59 @@ COMMON_COMP_FLAGS += -mmcu=$(ADK_MCU)
 ################################################################################
 # Executable binary
 
-BINARY = $(ADK_APP_NAME).elf
+BINARY = $(ADK_OBJ_DIR)/$(ADK_APP_NAME).elf
 
 all: $(BINARY)
 
 $(BINARY): $(ADK_OBJS)
-	@echo ADK_OBJS: $(ADK_OBJS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 $(ADK_OBJ_DIR)/%.o: %.c
 	$(CC) -c $(COMMON_COMP_FLAGS) $(CFLAGS) -o $@ $<
+	$(CC) -c $(COMMON_COMP_FLAGS) $(CFLAGS) -MM -MT '$@' -o $(@:.o=.d) $<
 
 #XXX cpp S
 
 ################################################################################
 # Binary converted to text formats understandable by most firmware uploaders.
 
-.PHONY: text
+AVR_ROM_HEX = $(ADK_OBJ_DIR)/$(ADK_APP_NAME)_rom.hex
+AVR_ROM_SREC = $(ADK_OBJ_DIR)/$(ADK_APP_NAME)_rom.srec
+AVR_ROM_BIN = $(ADK_OBJ_DIR)/$(ADK_APP_NAME)_rom.bin
 
-# XXX
+.PHONY: avr_rom_text
+
+all: avr_rom_text
+
+avr_rom_text: $(AVR_ROM_HEX) $(AVR_ROM_SREC) $(AVR_ROM_BIN)
+
+$(AVR_ROM_HEX): $(BINARY)
+	$(OBJCOPY) -j .text -j .data -O ihex $< $@
+
+$(AVR_ROM_SREC): $(BINARY)
+	$(OBJCOPY) -j .text -j .data -O srec $< $@
+	
+$(AVR_ROM_BIN): $(BINARY)
+	$(OBJCOPY) -j .text -j .data -O binary $< $@
+
+################################################################################
+# EEPROM images
+
+AVR_EEPROM_HEX = $(ADK_OBJ_DIR)/$(ADK_APP_NAME)_eeprom.hex
+AVR_EEPROM_SREC = $(ADK_OBJ_DIR)/$(ADK_APP_NAME)_eeprom.srec
+AVR_EEPROM_BIN = $(ADK_OBJ_DIR)/$(ADK_APP_NAME)_eeprom.bin
+
+.PHONY: avr_eeprom_text
+
+all: avr_eeprom_text
+
+avr_eeprom_text: $(AVR_EEPROM_HEX) $(AVR_EEPROM_SREC) $(AVR_EEPROM_BIN)
+
+$(AVR_EEPROM_HEX): $(BINARY)
+	$(OBJCOPY) -j .eeprom --change-section-lma .eeprom=0 -O ihex $< $@
+
+$(AVR_EEPROM_SREC): $(BINARY)
+	$(OBJCOPY) -j .eeprom --change-section-lma .eeprom=0 -O srec $< $@
+	
+$(AVR_EEPROM_BIN): $(BINARY)
+	$(OBJCOPY) -j .eeprom --change-section-lma .eeprom=0 -O binary $< $@

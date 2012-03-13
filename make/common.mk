@@ -140,10 +140,13 @@ OBJS += $(foreach src, $(SRCS), $(call GET_OBJ $(src)))
 
 ADK_OBJS = $(foreach obj, $(sort $(OBJS)), $(ADK_OBJ_DIR)/$(obj))
 ADK_SRC_DIRS = $(sort $(SRC_DIRS))
+# Additional automatic dependencies for object files
+ADK_DEPS = $(ADK_OBJS:.o=.d)
 
 VPATH += $(ADK_SRC_DIRS)
 
-$(ADK_OBJS): $(ADK_OBJ_DIR)
+# include dependencies if exist
+-include $(ADK_DEPS)
 
 # ADK_APP_NAME
 endif

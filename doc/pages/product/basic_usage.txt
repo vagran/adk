@@ -30,6 +30,14 @@ Optional variables in the makefile:
   * '''SRC_DIRS''' -- additional directories to search for source files. By default only current directory is inspected.
   * '''SRCS''' -- additional particular source files to include in the build.
   * '''INCLUDE_DIRS''' -- additional directories to specify as include paths.
+  * '''CFLAGS''' -- additional compilation flags for C files.
+  * '''CPPFLAGS''' -- additional compilation flags for C++ files.
+  * '''LDFLAGS''' -- additional compilation flags for linker.
+  * '''DEFS''' -- additional defines for '-D' compiler option.
+  * '''DEBUG_OPT_FLAGS''' -- optimization flags for debug build. They overwrite default flags if specified.
+  * '''RELEASE_OPT_FLAGS''' -- optimization flags for release build. They overwrite default flags if specified.
+
+//:!: Everywhere a list of values is acceptable in makefile variables, it can be specified as blank separated values.//
 
 After that run '''make''' specifying just created makefile. Current directory (and optionally directories specified by '''SRC_DIRS''' variable) will be searched for source files (matching name patterns for supported source file types) and all found files are compiled. The result will be available in '''build''' directory and subdirectory named by target platform and build type.
 
