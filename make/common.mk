@@ -75,7 +75,7 @@ COMPILE_DIR = $(CURDIR)/build
 ADK_OBJ_DIR = $(COMPILE_DIR)/$(ADK_PLATFORM)-$(ADK_BUILD_TYPE)
 
 $(ADK_OBJ_DIR):
-	if [ ! -d $@ ]; then $(MKPATH) $@; fi
+	[ -d $@ ] || $(MKPATH) $@
 
 .PHONY: adk_build_dir adk_clean_obj_dir adk_clean_build_dir
 
