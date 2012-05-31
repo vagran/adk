@@ -25,3 +25,17 @@ export NAT_CPPFILT = $(TOOLS_BIN)/c++filt
 
 export WARN_COMP_FLAGS = -Wall -Werror
 
+# Used libraries versions
+export GLIB_VERSION = 2.0
+export PANGO_VERSION = 1.0
+export GDK_PIXBUF_VERSION = 2.0
+export GTK_VERSION = 3.0
+export GLIBMM_VERSION = 2.4
+export GIOMM_VERSION = 2.4
+export CAIROMM_VERSION = 1.0
+export PANGOMM_VERSION = 1.4
+export GDKMM_VERSION = 3.0
+export GTKMM_VERSION = 3.0
+export SIGCPP_VERSION = 2.0
+export ATK_VERSION = 1.0
+export ATKMM_VERSION = 1.6

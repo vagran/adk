@@ -19,6 +19,11 @@
 #include <avr/io.h>
 #include <avr/sleep.h>
 
+#else /* ADK_PLATFORM_AVR */
+/* Desktop applications. */
+
+#include <gtkmm.h>
+
 #endif /* ADK_PLATFORM_AVR */
 
 #endif /* ADK_H_ */

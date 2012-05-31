@@ -13,7 +13,11 @@
 #include <adk.h>
 
 int
-main()
+main(int argc, char **argv)
 {
-    return 237;
+    Gtk::Main toolkit(argc, argv);
+    Gtk::Window window;
+
+    toolkit.run(window);
+    return 0;
 }
