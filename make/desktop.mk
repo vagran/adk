@@ -5,7 +5,9 @@
 # All rights reserved.
 # See COPYING file for copyright details.
 
-LIBS += stdc++ glibmm-$(GLIBMM_VERSION) gtkmm-$(GTKMM_VERSION)
+LIBS += stdc++ glib-$(GLIB_VERSION) glibmm-$(GLIBMM_VERSION) \
+	sigc-$(SIGCPP_VERSION) gtkmm-$(GTKMM_VERSION) atkmm-$(ATKMM_VERSION) \
+	cairomm-$(CAIROMM_VERSION)
 
 LIB_FLAGS = $(foreach lib, $(LIBS), -l$(lib))
 
@@ -30,6 +32,8 @@ INCLUDE_DIRS += $(LIB_INC_DIR)/glib-$(GLIB_VERSION) \
                 $(LIB_INC_DIR)/gtkmm-$(GTKMM_VERSION) \
                 $(LIB_INC_DIR)/atk-$(ATK_VERSION) \
                 $(LIB_INC_DIR)/atkmm-$(ATKMM_VERSION)
+
+CFLAGS += -std=c++0x
 
 ifeq ($(ADK_BUILD_TYPE),release)
 	CFLAGS += -O2

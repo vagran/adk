@@ -34,6 +34,11 @@ ifdef ADK_APP_NAME
     else ifeq ($(ADK_PLATFORM),linux64)
         ADK_PLATFORM_MAKEFILE = desktop.mk
         DEFS += ADK_PLATFORM_LINUX64
+        # Compilation tools.
+        CC = $(NAT_CC)
+		LD = $(NAT_LD)
+		NM = $(NAT_NM)
+		CPPFILT = $(NAT_CPPFILT)
     else ifeq ($(ADK_PLATFORM),win32)
         ADK_PLATFORM_MAKEFILE = desktop.mk
         DEFS += ADK_PLATFORM_WIN32

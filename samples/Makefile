@@ -5,6 +5,6 @@
 # All rights reserved.
 # See COPYING file for copyright details.
 
-SUBDIRS = avr
+SUBDIRS = avr desktop
 
 include $(ADK_ROOT)/make/make.mk

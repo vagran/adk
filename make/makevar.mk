@@ -6,6 +6,8 @@
 # See COPYING file for copyright details.
 
 export DEF_GOAL = all
+export TOOLS_BIN = $(ADK_PREFIX)/bin
+export NAT_TOOLS_PREFIX = adk-
 
 # Common tools
 export INSTALL = install
@@ -18,10 +20,10 @@ export MKDIR = mkdir
 export MKPATH = mkdir -p
 
 # Native compilation tools
-export NAT_CC = $(TOOLS_BIN)/gcc
-export NAT_LD = $(TOOLS_BIN)/gcc
-export NAT_NM = $(TOOLS_BIN)/nm
-export NAT_CPPFILT = $(TOOLS_BIN)/c++filt
+export NAT_CC = $(TOOLS_BIN)/$(NAT_TOOLS_PREFIX)gcc
+export NAT_LD = $(TOOLS_BIN)/$(NAT_TOOLS_PREFIX)gcc
+export NAT_NM = $(TOOLS_BIN)/$(NAT_TOOLS_PREFIX)nm
+export NAT_CPPFILT = $(TOOLS_BIN)/$(NAT_TOOLS_PREFIX)c++filt
 
 export WARN_COMP_FLAGS = -Wall -Werror
 

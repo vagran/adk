@@ -25,9 +25,11 @@
                     <property name="ubuntu_local">True</property>
                     <child>
                       <object class="GtkImageMenuItem" id="imagemenuitem1">
-                        <property name="label">gtk-quit</property>
                         <property name="visible">True</property>
+                        <property name="related_action">action_quit</property>
+                        <property name="use_action_appearance">True</property>
                         <property name="use_stock">True</property>
+                        <property name="always_show_image">True</property>
                       </object>
                     </child>
                   </object>
@@ -70,7 +72,7 @@
                                 <property name="width_request">100</property>
                                 <property name="visible">True</property>
                                 <child>
-                                  <object class="GtkRadioButton" id="rbutRectangle">
+                                  <object class="GtkRadioButton" id="rbRectangle">
                                     <property name="label" translatable="yes">Rectangle</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
@@ -84,14 +86,14 @@
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkRadioButton" id="rbutEllipse">
+                                  <object class="GtkRadioButton" id="rbEllipse">
                                     <property name="label" translatable="yes">Ellipse</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">False</property>
                                     <property name="active">True</property>
                                     <property name="draw_indicator">True</property>
-                                    <property name="group">rbutRectangle</property>
+                                    <property name="group">rbRectangle</property>
                                   </object>
                                   <packing>
                                     <property name="expand">False</property>
@@ -99,14 +101,14 @@
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkRadioButton" id="rbutTriangle">
+                                  <object class="GtkRadioButton" id="rbTriangle">
                                     <property name="label" translatable="yes">Triangle</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">False</property>
                                     <property name="active">True</property>
                                     <property name="draw_indicator">True</property>
-                                    <property name="group">rbutRectangle</property>
+                                    <property name="group">rbRectangle</property>
                                   </object>
                                   <packing>
                                     <property name="expand">False</property>
@@ -135,11 +137,10 @@
                             <property name="visible">True</property>
                             <property name="resize_mode">queue</property>
                             <child>
-                              <object class="GtkDrawingArea" id="drawingarea1">
+                              <object class="GtkDrawingArea" id="drawing_area">
                                 <property name="width_request">300</property>
                                 <property name="height_request">200</property>
                                 <property name="visible">True</property>
-                                <property name="events">GDK_EXPOSURE_MASK | GDK_STRUCTURE_MASK</property>
                               </object>
                             </child>
                           </object>
@@ -174,5 +175,11 @@
         </child>
       </object>
     </child>
+  </object>
+  <object class="GtkActionGroup" id="actiongroup1"/>
+  <object class="GtkAction" id="action_quit">
+    <property name="name">quit</property>
+    <property name="label">Quit</property>
+    <property name="stock_id">gtk-quit</property>
   </object>
 </interface>
