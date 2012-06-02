@@ -37,6 +37,19 @@ else ifeq ($(ADK_BUILD_TYPE),debug)
     CFLAGS += -O0 -ggdb3
 endif
 
+# Get glade files
+GLADE_FILES += $(foreach src_dir, $(SRC_DIRS), $(call SCAN_PATH, $(src_dir), *.glade))
+ifneq ($(GLADE_FILES), )
+GLADE_TARGET_FILES = $(foreach file, $(GLADE_FILES), $(ADK_OBJ_DIR)/$(notdir $(file)))
+# Rules for glade files
+define GLADE_RULE
+$(ADK_OBJ_DIR)/$(notdir $(1)): $(1)
+	cp $$^ $$@
+endef
+$(foreach file, $(GLADE_FILES), $(eval $(call GLADE_RULE, $(file))))
+all: $(GLADE_TARGET_FILES)
+endif
+
 ################################################################################
 # Executable binary
 

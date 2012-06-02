@@ -118,25 +118,24 @@ endif
 
 ifdef ADK_APP_NAME
 
-# Make object file name from source file name
-GET_OBJ = $(patsubst %.c, %.o, $(filter %.c, $(notdir $(1)))) \
-	$(patsubst %.cpp, %.o, $(filter %.cpp, $(notdir $(1)))) \
-	$(patsubst %.S, %.o, $(filter $.S, $(notdir $(1)))) \
+# Substitute multiple patterns by one
+PAT_SUBST = $(foreach pat, $(1), $(patsubst $(pat), $(2), $(filter $(pat), $(3))))
 
-# Scan directories for source files
-SCAN_PATH = $(call GET_OBJ, $(wildcard $(1)/*.c)) \
-	$(call GET_OBJ, $(wildcard $(1)/*.cpp)) \
-	$(call GET_OBJ, $(wildcard $(1)/*.S)) \
+# Scan directories for files using specified patterns
+SCAN_PATH = $(foreach pat, $(2), $(wildcard $(1)/$(pat)))
 
-# Firstly add source files from current directory
-OBJS += $(call SCAN_PATH, .)
+# Get object files based on source files in specified directory
+GET_OBJ = $(call PAT_SUBST, %.c %.cpp %.S, %.o, $(notdir $(call SCAN_PATH, $(1), *.c *.cpp *.S)))
 
-# Then scan all specified additional directories
-OBJS += $(foreach src_dir, $(SRC_DIRS), $(call SCAN_PATH, $(src_dir)))
+# Add source files from current directory
+SRC_DIRS += .
+
+# Scan all specified additional directories
+OBJS += $(foreach src_dir, $(SRC_DIRS), $(call GET_OBJ, $(src_dir)))
 
 # Add all specified additional source files
-SRC_DIRS += $(foreach src, $(SRCS), $(dir $(src)))
-OBJS += $(foreach src, $(SRCS), $(call GET_OBJ $(src)))
+SRC_DIRS += $(dir $(SRCS))
+OBJS += $(call PAT_SUBST, %.c %.cpp %.S, %.o, $(notdir $(SRCS)))
 
 ADK_OBJS = $(foreach obj, $(sort $(OBJS)), $(ADK_OBJ_DIR)/$(obj))
 ADK_SRC_DIRS = $(sort $(SRC_DIRS))

@@ -23,6 +23,7 @@
 /* Desktop applications. */
 
 #include <gtkmm.h>
+#include <cairomm/cairomm.h>
 
 #endif /* ADK_PLATFORM_AVR */
 
