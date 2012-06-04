@@ -23,6 +23,7 @@ export MKPATH = mkdir -p
 export NAT_CC = $(TOOLS_BIN)/$(NAT_TOOLS_PREFIX)gcc
 export NAT_LD = $(TOOLS_BIN)/$(NAT_TOOLS_PREFIX)gcc
 export NAT_NM = $(TOOLS_BIN)/$(NAT_TOOLS_PREFIX)nm
+export NAT_OBJCOPY = $(TOOLS_BIN)/$(NAT_TOOLS_PREFIX)objcopy
 export NAT_CPPFILT = $(TOOLS_BIN)/$(NAT_TOOLS_PREFIX)c++filt
 
 export WARN_COMP_FLAGS = -Wall -Werror

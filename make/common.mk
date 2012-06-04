@@ -38,7 +38,12 @@ ifdef ADK_APP_NAME
         CC = $(NAT_CC)
 		LD = $(NAT_LD)
 		NM = $(NAT_NM)
+		OBJCOPY = $(NAT_OBJCOPY)
 		CPPFILT = $(NAT_CPPFILT)
+		# Format of object files
+		OBJ_FORMAT = elf64-x86-64
+		# Binary architecture of object files
+		OBJ_ARCH = i386
     else ifeq ($(ADK_PLATFORM),win32)
         ADK_PLATFORM_MAKEFILE = desktop.mk
         DEFS += ADK_PLATFORM_WIN32
@@ -104,7 +109,7 @@ endif
 
 ifdef ADK_APP_NAME
 
-INCLUDE_DIRS += $(ADK_ROOT)/include
+INCLUDE_DIRS += $(ADK_ROOT)/include $(ADK_OBJ_DIR)
 
 IFLAGS = $(foreach dir, $(INCLUDE_DIRS), -I$(dir))
 

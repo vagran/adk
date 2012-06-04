@@ -32,33 +32,32 @@ private:
         virtual bool
         on_draw(const Cairo::RefPtr<Cairo::Context>& cr)
         {
-            cr->set_line_width(7);
-            cr->set_source_rgb(0, 0, 0);
-
             switch (_curShape) {
             case SHAPE_RECTANGLE:
                 cr->rectangle(20, 20, 200, 100);
-                cr->stroke_preserve();
                 cr->set_source_rgb(0, 0.8, 0);
+                cr->fill_preserve();
                 break;
             case SHAPE_ELLIPSE:
                 cr->arc(150, 100, 90, 0, 2 * 3.14);
-                cr->stroke_preserve();
                 cr->set_source_rgb(0.8, 0, 0);
+                cr->fill_preserve();
                 break;
             case SHAPE_TRIANGLE:
-                cr->set_line_cap(Cairo::LINE_CAP_ROUND);
                 cr->move_to(40, 40);
                 cr->line_to(200, 40);
                 cr->line_to(120, 160);
                 cr->line_to(40, 40);
-                cr->set_line_join(Cairo::LINE_JOIN_ROUND);
-                cr->stroke_preserve();
                 cr->set_source_rgb(0.8, 0, 0.8);
+                cr->fill_preserve();
+                cr->set_line_cap(Cairo::LINE_CAP_ROUND);
+                cr->set_line_join(Cairo::LINE_JOIN_ROUND);
                 break;
             }
 
-            cr->fill();
+            cr->set_line_width(3);
+            cr->set_source_rgb(0, 0, 0);
+            cr->stroke();
             return true;
         }
 
@@ -125,7 +124,8 @@ int
 main(int argc, char **argv)
 {
     Gtk::Main app(argc, argv);
-    Glib::RefPtr<Gtk::Builder> builder = Gtk::Builder::create_from_file("sample.glade");
+    Glib::RefPtr<Gtk::Builder> builder =
+        Gtk::Builder::create_from_string(ADK_GLADE_XML(main_window));
     MainWindow *mainWindow = 0;
     builder->get_widget_derived("main_wnd", mainWindow);
     app.run(*mainWindow);

@@ -7,7 +7,8 @@
  */
 
 /** @file adk.h
- * TODO insert description here.
+ * Main header file of ADK library. This is the only file which should be
+ * included by application code.
  */
 
 #ifndef ADK_H_
@@ -24,6 +25,8 @@
 
 #include <gtkmm.h>
 #include <cairomm/cairomm.h>
+
+#include <adk/glade.h>
 
 #endif /* ADK_PLATFORM_AVR */
 
