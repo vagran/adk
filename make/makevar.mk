@@ -21,7 +21,7 @@ export MKPATH = mkdir -p
 
 # Native compilation tools
 export NAT_CC = $(TOOLS_BIN)/$(NAT_TOOLS_PREFIX)gcc
-export NAT_LD = $(TOOLS_BIN)/$(NAT_TOOLS_PREFIX)gcc
+export NAT_LD = $(TOOLS_BIN)/$(NAT_TOOLS_PREFIX)ld
 export NAT_NM = $(TOOLS_BIN)/$(NAT_TOOLS_PREFIX)nm
 export NAT_OBJCOPY = $(TOOLS_BIN)/$(NAT_TOOLS_PREFIX)objcopy
 export NAT_CPPFILT = $(TOOLS_BIN)/$(NAT_TOOLS_PREFIX)c++filt

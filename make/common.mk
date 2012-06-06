@@ -9,10 +9,6 @@
 # Verify target if application name is specified.
 ifdef ADK_APP_NAME
 
-    ifdef SUBDIRS
-        $(error 'SUBDIRS' cannot be specified in application directory)
-    endif
-
     ifeq ($(ADK_BUILD_TYPE),release)
     
     else ifeq ($(ADK_BUILD_TYPE),debug)
@@ -26,6 +22,7 @@ ifdef ADK_APP_NAME
         DEFS += ADK_PLATFORM_AVR
         # Compilation tools.
         CC = avr-gcc
+        LD = avr-ld
         OBJCOPY = avr-objcopy
         OBJDUMP = avr-objdump
     else ifeq ($(ADK_PLATFORM),linux32)

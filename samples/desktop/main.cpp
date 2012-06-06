@@ -13,6 +13,8 @@
 
 #include <adk.h>
 
+#include "lib/sample_lib.h"
+
 /** Main window class. */
 class MainWindow: public Gtk::Window {
 private:
@@ -124,8 +126,7 @@ int
 main(int argc, char **argv)
 {
     Gtk::Main app(argc, argv);
-    Glib::RefPtr<Gtk::Builder> builder =
-        Gtk::Builder::create_from_string(ADK_GLADE_XML(main_window));
+    Glib::RefPtr<Gtk::Builder> builder = g_sampleLib.Test();
     MainWindow *mainWindow = 0;
     builder->get_widget_derived("main_wnd", mainWindow);
     app.run(*mainWindow);

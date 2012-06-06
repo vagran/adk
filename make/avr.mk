@@ -42,7 +42,7 @@ BINARY = $(ADK_OBJ_DIR)/$(ADK_APP_NAME).elf
 all: $(BINARY)
 
 $(BINARY): $(ADK_OBJS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
+	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 $(ADK_OBJ_DIR)/%.o: %.c
 	$(CC) -c $(COMMON_COMP_FLAGS) $(CFLAGS) -o $@ $<

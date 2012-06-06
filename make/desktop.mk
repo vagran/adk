@@ -11,10 +11,10 @@ LIBS += stdc++ glib-$(GLIB_VERSION) glibmm-$(GLIBMM_VERSION) \
 
 LIB_FLAGS = $(foreach lib, $(LIBS), -l$(lib))
 
-LIB_INC_DIR = $(ADK_PREFIX)/include
-LIB_LIB_DIR = $(ADK_PREFIX)/lib
+LIB_INC_DIR += $(ADK_PREFIX)/include
+LIB_LIB_DIR += $(ADK_PREFIX)/lib
 
-LIB_FLAGS += -L$(LIB_LIB_DIR)
+LIB_FLAGS += $(foreach file, $(LIB_LIB_DIR), -L$(file))
 
 INCLUDE_DIRS += $(LIB_INC_DIR)/freetype2
 
@@ -69,17 +69,28 @@ $(ADK_OBJ_DIR)/%.glade.o: %.glade
 
 endif
 
-test:
-	echo $(GLADE_OBJ_FILES)
+ifeq ($(ADK_APP_TYPE),lib)
+# Library specific flags
+
+CFLAGS += -fPIC -DPIC
+
+LDFLAGS += -shared -fPIC
+
+endif
+
 ################################################################################
 # Executable binary
 
+ifeq ($(ADK_APP_TYPE),app)
 BINARY = $(ADK_OBJ_DIR)/$(ADK_APP_NAME)
+else ifeq ($(ADK_APP_TYPE),lib)
+BINARY = $(ADK_OBJ_DIR)/lib$(ADK_APP_NAME).so
+endif
 
 all: $(BINARY)
 
 $(BINARY): $(ADK_OBJS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIB_FLAGS)
+	$(CC) $(LDFLAGS) -o $@ $^ $(LIB_FLAGS)
 
 $(ADK_OBJ_DIR)/%.o: %.cpp
 	$(CC) -c $(COMMON_COMP_FLAGS) $(CFLAGS) -o $@ $<
