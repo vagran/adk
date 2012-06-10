@@ -9,12 +9,8 @@ LIBS += stdc++ glib-$(GLIB_VERSION) glibmm-$(GLIBMM_VERSION) \
 	sigc-$(SIGCPP_VERSION) gtkmm-$(GTKMM_VERSION) atkmm-$(ATKMM_VERSION) \
 	cairomm-$(CAIROMM_VERSION)
 
-LIB_FLAGS = $(foreach lib, $(LIBS), -l$(lib))
-
 LIB_INC_DIR += $(ADK_PREFIX)/include
-LIB_LIB_DIR += $(ADK_PREFIX)/lib
-
-LIB_FLAGS += $(foreach file, $(LIB_LIB_DIR), -L$(file))
+LIB_DIRS += $(ADK_PREFIX)/lib
 
 INCLUDE_DIRS += $(LIB_INC_DIR)/freetype2
 
@@ -32,8 +28,6 @@ INCLUDE_DIRS += $(LIB_INC_DIR)/glib-$(GLIB_VERSION) \
                 $(LIB_INC_DIR)/gtkmm-$(GTKMM_VERSION) \
                 $(LIB_INC_DIR)/atk-$(ATK_VERSION) \
                 $(LIB_INC_DIR)/atkmm-$(ATKMM_VERSION)
-
-CFLAGS += -std=c++0x
 
 ifeq ($(ADK_BUILD_TYPE),release)
 	CFLAGS += -O2
@@ -93,5 +87,5 @@ $(BINARY): $(ADK_OBJS)
 	$(CC) $(LDFLAGS) -o $@ $^ $(LIB_FLAGS)
 
 $(ADK_OBJ_DIR)/%.o: %.cpp
-	$(CC) -c $(COMMON_COMP_FLAGS) $(CFLAGS) -o $@ $<
-	$(CC) -c $(COMMON_COMP_FLAGS) $(CFLAGS) -MM -MT '$@' -o $(@:.o=.d) $<
+	$(CC) -c $(COMMON_COMP_FLAGS) $(COMMON_CPP_FLAGS) $(CFLAGS) -o $@ $<
+	$(CC) -c $(COMMON_COMP_FLAGS) $(COMMON_CPP_FLAGS) $(CFLAGS) -MM -MT '$@' -o $(@:.o=.d) $<

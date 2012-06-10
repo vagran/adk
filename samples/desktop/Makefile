@@ -12,6 +12,6 @@ ADK_APP_TYPE = app
 ADK_APP_NAME = desktop_sample_1
 
 LIBS += desktop_sample_2
-LIB_LIB_DIR += lib/build/$(ADK_PLATFORM)-$(ADK_BUILD_TYPE)
+LIB_DIRS += lib/build/$(ADK_PLATFORM)-$(ADK_BUILD_TYPE)
 
 include $(ADK_ROOT)/make/make.mk

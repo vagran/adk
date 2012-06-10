@@ -125,7 +125,7 @@ public:
 int
 main(int argc, char **argv)
 {
-    Gtk::Main app(argc, argv);
+    Gtk::Main app(argc, argv); //XXX use Gtk::Application after gtkmm upgraded
     Glib::RefPtr<Gtk::Builder> builder = g_sampleLib.Test();
     MainWindow *mainWindow = 0;
     builder->get_widget_derived("main_wnd", mainWindow);

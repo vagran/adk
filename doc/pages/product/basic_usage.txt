@@ -18,6 +18,7 @@ Create makefile using the following rules:
   * Define '''ADK_APP_TYPE''' variable as target application type. Default value is '''app'''. The following values allowed:
     * '''app''' for building executable application.
     * '''lib''' for building dynamic library (it is either shared object for Linux or DLL for Windows).
+    * '''unit_test''' for building unit test.
   * Define '''ADK_APP_NAME''' variable as a name of resulted binary file without suffix and/or prefix.
   * Include "$(ADK_ROOT)/make/make.mk" file.
 
@@ -58,4 +59,10 @@ FIXME Doxygen parameters.
 
 FIXME installation packages.
 
-FIXME unit tests parameters/targets.
+====== Unit tests ======
+
+For unit test target the '''ADK_APP_TYPE''' variable should have '''unit_test''' value. These additional variables should also be defined:
+  * '''ADK_TEST_NAME''' -- short symbolic name of the test. The value should not have spaces.
+  * '''ADK_TEST_DESC''' -- free-form description of the test. The value may have spaces.
+  * '''ADK_TEST_SRCS''' -- list of source files of component being tested.
+

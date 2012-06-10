@@ -7,7 +7,9 @@
 
 export DEF_GOAL = all
 export TOOLS_BIN = $(ADK_PREFIX)/bin
+export LIB_DIRS = $(ADK_PREFIX)/lib $(ADK_PREFIX)/lib64
 export NAT_TOOLS_PREFIX = adk-
+export NAT_PLATFORM = linux64
 
 # Common tools
 export INSTALL = install
@@ -27,6 +29,7 @@ export NAT_OBJCOPY = $(TOOLS_BIN)/$(NAT_TOOLS_PREFIX)objcopy
 export NAT_CPPFILT = $(TOOLS_BIN)/$(NAT_TOOLS_PREFIX)c++filt
 
 export WARN_COMP_FLAGS = -Wall -Werror
+export STD_COMP_FLAGS = -std=c++0x
 
 # Used libraries versions
 export GLIB_VERSION = 2.0

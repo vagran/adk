@@ -6,8 +6,24 @@
 # See COPYING file for copyright details.
 
 ################################################################################
+
+ifeq ($(ADK_APP_TYPE),unit_test)
+	# Unit test
+
+    ADK_PLATFORM_MAKEFILE = unit_test.mk
+    ADK_APP_NAME = $(ADK_TEST_NAME)
+    ADK_PLATFORM = $(NAT_PLATFORM)
+    ADK_BUILD_TYPE = debug
+    
+    # Compilation tools.
+    CC = $(NAT_CC)
+    LD = $(NAT_LD)
+    NM = $(NAT_NM)
+    OBJCOPY = $(NAT_OBJCOPY)
+    CPPFILT = $(NAT_CPPFILT)
+
 # Verify target if application name is specified.
-ifdef ADK_APP_NAME
+else ifdef ADK_APP_NAME
 
     ifeq ($(ADK_BUILD_TYPE),release)
     
@@ -72,6 +88,15 @@ $(MAKECMDGOALS): $(SUBDIRS_TARGET)
 endif
 
 ################################################################################
+# Utilities
+
+# A literal space.
+space :=
+space +=
+# Join elements in list specified in argument 2 using separator from argument 1.
+JOIN = $(subst $(space),$1,$(strip $2))
+
+################################################################################
 # Output directories
 
 ifdef ADK_APP_NAME
@@ -108,12 +133,18 @@ ifdef ADK_APP_NAME
 
 INCLUDE_DIRS += $(ADK_ROOT)/include $(ADK_OBJ_DIR)
 
-IFLAGS = $(foreach dir, $(INCLUDE_DIRS), -I$(dir))
+IFLAGS += $(foreach dir, $(INCLUDE_DIRS), -I$(dir))
 
 DEFS += ADK_APP_NAME=$(ADK_APP_NAME) ADK_BUILD_TYPE=$(ADK_BUILD_TYPE) \
 	ADK_PLATFORM=$(ADK_PLATFORM)
 
-COMMON_COMP_FLAGS = $(WARN_COMP_FLAGS) $(foreach def, $(DEFS), -D$(def)) $(IFLAGS)
+COMMON_COMP_FLAGS += $(WARN_COMP_FLAGS) $(foreach def, $(DEFS), -D$(def)) $(IFLAGS)
+
+COMMON_CPP_FLAGS += $(STD_COMP_FLAGS)
+
+LIB_FLAGS += $(foreach lib, $(LIBS), -l$(lib))
+
+LIB_FLAGS += $(foreach file, $(LIB_DIRS), -L$(file))
 
 # ADK_APP_NAME
 endif
@@ -160,6 +191,6 @@ endif
 ################################################################################
 # Include platform specific makefile
 
-ifdef ADK_APP_NAME
+ifdef ADK_PLATFORM_MAKEFILE
     include $(ADK_ROOT)/make/$(ADK_PLATFORM_MAKEFILE)
 endif
