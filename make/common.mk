@@ -21,6 +21,10 @@ ifeq ($(ADK_APP_TYPE),unit_test)
     NM = $(NAT_NM)
     OBJCOPY = $(NAT_OBJCOPY)
     CPPFILT = $(NAT_CPPFILT)
+    
+else ifeq ($(ADK_APP_TYPE),doc)
+	# Documentation
+	ADK_PLATFORM_MAKEFILE = doc.mk
 
 # Verify target if application name is specified.
 else ifdef ADK_APP_NAME

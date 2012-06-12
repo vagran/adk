@@ -19,6 +19,7 @@ Create makefile using the following rules:
     * '''app''' for building executable application.
     * '''lib''' for building dynamic library (it is either shared object for Linux or DLL for Windows).
     * '''unit_test''' for building unit test.
+    * '''doc''' for documentation directory.
   * Define '''ADK_APP_NAME''' variable as a name of resulted binary file without suffix and/or prefix.
   * Include "$(ADK_ROOT)/make/make.mk" file.
 
@@ -37,6 +38,7 @@ Optional variables in the makefile:
   * '''DEFS''' -- additional defines for '-D' compiler option.
   * '''DEBUG_OPT_FLAGS''' -- optimization flags for debug build. They overwrite default flags if specified.
   * '''RELEASE_OPT_FLAGS''' -- optimization flags for release build. They overwrite default flags if specified.
+  * '''LIB_DIRS''' -- additional directories to search for libraries.
 
 //:!: Everywhere a list of values is acceptable in makefile variables, it can be specified as blank separated values.//
 
@@ -50,12 +52,10 @@ Currently the following source file types are supported:
 The following make targets available:
   * '''all''' -- build specified application. Default target.
   * '''clean''' -- remove all files created during the build. If '''build''' directory has several subdirectories then only one corresponding to specified platform and build type is removed. If it is the only subdirectory then '''build''' directory is also removed.
-  * '''adk_build_dir''' -- create output directories. Can be used as dependency for custom user targets which produce some output.
+  * '''adk_build_dir''' -- create output directories. Can be used as dependency for custom user targets which produce some output. Should not be used as dependency for generated files themselves because they will be rebuilt even if nothing is changed (because directory modification timestamp is updated each time some file is added or removed into the directory).
 
 The following variables are available in the ADK makefile scope. They can be used when user is writing some extensions for make process in an application makefile.
   * '''ADK_OBJ_DIR''' -- output directory where all produced files should be stored.
-
-FIXME Doxygen parameters.
 
 FIXME installation packages.
 
@@ -66,3 +66,16 @@ For unit test target the '''ADK_APP_TYPE''' variable should have '''unit_test'''
   * '''ADK_TEST_DESC''' -- free-form description of the test. The value may have spaces.
   * '''ADK_TEST_SRCS''' -- list of source files of component being tested.
 
+====== Documentation ======
+
+Documentation standard for ADK is [[http://www.dokuwiki.org/dokuwiki|Dokuwiki]] documentation format. It is well suitable for storing it in source code repository. Specify 
+'''ADK_APP_TYPE''' as '''doc''' in the makefile. Additional variables are:
+  * '''ADK_DOC_DIR''' -- directory where the Dokuwiki server runs.
+  * '''ADK_DOC_NAMESPACE''' -- namespace prefix if the documentation server is shared between several projects.
+  * '''ADK_DOC_DEPLOY_DIR''' -- additional paths for documentation deployment.
+
+The following make targets are supported:
+  * '''all''' -- copies documentation files from the server directory to the source files directory.
+  * '''deploy''' -- copies documentation files from source files directory to the server directory and all specified additional deployment directories if any.
+
+FIXME doxygen

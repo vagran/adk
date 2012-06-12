@@ -20,6 +20,7 @@ export RMPATH = rm -rf
 export CAT = cat
 export MKDIR = mkdir
 export MKPATH = mkdir -p
+export RSYNC = rsync
 
 # Native compilation tools
 export NAT_CC = $(TOOLS_BIN)/$(NAT_TOOLS_PREFIX)gcc

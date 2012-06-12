@@ -29,10 +29,20 @@ INCLUDE_DIRS += $(LIB_INC_DIR)/glib-$(GLIB_VERSION) \
                 $(LIB_INC_DIR)/atk-$(ATK_VERSION) \
                 $(LIB_INC_DIR)/atkmm-$(ATKMM_VERSION)
 
+# Compiler optimization flags for debug build
+ifndef DEBUG_OPT_FLAGS
+DEBUG_OPT_FLAGS = -O0
+endif
+
+# Compiler optimization flags for release build
+ifndef RELEASE_OPT_FLAGS
+RELEASE_OPT_FLAGS = -O2
+endif
+
 ifeq ($(ADK_BUILD_TYPE),release)
-	CFLAGS += -O2
+	CFLAGS += $(RELEASE_OPT_FLAGS)
 else ifeq ($(ADK_BUILD_TYPE),debug)
-    CFLAGS += -O0 -ggdb3
+    CFLAGS += $(DEBUG_OPT_FLAGS) -ggdb3
 endif
 
 # Get glade files
