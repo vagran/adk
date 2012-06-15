@@ -3,7 +3,7 @@
 In order to built an application which uses ADK the following conditions must be met:
   * ADK package is available in the file system.
   * ''ADK_ROOT'' environment variable is pointing to ADK package root directory.
-  * ''ADK_TOOLS'' environment variable is pointing to a directory where ADK tools binaries resides.
+  * ''ADK_PREFIX'' environment variable is pointing to a directory where ADK tools are installed.
 
 Create makefile using the following rules:
   * Define '''ADK_PLATFORM''' variable as a target platform type. Default value is '''linux64'''. The following values allowed:

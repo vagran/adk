@@ -7,7 +7,7 @@
 
 export DEF_GOAL = all
 export TOOLS_BIN = $(ADK_PREFIX)/bin
-export LIB_DIRS = $(ADK_PREFIX)/lib $(ADK_PREFIX)/lib64
+export LIB_DIRS += $(ADK_PREFIX)/lib $(ADK_PREFIX)/lib64
 export NAT_TOOLS_PREFIX = adk-
 export NAT_PLATFORM = linux64
 

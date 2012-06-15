@@ -10,7 +10,6 @@ LIBS += stdc++ glib-$(GLIB_VERSION) glibmm-$(GLIBMM_VERSION) \
 	cairomm-$(CAIROMM_VERSION)
 
 LIB_INC_DIR += $(ADK_PREFIX)/include
-LIB_DIRS += $(ADK_PREFIX)/lib
 
 INCLUDE_DIRS += $(LIB_INC_DIR)/freetype2
 
