@@ -8,7 +8,7 @@
 ################################################################################
 
 ifeq ($(ADK_APP_TYPE),unit_test)
-	# Unit test
+    # Unit test
 
     ADK_PLATFORM_MAKEFILE = unit_test.mk
     ADK_APP_NAME = $(ADK_TEST_NAME)
@@ -23,8 +23,8 @@ ifeq ($(ADK_APP_TYPE),unit_test)
     CPPFILT = $(NAT_CPPFILT)
     
 else ifeq ($(ADK_APP_TYPE),doc)
-	# Documentation
-	ADK_PLATFORM_MAKEFILE = doc.mk
+    # Documentation
+    ADK_PLATFORM_MAKEFILE = doc.mk
 
 # Verify target if application name is specified.
 else ifdef ADK_APP_NAME
@@ -38,6 +38,7 @@ else ifdef ADK_APP_NAME
     endif
     
     ifeq ($(ADK_PLATFORM),avr)
+        ADK_PLATFORM_ID = $(ADK_PLATFORM_ID_AVR)
         ADK_PLATFORM_MAKEFILE = avr.mk
         DEFS += ADK_PLATFORM_AVR
         # Compilation tools.
@@ -46,25 +47,29 @@ else ifdef ADK_APP_NAME
         OBJCOPY = avr-objcopy
         OBJDUMP = avr-objdump
     else ifeq ($(ADK_PLATFORM),linux32)
+        ADK_PLATFORM_ID = $(ADK_PLATFORM_ID_LINUX32)
         ADK_PLATFORM_MAKEFILE = desktop.mk
         DEFS += ADK_PLATFORM_LINUX32
     else ifeq ($(ADK_PLATFORM),linux64)
+        ADK_PLATFORM_ID = $(ADK_PLATFORM_ID_LINUX64)
         ADK_PLATFORM_MAKEFILE = desktop.mk
         DEFS += ADK_PLATFORM_LINUX64
         # Compilation tools.
         CC = $(NAT_CC)
-		LD = $(NAT_LD)
-		NM = $(NAT_NM)
-		OBJCOPY = $(NAT_OBJCOPY)
-		CPPFILT = $(NAT_CPPFILT)
-		# Format of object files
-		OBJ_FORMAT = elf64-x86-64
-		# Binary architecture of object files
-		OBJ_ARCH = i386
+        LD = $(NAT_LD)
+        NM = $(NAT_NM)
+        OBJCOPY = $(NAT_OBJCOPY)
+        CPPFILT = $(NAT_CPPFILT)
+        # Format of object files
+        OBJ_FORMAT = elf64-x86-64
+        # Binary architecture of object files
+        OBJ_ARCH = i386
     else ifeq ($(ADK_PLATFORM),win32)
+        ADK_PLATFORM_ID = $(ADK_PLATFORM_ID_WIN32)
         ADK_PLATFORM_MAKEFILE = desktop.mk
         DEFS += ADK_PLATFORM_WIN32
     else ifeq ($(ADK_PLATFORM),win64)
+        ADK_PLATFORM_ID = $(ADK_PLATFORM_ID_WIN64)
         ADK_PLATFORM_MAKEFILE = desktop.mk
         DEFS += ADK_PLATFORM_WIN64
     else
@@ -140,7 +145,7 @@ INCLUDE_DIRS += $(ADK_ROOT)/include $(ADK_OBJ_DIR)
 IFLAGS += $(foreach dir, $(INCLUDE_DIRS), -I$(dir))
 
 DEFS += ADK_APP_NAME=$(ADK_APP_NAME) ADK_BUILD_TYPE=$(ADK_BUILD_TYPE) \
-	ADK_PLATFORM=$(ADK_PLATFORM)
+	ADK_PLATFORM=$(ADK_PLATFORM) ADK_PLATFORM_ID=$(ADK_PLATFORM_ID)
 
 COMMON_COMP_FLAGS += $(WARN_COMP_FLAGS) $(foreach def, $(DEFS), -D$(def)) $(IFLAGS)
 
