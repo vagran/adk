@@ -33,7 +33,7 @@
 //XXX should be removed after Eclipse will have c++11 supported
 #ifdef __CDT_PARSER__
 #define constexpr
-#define nullptr ((void *)0)
+#define nullptr 0
 #define noexcept
 #endif /* __CDT_PARSER__ */
 
@@ -49,10 +49,15 @@
 #include <list>
 #include <string>
 #include <sstream>
+#include <memory>
 
 #include <gtkmm.h>
 #include <cairomm/cairomm.h>
 
+#include <adk/types.h>
+
+#include <adk/logging.h>
+#include <adk/utils.h>
 #include <adk/glade.h>
 
 #endif /* ADK_PLATFORM_AVR */
