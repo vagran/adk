@@ -37,29 +37,43 @@ else ifdef ADK_APP_NAME
         $(error Build type not supported: $(ADK_BUILD_TYPE))
     endif
     
+    ifeq ($(ADK_PLATFORM),native)
+        ADK_PLATFORM = $(NAT_PLATFORM)
+    endif
+    
     ifeq ($(ADK_PLATFORM),avr)
         ADK_PLATFORM_ID = $(ADK_PLATFORM_ID_AVR)
         ADK_PLATFORM_MAKEFILE = avr.mk
         DEFS += ADK_PLATFORM_AVR
         # Compilation tools.
-        CC = avr-gcc
-        LD = avr-ld
-        OBJCOPY = avr-objcopy
-        OBJDUMP = avr-objdump
+        CC = $(AVR_CC)
+        LD = $(AVR_LD)
+        OBJCOPY = $(AVR_OBJCOPY)
+        OBJDUMP = $(AVR_OBJDUMP)
     else ifeq ($(ADK_PLATFORM),linux32)
         ADK_PLATFORM_ID = $(ADK_PLATFORM_ID_LINUX32)
         ADK_PLATFORM_MAKEFILE = desktop.mk
         DEFS += ADK_PLATFORM_LINUX32
+        # Compilation tools.
+        CC = $(LINUX32_CC)
+        LD = $(LINUX32_LD)
+        NM = $(LINUX32_NM)
+        OBJCOPY = $(LINUX32_OBJCOPY)
+        CPPFILT = $(LINUX32_CPPFILT)
+        # Format of object files
+        OBJ_FORMAT = elf32-i386
+        # Binary architecture of object files
+        OBJ_ARCH = i386
     else ifeq ($(ADK_PLATFORM),linux64)
         ADK_PLATFORM_ID = $(ADK_PLATFORM_ID_LINUX64)
         ADK_PLATFORM_MAKEFILE = desktop.mk
         DEFS += ADK_PLATFORM_LINUX64
         # Compilation tools.
-        CC = $(NAT_CC)
-        LD = $(NAT_LD)
-        NM = $(NAT_NM)
-        OBJCOPY = $(NAT_OBJCOPY)
-        CPPFILT = $(NAT_CPPFILT)
+        CC = $(LINUX64_CC)
+        LD = $(LINUX64_LD)
+        NM = $(LINUX64_NM)
+        OBJCOPY = $(LINUX64_OBJCOPY)
+        CPPFILT = $(LINUX64_CPPFILT)
         # Format of object files
         OBJ_FORMAT = elf64-x86-64
         # Binary architecture of object files

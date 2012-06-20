@@ -7,7 +7,7 @@
 
 SUBDIRS = lib
 
-ADK_PLATFORM = linux64
+ADK_PLATFORM = native
 ADK_APP_TYPE = app
 ADK_APP_NAME = desktop_sample_1
 

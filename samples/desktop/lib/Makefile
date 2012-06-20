@@ -5,7 +5,7 @@
 # All rights reserved.
 # See COPYING file for copyright details.
 
-ADK_PLATFORM = linux64
+ADK_PLATFORM = native
 ADK_APP_TYPE = lib
 ADK_APP_NAME = desktop_sample_2
 

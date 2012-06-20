@@ -14,6 +14,9 @@ endif
 
 DEFS += ADK_MCU=$(ADK_MCU)
 
+INCLUDE_DIRS += $(ADK_PREFIX)/avr/include
+LIB_DIRS += $(ADK_PREFIX)/avr/lib
+
 ifeq ($(ADK_BUILD_TYPE),release)
     ifndef RELEASE_OPT_FLAGS
         # Optimize for size by default
@@ -42,7 +45,7 @@ BINARY = $(ADK_OBJ_DIR)/$(ADK_APP_NAME).elf
 all: $(BINARY)
 
 $(BINARY): $(ADK_OBJS)
-	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
+	$(CC) $(LDFLAGS) $(LIB_FLAGS) -o $@ $^ $(LIBS)
 
 $(ADK_OBJ_DIR)/%.o: %.c
 	$(CC) -c $(COMMON_COMP_FLAGS) $(CFLAGS) -o $@ $<

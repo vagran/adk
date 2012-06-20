@@ -140,12 +140,12 @@ void
 TestMan::PrintStat(bool total)
 {
     if (!total) {
-        printf("Values checked: %lu\nAsserts executed: %lu\n",
+        printf("Values checked: %zu\nAsserts executed: %zu\n",
                _numValues,_numAsserts);
         _numValues = 0;
         _numAsserts = 0;
     } else {
-        printf("Total values checked: %lu\nTotal asserts executed: %lu\n",
+        printf("Total values checked: %zu\nTotal asserts executed: %zu\n",
                _totNumValues,_totNumAsserts);
     }
 }
@@ -163,7 +163,7 @@ TestMan::Run()
     size_t numPassed = 0;
 
     for (TestDesc *t: _tests) {
-        printf("==== Running test '%s' (%lu of %lu) ====\n(defined at %s:%d)\n\n",
+        printf("==== Running test '%s' (%zu of %zu) ====\n(defined at %s:%d)\n\n",
                t->GetName(), testIdx + 1, numTests, t->GetFile(), t->GetLine());
 
         bool failed = false;
@@ -187,7 +187,7 @@ TestMan::Run()
     }
 
     printf("======== Testing complete [%s] ========\n"
-           "%lu of %lu tests passed\n",
+           "%zu of %zu tests passed\n",
            numPassed == numTests ? "SUCCEED" : "FAILED",
            numPassed, numTests);
     PrintStat(true);
