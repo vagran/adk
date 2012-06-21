@@ -12,7 +12,7 @@ ifeq ($(ADK_APP_TYPE),unit_test)
 
     ADK_PLATFORM_MAKEFILE = unit_test.mk
     ADK_APP_NAME = $(ADK_TEST_NAME)
-    ADK_PLATFORM = $(NAT_PLATFORM)
+    ADK_PLATFORM = $(ADK_NAT_PLATFORM)
     ADK_BUILD_TYPE = debug
     
     # Compilation tools.
@@ -38,7 +38,7 @@ else ifdef ADK_APP_NAME
     endif
     
     ifeq ($(ADK_PLATFORM),native)
-        ADK_PLATFORM = $(NAT_PLATFORM)
+        ADK_PLATFORM = $(ADK_NAT_PLATFORM)
     endif
     
     ifeq ($(ADK_PLATFORM),avr)

@@ -22,8 +22,10 @@ export MKDIR = mkdir
 export MKPATH = mkdir -p
 export RSYNC = rsync
 
-# Native platform, change if necessary
-export NAT_PLATFORM = linux64
+# Default native platform
+ifndef ADK_NAT_PLATFORM
+export ADK_NAT_PLATFORM = linux64
+endif
 
 # Native compilation tools
 export NAT_CC = $(TOOLS_BIN)/$(NAT_TOOLS_PREFIX)gcc
@@ -32,7 +34,7 @@ export NAT_NM = $(TOOLS_BIN)/$(NAT_TOOLS_PREFIX)nm
 export NAT_OBJCOPY = $(TOOLS_BIN)/$(NAT_TOOLS_PREFIX)objcopy
 export NAT_CPPFILT = $(TOOLS_BIN)/$(NAT_TOOLS_PREFIX)c++filt
 
-ifeq ($(NAT_PLATFORM),linux32)
+ifeq ($(ADK_NAT_PLATFORM),linux32)
 export LINUX32_CC = $(NAT_CC)
 export LINUX32_LD = $(NAT_LD)
 export LINUX32_NM = $(NAT_NM)
@@ -43,7 +45,7 @@ export LINUX64_LD = XXX
 export LINUX64_NM = XXX
 export LINUX64_OBJCOPY = XXX
 export LINUX64_CPPFILT = XXX
-else ifeq ($(NAT_PLATFORM),linux64)
+else ifeq ($(ADK_NAT_PLATFORM),linux64)
 export LINUX32_CC = XXX
 export LINUX32_LD = XXX
 export LINUX32_NM = XXX
@@ -55,7 +57,7 @@ export LINUX64_NM = $(NAT_NM)
 export LINUX64_OBJCOPY = $(NAT_OBJCOPY)
 export LINUX64_CPPFILT = $(NAT_CPPFILT)
 else
-$(error Build platform not supported: $(NAT_PLATFORM))
+$(error Build platform not supported: $(ADK_NAT_PLATFORM))
 endif
 
 # AVR compilation tools
