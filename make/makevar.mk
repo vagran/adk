@@ -68,7 +68,7 @@ export AVR_OBJCOPY = $(TOOLS_BIN)/$(AVR_TOOLS_PREFIX)objcopy
 export AVR_CPPFILT = $(TOOLS_BIN)/$(AVR_TOOLS_PREFIX)c++filt
 
 export WARN_COMP_FLAGS = -Wall -Werror
-export STD_COMP_FLAGS = -std=c++0x
+export STD_COMP_FLAGS = -std=c++11
 
 # Used libraries versions
 export GLIB_VERSION = 2.0
