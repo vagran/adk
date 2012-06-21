@@ -78,7 +78,7 @@ opts = {
         'avr': {
             'config-params': '--program-prefix=avr- --target=avr --enable-languages=c,c++ ' +
                 '--enable-shared --with-system-zlib --enable-long-long --enable-nls ' +
-                '--without-included-gettext --disable-checking ' +
+                '--without-included-gettext --disable-checking --disable-bootstrap ' +
                 '--disable-libada --disable-libssp --disable-libquadmath --disable-libgomp ' +
                 '--with-gmp=${PREFIX} --with-mpfr=${PREFIX} --with-mpc=${PREFIX}'
         }
