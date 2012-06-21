@@ -18,7 +18,6 @@ export PATH=$ADK_PREFIX/bin:$ADK_PREFIX/sbin:$PATH
 export LD_LIBRARY_PATH=$ADK_PREFIX/lib:$ADK_PREFIX/lib64
  
 export ADK_ROOT=$ADK_PROJECT_PATH/source/ADK
-export ADK_TOOLS=$ADK_PREFIX/bin
 export ADK_BUILD_TYPE=debug
  
 export PS1='ADK env [\W]$ '
