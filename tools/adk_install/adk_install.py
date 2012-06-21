@@ -163,6 +163,9 @@ def Main():
     optParser.add_option('-i', '--install-pkg', dest = 'installPkgs', action = 'append',
                          metavar = 'PACKAGE',
                          help = 'Separate packages to install (multiple can be specified)')
+    optParser.add_option('-e', '--exclude-pkg', dest = 'excludePkgs', action = 'append',
+                         metavar = 'PACKAGE',
+                         help = 'Separate packages to exclude (multiple can be specified)')
     
     (opts, args) = optParser.parse_args()
     
@@ -184,6 +187,15 @@ def Main():
     else:
         pkgList = conf.packages
     
+    if opts.excludePkgs is not None:
+        excludeList = opts.excludePkgs
+        for pkg in excludeList:
+            if not ':' in pkg:
+                excludeList[excludeList.index(pkg)] = pkg + ':default'
+        for pkg in excludeList:
+            if pkg in pkgList:
+                pkgList.remove(pkg)
+
     if not os.path.exists(opts.buildDir):
         os.makedirs(opts.buildDir)
     if not os.path.exists(opts.prefix):

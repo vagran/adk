@@ -4,14 +4,14 @@
 # <package name>[:<target name>]
 packages = [
     # Development tools
-    'binutils:avr',
-    'gcc:avr',
-    'avr-libc',
-    'flex',
-    'bison',
     'gmp',
     'mpfr',
     'mpc',
+    'flex',
+    'bison',
+    'binutils:avr',
+    'gcc:avr',
+    'avr-libc',
     'binutils:native',
     'gcc:native',
 #    'binutils:windows'
@@ -79,7 +79,8 @@ opts = {
             'config-params': '--program-prefix=avr- --target=avr --enable-languages=c,c++ ' +
                 '--enable-shared --with-system-zlib --enable-long-long --enable-nls ' +
                 '--without-included-gettext --disable-checking ' +
-                '--disable-libada --disable-libssp --disable-libquadmath --disable-libgomp'
+                '--disable-libada --disable-libssp --disable-libquadmath --disable-libgomp ' +
+                '--with-gmp=${PREFIX} --with-mpfr=${PREFIX} --with-mpc=${PREFIX}'
         }
     },
     'doxygen': {

@@ -24,7 +24,7 @@ export MKPATH = mkdir -p
 export RSYNC = rsync
 
 # Native platform, change if necessary
-export NAT_PLATFORM = linux32
+export NAT_PLATFORM = linux64
 
 # Native compilation tools
 export NAT_CC = $(TOOLS_BIN)/$(NAT_TOOLS_PREFIX)gcc

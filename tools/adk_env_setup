@@ -1,0 +1,26 @@
+#!/bin/bash
+# /ADK/tools/adk_env_setup
+#
+# This file is a part of ADK library.
+# Copyright (c) 2012, Artyom Lebedev <artyom.lebedev@gmail.com>
+# All rights reserved.
+# See COPYING file for copyright details.
+
+if [ -z "$ADK_PROJECT_PATH" ]; then
+    export ADK_PROJECT_PATH=$HOME/projects/adk
+    bash --init-file $0
+fi
+ 
+cd $ADK_PROJECT_PATH
+ 
+export ADK_PREFIX=$ADK_PROJECT_PATH/usr/local
+export PATH=$ADK_PREFIX/bin:$ADK_PREFIX/sbin:$PATH
+export LD_LIBRARY_PATH=$ADK_PREFIX/lib:$ADK_PREFIX/lib64
+ 
+export ADK_ROOT=$ADK_PROJECT_PATH/source/ADK
+export ADK_TOOLS=$ADK_PREFIX/bin
+export ADK_BUILD_TYPE=debug
+ 
+export PS1='ADK env [\W]$ '
+ 
+echo "Welcome to ADK development environment"

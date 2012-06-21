@@ -1,0 +1,31 @@
+#!/usr/bin/env perl
+# /ADK/tools/adk_sudo
+#
+# This file is a part of ADK library.
+# Copyright (c) 2012, Artyom Lebedev <artyom.lebedev@gmail.com>
+# All rights reserved.
+# See COPYING file for copyright details.
+
+use Getopt::Long;
+use File::Basename;
+ 
+$ADK_PREFIX = $ENV{ADK_PREFIX};
+$ADK_PROJECT_PATH = $ENV{ADK_PROJECT_PATH};
+ 
+if (!GetOptions("prefix=s" => \$ADK_PREFIX,
+        "project_path=s" => \$ADK_PROJECT_PATH)
+        || $#ARGV == -1) {
+    my $script = basename($0);
+    print("Usage: $script <command>\n");
+    exit(1);
+}
+ 
+if ($>) {
+    exit(system("sudo $0 --prefix=$ADK_PREFIX --project_path=$ADK_PROJECT_PATH -- @ARGV"));
+}
+ 
+$ENV{ADK_PREFIX} = $ADK_PREFIX;
+$ENV{ADK_PROJECT_PATH} = $ADK_PROJECT_PATH;
+$ENV{PATH} = "$ADK_PREFIX/bin:$ADK_PREFIX/sbin:" . $ENV{PATH};
+$ENV{LD_LIBRARY_PATH} = "$ADK_PREFIX/lib:$ADK_PREFIX/lib64";
+exit(system("@ARGV"));
