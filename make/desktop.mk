@@ -5,36 +5,9 @@
 # All rights reserved.
 # See COPYING file for copyright details.
 
-LIBS += stdc++ glib-$(GLIB_VERSION) glibmm-$(GLIBMM_VERSION) \
-	sigc-$(SIGCPP_VERSION) gtkmm-$(GTKMM_VERSION) atkmm-$(ATKMM_VERSION) \
-	cairomm-$(CAIROMM_VERSION)
+LIBS += stdc++ $(DESKTOP_LIBS)
 
-LIB_INC_DIR = $(ADK_PREFIX)/include
-LIB_LIB_DIR = $(ADK_PREFIX)/lib
-
-INCLUDE_DIRS += $(LIB_INC_DIR)/freetype2
-
-INCLUDE_DIRS += $(LIB_INC_DIR)/glib-$(GLIB_VERSION) \
-                $(LIB_LIB_DIR)/glib-$(GLIB_VERSION)/include \
-                $(LIB_INC_DIR)/pango-$(PANGO_VERSION) \
-                $(LIB_INC_DIR)/cairo \
-                $(LIB_INC_DIR)/gdk-pixbuf-$(GDK_PIXBUF_VERSION) \
-                $(LIB_INC_DIR)/gtk-$(GTK_VERSION) \
-                $(LIB_INC_DIR)/sigc++-$(SIGCPP_VERSION) \
-                $(LIB_LIB_DIR)/sigc++-$(SIGCPP_VERSION)/include \
-                $(LIB_INC_DIR)/glibmm-$(GLIBMM_VERSION) \
-                $(LIB_LIB_DIR)/glibmm-$(GLIBMM_VERSION)/include \
-                $(LIB_INC_DIR)/giomm-$(GIOMM_VERSION) \
-                $(LIB_INC_DIR)/cairomm-$(CAIROMM_VERSION) \
-                $(LIB_LIB_DIR)/cairomm-$(CAIROMM_VERSION)/include \
-                $(LIB_INC_DIR)/pangomm-$(PANGOMM_VERSION) \
-                $(LIB_LIB_DIR)/pangomm-$(PANGOMM_VERSION)/include \
-                $(LIB_INC_DIR)/gdkmm-$(GDKMM_VERSION) \
-                $(LIB_LIB_DIR)/gdkmm-$(GDKMM_VERSION)/include \
-                $(LIB_INC_DIR)/gtkmm-$(GTKMM_VERSION) \
-                $(LIB_LIB_DIR)/gtkmm-$(GTKMM_VERSION)/include \
-                $(LIB_INC_DIR)/atk-$(ATK_VERSION) \
-                $(LIB_INC_DIR)/atkmm-$(ATKMM_VERSION)
+INCLUDE_DIRS += $(DESKTOP_LIBS_INC_DIRS)
 
 # Compiler optimization flags for debug build
 ifndef DEBUG_OPT_FLAGS

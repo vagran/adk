@@ -22,6 +22,8 @@ $result_name = "auto_stubs.cpp";
 %defined_syms = ( );
 # All undefined symbols
 %wanted_syms = ( );
+# Prohibited symbols
+%prohibited_syms = ( "__dso_handle" => 1);
 
 sub ParseFile {
     my ($filename, $isTest) = @_;
@@ -44,7 +46,7 @@ sub ParseFile {
 
 sub ResolveSymbols {
     for my $name (keys %wanted_syms) {
-        if (defined $defined_syms{$name}) {
+        if (defined $defined_syms{$name} or defined $prohibited_syms{$name}) {
             delete $wanted_syms{$name};
         }
     }
@@ -86,7 +88,7 @@ EOF
     for my $name (keys %wanted_syms) {
         my $readable_name = DemangleName($name);
         
-        print(RESULT "SYM_STUB($symIdx,\n\t\"$name\",\n\t \"$readable_name\",\n\t\"$wanted_syms{$name}\")\n");
+        print(RESULT "SYM_STUB($symIdx,\n\t\"$name\",\n\t\"$readable_name\",\n\t\"$wanted_syms{$name}\")\n");
         $symIdx++;
     }
 

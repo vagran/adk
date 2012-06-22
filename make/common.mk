@@ -10,9 +10,12 @@
 ifeq ($(ADK_APP_TYPE),unit_test)
     # Unit test
 
+    ifndef ADK_PLATFORM
+    ADK_PLATFORM = native
+    endif
+    
     ADK_PLATFORM_MAKEFILE = unit_test.mk
     ADK_APP_NAME = $(ADK_TEST_NAME)
-    ADK_PLATFORM = $(ADK_NAT_PLATFORM)
     ADK_BUILD_TYPE = debug
     
     # Compilation tools.
@@ -25,9 +28,14 @@ ifeq ($(ADK_APP_TYPE),unit_test)
 else ifeq ($(ADK_APP_TYPE),doc)
     # Documentation
     ADK_PLATFORM_MAKEFILE = doc.mk
+else ifeq ($(ADK_PLATFORM),avr)
+    ADK_PLATFORM_MAKEFILE = avr.mk
+else
+    ADK_PLATFORM_MAKEFILE = desktop.mk
+endif
 
 # Verify target if application name is specified.
-else ifdef ADK_APP_NAME
+ifdef ADK_APP_NAME
 
     ifeq ($(ADK_BUILD_TYPE),release)
     
@@ -43,7 +51,6 @@ else ifdef ADK_APP_NAME
     
     ifeq ($(ADK_PLATFORM),avr)
         ADK_PLATFORM_ID = $(ADK_PLATFORM_ID_AVR)
-        ADK_PLATFORM_MAKEFILE = avr.mk
         DEFS += ADK_PLATFORM_AVR
         # Compilation tools.
         CC = $(AVR_CC)
@@ -52,7 +59,6 @@ else ifdef ADK_APP_NAME
         OBJDUMP = $(AVR_OBJDUMP)
     else ifeq ($(ADK_PLATFORM),linux32)
         ADK_PLATFORM_ID = $(ADK_PLATFORM_ID_LINUX32)
-        ADK_PLATFORM_MAKEFILE = desktop.mk
         DEFS += ADK_PLATFORM_LINUX32
         # Compilation tools.
         CC = $(LINUX32_CC)
@@ -66,7 +72,6 @@ else ifdef ADK_APP_NAME
         OBJ_ARCH = i386
     else ifeq ($(ADK_PLATFORM),linux64)
         ADK_PLATFORM_ID = $(ADK_PLATFORM_ID_LINUX64)
-        ADK_PLATFORM_MAKEFILE = desktop.mk
         DEFS += ADK_PLATFORM_LINUX64
         # Compilation tools.
         CC = $(LINUX64_CC)
@@ -80,11 +85,9 @@ else ifdef ADK_APP_NAME
         OBJ_ARCH = i386
     else ifeq ($(ADK_PLATFORM),win32)
         ADK_PLATFORM_ID = $(ADK_PLATFORM_ID_WIN32)
-        ADK_PLATFORM_MAKEFILE = desktop.mk
         DEFS += ADK_PLATFORM_WIN32
     else ifeq ($(ADK_PLATFORM),win64)
         ADK_PLATFORM_ID = $(ADK_PLATFORM_ID_WIN64)
-        ADK_PLATFORM_MAKEFILE = desktop.mk
         DEFS += ADK_PLATFORM_WIN64
     else
         $(error Platform not supported: $(ADK_PLATFORM))
