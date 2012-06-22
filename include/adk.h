@@ -50,6 +50,7 @@
 #include <string>
 #include <sstream>
 #include <memory>
+#include <atomic>
 
 #include <gtkmm.h>
 #include <cairomm/cairomm.h>
