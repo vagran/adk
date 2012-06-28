@@ -175,7 +175,10 @@ LIB_FLAGS += $(foreach file, $(LIB_DIRS), -L$(file))
 # ADK_APP_NAME
 endif
 
-.PHONY: all clean
+.PHONY: all clean test
+
+# Default definition for testing target
+test:
 
 ################################################################################
 # Common compilaion rules
