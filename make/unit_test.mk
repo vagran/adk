@@ -21,8 +21,6 @@ CFLAGS += -ggdb3 -DDEBUG -O0
 
 LIBS += stdc++
 
-INCLUDE_DIRS += $(DESKTOP_LIBS_INC_DIRS)
-
 AUTO_SRC = $(ADK_OBJ_DIR)/auto_stabs.cpp
 AUTO_OBJ = $(AUTO_SRC:.cpp=.o)
 
@@ -57,7 +55,9 @@ $(AUTO_SRC): $(ADK_OBJS) $(ADK_TEST_OBJS)
 	$(STUBS_GEN) --nm $(NM) --cppfilt $(CPPFILT) \
 	--result $@ \
 	$(foreach src, $(ADK_TEST_OBJS), --test_src $(src)) \
-	$(foreach src, $(ADK_OBJS), --src $(src))
+	$(foreach src, $(ADK_OBJS), --src $(src)) \
+	$(foreach dir, $(LIB_DIRS), --lib-dir $(dir)) \
+	$(foreach lib, $(LIBS), --lib $(lib))
 	echo "$$AUTO_CHUNK" >> $@
 
 # Target for launching the tests

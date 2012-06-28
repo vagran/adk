@@ -31,8 +31,8 @@ sub ParseFile {
     open(NM, "$NM $filename |") or die("Failed to open file '$filename'");
     
     while (my $line = <NM>) {
-        if ($line =~ /^\s*[0-9a-fA-F]*\s+([TDUB])\s+(.*)$/) {
-            if ($1 eq "T" or $1 eq "D" or $1 eq "B") {
+        if ($line =~ /^\s*[0-9a-fA-F]*\s+([TDUBWV])\s+(.*)$/) {
+            if ($1 eq "T" or $1 eq "D" or $1 eq "B" or $1 eq "W" or $1 eq "V") {
                 $defined_syms{$2} = $filename;
             } elsif ($1 eq "U" and $isTest) {
                 if ($2 !~ /__cxa|__cxx|__gxx|_Unwind_/) {
@@ -43,6 +43,24 @@ sub ParseFile {
     }
     close(NM);
 }
+
+sub FindLib {
+    my ($libname) = @_;
+    for my $dir (@LIB_DIRS) {
+        my $file = "$dir/lib${libname}.so";
+        if ( -e $file) {
+            return $file;
+        }
+    }
+    die("Library not found: $libname")
+}
+
+sub ProcessLib {
+    my ($libname) = @_;
+    my $file = FindLib($libname);
+    ParseFile($file, 0);
+}
+
 
 sub ResolveSymbols {
     for my $name (keys %wanted_syms) {
@@ -101,7 +119,9 @@ GetOptions(
     "cppfilt=s" => \$CPPFILT,
     "result=s" => \$result_name,
     "src=s" => \@SRCS,
-    "test_src=s" => \@TEST_SRCS
+    "test_src=s" => \@TEST_SRCS,
+    "lib-dir=s" => \@LIB_DIRS,
+    "lib=s" => \@LIBS
 );
 
 for my $file (@TEST_SRCS) {
@@ -110,6 +130,10 @@ for my $file (@TEST_SRCS) {
 
 for my $file (@SRCS) {
     ParseFile($file, 0);
+}
+
+for my $lib (@LIBS) {
+    ProcessLib($lib);
 }
 
 ResolveSymbols();
