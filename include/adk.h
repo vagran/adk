@@ -51,6 +51,7 @@
 #include <sstream>
 #include <memory>
 #include <atomic>
+#include <mutex>
 
 #include <gtkmm.h>
 #include <cairomm/cairomm.h>
