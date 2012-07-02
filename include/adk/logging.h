@@ -30,11 +30,19 @@
 
 #endif /* ADK_PLATFORM_AVR */
 
+#ifdef DEBUG
+
 #define ASSERT(x) do { \
     if (UNLIKELY(!(x))) { \
         ADK_CRITICAL("Assert failed: '%s'", # x); \
         ASSERT_IMPL(); \
     } \
 } while (false)
+
+#else /* DEBUG */
+
+#define ASSERT(x)
+
+#endif /* DEBUG */
 
 #endif /* LOGGING_H_ */
