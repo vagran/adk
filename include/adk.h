@@ -56,6 +56,10 @@
 #include <gtkmm.h>
 #include <cairomm/cairomm.h>
 
+#ifdef UNITTEST
+#include <adk_ut.h>
+#endif
+
 #include <adk/types.h>
 
 #include <adk/logging.h>
