@@ -59,6 +59,7 @@
 #include <adk/types.h>
 
 #include <adk/logging.h>
+#include <adk/debug.h>
 #include <adk/utils.h>
 #include <adk/glade.h>
 

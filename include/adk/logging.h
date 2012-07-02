@@ -13,6 +13,15 @@
 #ifndef LOGGING_H_
 #define LOGGING_H_
 
+#ifdef UNITTEST
+
+#define ADK_CRITICAL(msg, ...) UT_TRACE("[CRIT] " msg, ## __VA_ARGS__)
+#define ADK_ERROR(msg, ...) UT_TRACE("[ERROR] " msg, ## __VA_ARGS__)
+#define ADK_WARNING(msg, ...) UT_TRACE("[WARN] " msg, ## __VA_ARGS__)
+#define ADK_INFO(msg, ...) UT_TRACE("[INFO] " msg, ## __VA_ARGS__)
+
+#else /* UNITTEST */
+
 #ifdef ADK_PLATFORM_AVR
 
 //XXX
@@ -24,25 +33,8 @@
 #define ADK_WARNING(msg, ...) g_warning("%s:%d: " msg, __FILE__, __LINE__, ## __VA_ARGS__)
 #define ADK_INFO(msg, ...) g_message("%s:%d: " msg, __FILE__, __LINE__, ## __VA_ARGS__)
 
-#define ASSERT_IMPL() do { \
-    throw "Assert failed"; \
-} while (false)
-
 #endif /* ADK_PLATFORM_AVR */
 
-#ifdef DEBUG
-
-#define ASSERT(x) do { \
-    if (UNLIKELY(!(x))) { \
-        ADK_CRITICAL("Assert failed: '%s'", # x); \
-        ASSERT_IMPL(); \
-    } \
-} while (false)
-
-#else /* DEBUG */
-
-#define ASSERT(x)
-
-#endif /* DEBUG */
+#endif /* UNITTEST */
 
 #endif /* LOGGING_H_ */
