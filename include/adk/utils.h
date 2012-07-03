@@ -132,37 +132,36 @@ namespace adk {
 
 /** Minimal value. */
 template <typename T>
-inline T
+inline constexpr T
 Min(T x, T y) { return MIN(x, y); }
 
 /** Maximal value. */
 template <typename T>
-inline T
+inline constexpr T
 Max(T x, T y) { return MAX(x, y); }
 
 /** Round up the value with specified alignment. */
 template <typename T, typename Tal>
-inline T
+inline constexpr T
 RoundUp(T size, Tal align) { return ROUND_UP(size, align); }
 
 /** Round down the value with specified alignment. */
 template <typename T, typename Tal>
-inline T
+inline constexpr T
 RoundDown(T size, Tal align) { return ROUND_DOWN(size, align); }
 
 /** Check if specified value is an integer power of two. */
 template <typename T>
-inline bool
+inline constexpr bool
 IsPowerOf2(T value) { return IS_POWER_OF_2(value); }
 
 /** Round up the value with specified alignment. Alignment must be an integer
  * power of two.
  */
 template <typename T, typename Tal>
-inline T
+inline constexpr T
 RoundUp2(T size, Tal align)
 {
-    ASSERT(IsPowerOf2(align));
     return ROUND_UP2(size, align);
 }
 
@@ -170,10 +169,9 @@ RoundUp2(T size, Tal align)
  * power of two.
  */
 template <typename T, typename Tal>
-inline T
+inline constexpr T
 RoundDown2(T size, Tal align)
 {
-    ASSERT(IsPowerOf2(align));
     return ROUND_DOWN2(size, align);
 }
 
@@ -184,7 +182,7 @@ RoundDown2(T size, Tal align)
  * @return Rotation result.
  */
 template <typename T>
-inline T
+inline constexpr T
 RotL(const T value, const size_t numBits)
 {
     return (value << numBits) | (value >> (sizeof(value) * NBBY - numBits));
@@ -197,7 +195,7 @@ RotL(const T value, const size_t numBits)
  * @return Rotation result.
  */
 template <typename T>
-inline T
+inline constexpr T
 RotR(const T value, const size_t numBits)
 {
     return (value >> numBits) | (value << (sizeof(value) * NBBY - numBits));
@@ -218,7 +216,7 @@ struct UnalignedData {
  * @return Retrieved data from specified location.
  */
 template <typename T>
-inline T
+inline constexpr T
 GetUnaligned(const void *p)
 {
     return static_cast<const UnalignedData<T> *>(p)->value;
