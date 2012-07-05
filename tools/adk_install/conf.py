@@ -34,7 +34,8 @@ packages = [
     'atkmm',
     'pangomm',
     'cairomm',
-    'gtkmm'
+    'gtkmm',
+    'valgrind'
 ]
 
 # Build/install options for each package. Each entry key is package name, payload
@@ -92,5 +93,10 @@ opts = {
         'default': {
             'config-params': '--without-libtiff'
         }
-    }
+    },
+    'valgrind': {
+        'default': {
+            'no-obj-dir': True
+        }
+    },
 }
