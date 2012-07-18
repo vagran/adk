@@ -64,7 +64,9 @@
 
 #include <adk/logging.h>
 #include <adk/debug.h>
+
 #include <adk/utils.h>
+#include <adk/bitmap.h>
 #include <adk/glade.h>
 
 #endif /* ADK_PLATFORM_AVR */
