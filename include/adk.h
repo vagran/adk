@@ -52,6 +52,7 @@
 #include <memory>
 #include <atomic>
 #include <mutex>
+#include <condition_variable>
 
 #include <gtkmm.h>
 #include <cairomm/cairomm.h>
