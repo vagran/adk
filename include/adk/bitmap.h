@@ -236,44 +236,63 @@ public:
 
     /** Get first set bit index.
      *
+     * @param startBit Bit index to start search from.
      * @return First set bit index, -1 if set bit not found.
      */
     size_t
-    FirstSet() const
+    FirstSet(size_t startBit = 0) const
     {
-        for (size_t wordIdx = 0; wordIdx < BaseT::NumWords(); wordIdx++) {
+        for (size_t wordIdx = startBit / sizeof(word_t);
+             wordIdx < BaseT::NumWords();
+             wordIdx++) {
+
             word_t w = BaseT::_bits[wordIdx];
             if (!w) {
                 continue;
             }
             size_t baseIdx = wordIdx * sizeof(word_t) * NBBY;
-            for (size_t bitIdx = 0; baseIdx + bitIdx < BaseT::NumBits(); bitIdx++) {
+            if (startBit) {
+                startBit -= baseIdx;
+            }
+            for (size_t bitIdx = startBit;
+                 baseIdx + bitIdx < BaseT::NumBits();
+                 bitIdx++) {
+
                 if (w & _GetMask(bitIdx)) {
                     return baseIdx + bitIdx;
                 }
             }
+            startBit = 0;
         }
         return -1;
     }
 
     /** Get first cleared bit index.
      *
+     * @param startBit Bit index to start search from.
      * @return First cleared bit index, -1 if set bit not found.
      */
     size_t
-    FirstClear() const
+    FirstClear(size_t startBit = 0) const
     {
-        for (size_t wordIdx = 0; wordIdx < BaseT::NumWords(); wordIdx++) {
+        for (size_t wordIdx = startBit / sizeof(word_t);
+             wordIdx < BaseT::NumWords();
+             wordIdx++) {
+
             word_t w = BaseT::_bits[wordIdx];
             if (w == ~static_cast<word_t>(0)) {
                 continue;
             }
             size_t baseIdx = wordIdx * sizeof(word_t) * NBBY;
+            if (startBit) {
+                startBit -= baseIdx;
+            }
             for (size_t bitIdx = 0; baseIdx + bitIdx < BaseT::NumBits(); bitIdx++) {
                 if (!(w & _GetMask(bitIdx))) {
                     return baseIdx + bitIdx;
                 }
             }
+            startBit = 0;
         }
         return -1;
     }
