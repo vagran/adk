@@ -75,6 +75,12 @@ protected:
         return RoundUp2(_numBits, sizeof(word_t) * NBBY) / (sizeof(word_t) * NBBY);
     }
 
+    BitmapBase()
+    {
+        _numBits = 0;
+        _bits = nullptr;
+    }
+
     BitmapBase(size_t numBits): _numBits(numBits)
     {
         _bits = _wordAlloc.allocate(NumWords());
@@ -101,6 +107,19 @@ protected:
         if (_bits) {
             _wordAlloc.deallocate(_bits, NumWords());
         }
+    }
+
+public:
+    /** Resize bitmap. All bits are cleared in new bitmap. */
+    void
+    Resize(size_t numBits)
+    {
+        if (_bits) {
+            _wordAlloc.deallocate(_bits, NumWords());
+        }
+        _numBits = numBits;
+        _bits = _wordAlloc.allocate(NumWords());
+        memset(_bits, 0, NumWords() * sizeof(word_t));
     }
 };
 
