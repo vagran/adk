@@ -81,9 +81,26 @@ protected:
         memset(_bits, 0, NumWords() * sizeof(word_t));
     }
 
+    template <class SrcAllocator>
+    BitmapBase(const BitmapBase<-1, SrcAllocator, word_t> &src)
+    {
+        _numBits = src._numBits;
+        _bits = _wordAlloc.allocate(NumWords());
+        memcpy(_bits, src._bits, NumWords() * sizeof(word_t));
+    }
+
+    BitmapBase(BitmapBase<-1, Allocator, word_t> &&src)
+    {
+        _numBits = src._numBits;
+        _bits = src._bits;
+        src._bits = nullptr;
+    }
+
     ~BitmapBase()
     {
-        _wordAlloc.deallocate(_bits, NumWords());
+        if (_bits) {
+            _wordAlloc.deallocate(_bits, NumWords());
+        }
     }
 };
 
@@ -96,7 +113,7 @@ protected:
  * @param Allocator Allocator class when using dynamic bitmap.
  * @param word_t Native word type to use for optimized bits operations.
  */
-template <size_t numBits, class Allocator = std::allocator<int>, typename word_t = long>
+template <size_t numBits = -1, class Allocator = std::allocator<int>, typename word_t = long>
 class Bitmap: public adk_internal::BitmapBase<numBits, Allocator, word_t> {
 private:
     /** Base class type. */
