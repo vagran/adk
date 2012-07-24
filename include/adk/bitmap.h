@@ -261,7 +261,7 @@ public:
     size_t
     FirstSet(size_t startBit = 0) const
     {
-        for (size_t wordIdx = startBit / sizeof(word_t);
+        for (size_t wordIdx = startBit / (sizeof(word_t) * NBBY);
              wordIdx < BaseT::NumWords();
              wordIdx++) {
 
@@ -294,7 +294,7 @@ public:
     size_t
     FirstClear(size_t startBit = 0) const
     {
-        for (size_t wordIdx = startBit / sizeof(word_t);
+        for (size_t wordIdx = startBit / (sizeof(word_t) * NBBY);
              wordIdx < BaseT::NumWords();
              wordIdx++) {
 
@@ -306,7 +306,10 @@ public:
             if (startBit) {
                 startBit -= baseIdx;
             }
-            for (size_t bitIdx = 0; baseIdx + bitIdx < BaseT::NumBits(); bitIdx++) {
+            for (size_t bitIdx = startBit;
+                 baseIdx + bitIdx < BaseT::NumBits();
+                 bitIdx++) {
+
                 if (!(w & _GetMask(bitIdx))) {
                     return baseIdx + bitIdx;
                 }
