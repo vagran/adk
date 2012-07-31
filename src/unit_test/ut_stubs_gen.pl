@@ -35,8 +35,8 @@ sub ParseFile {
     }
     
     while (my $line = <NM>) {
-        if ($line =~ /^\s*[0-9a-fA-F]*\s+([TDUBWV])\s+(.*)$/) {
-            if ($1 eq "T" or $1 eq "D" or $1 eq "B" or $1 eq "W" or $1 eq "V") {
+        if ($line =~ /^\s*[0-9a-fA-F]*\s+([TDUBWVi])\s+(.*)$/) {
+            if ($1 eq "T" or $1 eq "D" or $1 eq "B" or $1 eq "W" or $1 eq "V" or $1 eq "i") {
                 $defined_syms{$2} = $filename;
             } elsif ($1 eq "U" and $isTest) {
                 if ($2 !~ /__cxa|__cxx|__gxx|_Unwind_/) {
