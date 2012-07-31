@@ -19,7 +19,7 @@ DEFS += UNITTEST
 
 CFLAGS += -ggdb3 -DDEBUG -O0
 
-LIBS += stdc++
+LIBS += stdc++ c
 
 AUTO_SRC = $(ADK_OBJ_DIR)/auto_stabs.cpp
 AUTO_OBJ = $(AUTO_SRC:.cpp=.o)

@@ -70,6 +70,7 @@ ifdef ADK_APP_NAME
         OBJ_FORMAT = elf32-i386
         # Binary architecture of object files
         OBJ_ARCH = i386
+        LIB_DIRS += /lib/tls/i686/cmov
     else ifeq ($(ADK_PLATFORM),linux64)
         ADK_PLATFORM_ID = $(ADK_PLATFORM_ID_LINUX64)
         DEFS += ADK_PLATFORM_LINUX64

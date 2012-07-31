@@ -26,9 +26,13 @@ $result_name = "auto_stubs.cpp";
 %prohibited_syms = ( "__dso_handle" => 1);
 
 sub ParseFile {
-    my ($filename, $isTest) = @_;
+    my ($filename, $isTest, $isDynamicLib) = @_;
     
-    open(NM, "$NM $filename |") or die("Failed to open file '$filename'");
+    if ($isDynamicLib) {
+        open(NM, "$NM -D $filename |") or die("Failed to open file '$filename'");
+    } else {
+        open(NM, "$NM $filename |") or die("Failed to open file '$filename'");
+    }
     
     while (my $line = <NM>) {
         if ($line =~ /^\s*[0-9a-fA-F]*\s+([TDUBWV])\s+(.*)$/) {
@@ -46,10 +50,18 @@ sub ParseFile {
 
 sub FindLib {
     my ($libname) = @_;
+    # Firstly try exact match for default library
     for my $dir (@LIB_DIRS) {
         my $file = "$dir/lib${libname}.so";
         if ( -e $file) {
             return $file;
+        }
+    }
+    # Take the first match with version number
+    for my $dir (@LIB_DIRS) {
+        @files = glob("$dir/lib${libname}.so.*");
+        if (@files) {
+            return @files[0]
         }
     }
     die("Library not found: $libname")
@@ -58,7 +70,7 @@ sub FindLib {
 sub ProcessLib {
     my ($libname) = @_;
     my $file = FindLib($libname);
-    ParseFile($file, 0);
+    ParseFile($file, 0, 1);
 }
 
 
@@ -125,11 +137,11 @@ GetOptions(
 );
 
 for my $file (@TEST_SRCS) {
-    ParseFile($file, 1);
+    ParseFile($file, 1, 0);
 }
 
 for my $file (@SRCS) {
-    ParseFile($file, 0);
+    ParseFile($file, 0, 0);
 }
 
 for my $lib (@LIBS) {
