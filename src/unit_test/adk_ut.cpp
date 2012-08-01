@@ -444,7 +444,10 @@ ut::__ut_mdump()
 
 UtString::UtString()
 {
-    _handle = UT_STR2HDL(*new ut_string);
+    UtAllocator<ut_string> alloc;
+    ut_string *s = alloc.allocate(1);
+    s = new (s) ut_string();
+    _handle = UT_STR2HDL(*s);
     _allocated = true;
 }
 
@@ -457,7 +460,9 @@ UtString::UtString(void *handle)
 UtString::~UtString()
 {
     if (_allocated) {
-        //delete &UT_HDL2STR(_handle);
+        UtAllocator<ut_string> alloc;
+        alloc.destroy(&UT_HDL2STR(_handle));
+        alloc.deallocate(&UT_HDL2STR(_handle), 1);
     }
 }
 
@@ -510,7 +515,3 @@ main()
 {
     return !::testMan.Run();
 }
-
-
-
-

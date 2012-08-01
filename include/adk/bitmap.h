@@ -246,7 +246,7 @@ public:
     Invert()
     {
         for (size_t wordIdx = 0;
-             wordIdx < BaseT::NumWords() * sizeof(word_t);
+             wordIdx < BaseT::NumWords();
              wordIdx++) {
 
             BaseT::_bits[wordIdx] ^= ~static_cast<word_t>(0);
