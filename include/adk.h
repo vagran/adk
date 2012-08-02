@@ -14,28 +14,7 @@
 #ifndef ADK_H_
 #define ADK_H_
 
-/* ADK platform numeric identifiers to use in preprocessor directives. */
-#define ADK_PLATFORM_ID_AVR         0
-#define ADK_PLATFORM_ID_LINUX32     1
-#define ADK_PLATFORM_ID_LINUX64     2
-#define ADK_PLATFORM_ID_WIN32       3
-#define ADK_PLATFORM_ID_WIN64       4
-
-/** Check if platform is AVR. */
-#define ADK_PLATFORM_IS_AVR(id)     ((id) == ADK_PLATFORM_ID_AVR)
-/** Check if platform is Linux. */
-#define ADK_PLATFORM_IS_LINUX(id) \
-    ((id) == ADK_PLATFORM_ID_LINUX32 || (id) == ADK_PLATFORM_ID_LINUX64)
-/** Check if platform is Windows. */
-#define ADK_PLATFORM_IS_WINDOWS(id) \
-    ((id) == ADK_PLATFORM_ID_WIN32 || (id) == ADK_PLATFORM_ID_WIN64)
-
-//XXX should be removed after Eclipse will have c++11 supported
-#ifdef __CDT_PARSER__
-#define constexpr
-#define nullptr 0
-#define noexcept
-#endif /* __CDT_PARSER__ */
+#include <adk/defs.h>
 
 #ifdef ADK_PLATFORM_AVR
 

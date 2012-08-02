@@ -15,6 +15,8 @@
 #ifndef ADK_UT_H_
 #define ADK_UT_H_
 
+#include <adk/defs.h>
+
 #define __UT_CONCAT2(x, y)      x##y
 /** Concatenate identifiers. */
 #define __UT_CONCAT(x, y)       __UT_CONCAT2(x, y)
