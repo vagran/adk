@@ -40,8 +40,14 @@ endef
 
 all: $(BINARY_NAME)
 
+$(ADK_TEST_OBJS) $(AUTO_OBJ): $(ADK_PCHS)
+
 $(BINARY_NAME): $(ADK_OBJS) $(ADK_TEST_OBJS) $(AUTO_OBJ)
 	$(CC) $(LIB_FLAGS) $^ -o $@
+
+define ADK_GCH_RECIPE
+	$(CC) -c $(COMMON_COMP_FLAGS) $(COMMON_CPP_FLAGS) $(CFLAGS) -x c++-header -o $@ $<
+endef
 
 $(ADK_OBJ_DIR)/%.o: %.cpp
 	$(CC) -c $(COMMON_COMP_FLAGS) $(COMMON_CPP_FLAGS) $(CFLAGS) -o $@ $<

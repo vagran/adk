@@ -159,9 +159,31 @@ endif
 
 ifdef ADK_APP_NAME
 
-INCLUDE_DIRS += $(ADK_ROOT)/include $(ADK_OBJ_DIR)
+# Precompiled headers
+PCHS += $(ADK_ROOT)/include/adk.h
+ADK_PCHS = $(foreach hdr, $(PCHS), $(ADK_OBJ_DIR)/$(notdir $(hdr)).gch)
 
-IFLAGS += $(foreach dir, $(INCLUDE_DIRS), -I$(dir))
+# Default recipe should fail
+ifndef ADK_GCH_RECIPE
+define ADK_GCH_RECIPE
+$(error PCH recipe is not defined)
+endef
+# ADK_GCH_RECIPE
+endif
+
+# PCH rule definition.
+# $1 - PCH
+# $2 - source header path
+define PCH_RULE
+$(1): $(2)
+	$$(ADK_GCH_RECIPE)
+endef
+$(foreach hdr,$(PCHS),$(eval $(call PCH_RULE,$(ADK_OBJ_DIR)/$(notdir $(hdr)).gch,$(hdr))))
+
+INCLUDE_DIRS += $(ADK_ROOT)/include
+# ADK_OBJ_DIR should be the first in include paths list in order to give 
+# priority to precompiled headers.
+IFLAGS += $(foreach dir, $(ADK_OBJ_DIR) $(INCLUDE_DIRS), -I$(dir))
 
 DEFS += ADK_APP_NAME=$(ADK_APP_NAME) ADK_BUILD_TYPE=$(ADK_BUILD_TYPE) \
 	ADK_PLATFORM=$(ADK_PLATFORM) ADK_PLATFORM_ID=$(ADK_PLATFORM_ID)
@@ -212,6 +234,8 @@ ADK_SRC_DIRS = $(sort $(SRC_DIRS))
 ADK_DEPS = $(ADK_OBJS:.o=.d)
 
 VPATH += $(ADK_SRC_DIRS)
+
+$(ADK_OBJS): $(ADK_PCHS)
 
 # include dependencies if exist
 -include $(ADK_DEPS)

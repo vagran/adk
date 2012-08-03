@@ -8,7 +8,8 @@
 
 /** @file adk.h
  * Main header file of ADK library. This is the only file which should be
- * included by application code.
+ * included by application code. Include it first to speed up compilation time
+ * by using pre-compiled header.
  */
 
 #ifndef ADK_H_

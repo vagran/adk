@@ -42,6 +42,10 @@ $(ADK_OBJ_DIR)/%.glade.h: %.glade
 
 $(ADK_OBJS): $(GLADE_AUTO_HDR)
 
+# Main ADK include file should depend on Glade automatic header in order to
+# make pre-compiled header.
+$(ADK_ROOT)/include/adk.h: $(GLADE_AUTO_HDR)
+
 # Header file which includes all automatic glade header files
 $(GLADE_AUTO_HDR): $(GLADE_HDR_FILES)
 	echo "/* This file is generated automatically. */" > $@
@@ -79,3 +83,7 @@ $(BINARY): $(ADK_OBJS)
 $(ADK_OBJ_DIR)/%.o: %.cpp
 	$(CC) -c $(COMMON_COMP_FLAGS) $(COMMON_CPP_FLAGS) $(CFLAGS) -o $@ $<
 	$(CC) -c $(COMMON_COMP_FLAGS) $(COMMON_CPP_FLAGS) $(CFLAGS) -MM -MT '$@' -o $(@:.o=.d) $<
+
+define ADK_GCH_RECIPE
+	$(CC) -c $(COMMON_COMP_FLAGS) $(COMMON_CPP_FLAGS) $(CFLAGS) -x c++-header -o $@ $<
+endef
