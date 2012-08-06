@@ -40,7 +40,7 @@ endef
 
 all: $(BINARY_NAME)
 
-$(ADK_TEST_OBJS) $(AUTO_OBJ): $(ADK_PCHS)
+$(ADK_TEST_OBJS) $(AUTO_OBJ): $(ADK_PCHS) $(ADK_BUILD_DIR)
 
 $(BINARY_NAME): $(ADK_OBJS) $(ADK_TEST_OBJS) $(AUTO_OBJ)
 	$(CC) $(LIB_FLAGS) $^ -o $@
@@ -53,7 +53,7 @@ $(ADK_OBJ_DIR)/%.o: %.cpp
 	$(CC) -c $(COMMON_COMP_FLAGS) $(COMMON_CPP_FLAGS) $(CFLAGS) -o $@ $<
 	$(CC) -c $(COMMON_COMP_FLAGS) $(COMMON_CPP_FLAGS) $(CFLAGS) -MM -MT '$@' -o $(@:.o=.d) $<
 
-$(AUTO_OBJ): $(AUTO_SRC)
+$(AUTO_OBJ): $(AUTO_SRC) $(ADK_BUILD_DIR)
 	$(CC) -c $(COMMON_COMP_FLAGS) $(COMMON_CPP_FLAGS) $(CFLAGS) -o $@ $<
 
 export AUTO_CHUNK

@@ -137,11 +137,12 @@ ADK_OBJ_DIR = $(COMPILE_DIR)/$(ADK_PLATFORM)-$(ADK_BUILD_TYPE)
 $(ADK_OBJ_DIR):
 	[ -d $@ ] || $(MKPATH) $@
 
-.PHONY: adk_build_dir adk_clean_obj_dir adk_clean_build_dir adk_remove_build_dir
+.PHONY: adk_clean_obj_dir adk_clean_build_dir adk_remove_build_dir
 
-adk_build_dir: $(ADK_OBJ_DIR)
-
-all: adk_build_dir
+# Use this variable as dependecy from build directory. It will expand to empty
+# string if the directory already exists. This prevents from continuous rebuilds
+# because the directory timestamp changes after content is modificated.
+ADK_BUILD_DIR = $(filter-out $(wildcard $(ADK_OBJ_DIR)), $(ADK_OBJ_DIR))
 
 adk_clean_obj_dir:
 	$(RMPATH) $(ADK_OBJ_DIR)
@@ -180,7 +181,7 @@ endif
 # $1 - PCH
 # $2 - source header path
 define PCH_RULE
-$(1): $(2)
+$(1): $(2) $(ADK_BUILD_DIR)
 	$$(ADK_GCH_RECIPE)
 endef
 $(foreach hdr,$(PCHS),$(eval $(call PCH_RULE,$(ADK_OBJ_DIR)/$(notdir $(hdr)).gch,$(hdr))))
@@ -210,7 +211,7 @@ endif
 test:
 
 # Default definition for installation target
-install:
+install: all
 
 ################################################################################
 # Common compilaion rules
@@ -243,8 +244,6 @@ ADK_DEPS = $(ADK_OBJS:.o=.d)
 
 VPATH += $(ADK_SRC_DIRS)
 
-$(ADK_OBJS): $(ADK_PCHS)
-
 # include dependencies if exist
 -include $(ADK_DEPS)
 
@@ -257,3 +256,5 @@ endif
 ifdef ADK_PLATFORM_MAKEFILE
     include $(ADK_ROOT)/make/$(ADK_PLATFORM_MAKEFILE)
 endif
+
+$(ADK_OBJS): $(ADK_PCHS) $(ADK_BUILD_DIR)

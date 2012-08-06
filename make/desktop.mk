@@ -35,7 +35,7 @@ GLADE_AUTO_HDR = $(ADK_OBJ_DIR)/auto_adk_glade.h
 ADK_OBJS += $(GLADE_OBJ_FILES)
 
 # Header file with definition of XML location in data section
-$(ADK_OBJ_DIR)/%.glade.h: %.glade
+$(ADK_OBJ_DIR)/%.glade.h: %.glade $(ADK_BUILD_DIR)
 	echo "/* This file is generated automatically from \"$<\" file. */" > $@
 	echo "extern \"C\" const char _binary_$(patsubst %.glade,%,$<)_glade_start;" >> $@
 	echo "extern \"C\" const char _binary_$(patsubst %.glade,%,$<)_glade_end;" >> $@
@@ -47,12 +47,12 @@ $(ADK_OBJS): $(GLADE_AUTO_HDR)
 $(ADK_ROOT)/include/adk.h: $(GLADE_AUTO_HDR)
 
 # Header file which includes all automatic glade header files
-$(GLADE_AUTO_HDR): $(GLADE_HDR_FILES)
+$(GLADE_AUTO_HDR): $(GLADE_HDR_FILES) $(ADK_BUILD_DIR)
 	echo "/* This file is generated automatically. */" > $@
 	$(foreach file, $(GLADE_HDR_FILES), echo "#include <$(notdir $(file))>" >> $@)
 
 # Object file from Glade XML
-$(ADK_OBJ_DIR)/%.glade.o: %.glade
+$(ADK_OBJ_DIR)/%.glade.o: %.glade $(ADK_BUILD_DIR)
 	$(OBJCOPY) -I binary -O $(OBJ_FORMAT) -B $(OBJ_ARCH) $< $@
 
 endif
