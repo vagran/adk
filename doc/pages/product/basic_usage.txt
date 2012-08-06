@@ -40,6 +40,8 @@ Optional variables in the makefile:
   * '''RELEASE_OPT_FLAGS''' -- optimization flags for release build. They overwrite default flags if specified.
   * '''LIB_DIRS''' -- additional directories to search for libraries.
   * '''PCHS''' -- full paths to headers for which pre-compiled headers should be generated.
+  * '''ADK_INSTALL_DIR''' -- directory to install compiled binary to.
+  * '''ADK_INSTALL_MODE''' -- octal number for file mode for installed binary.
 
 //:!: Everywhere a list of values is acceptable in makefile variables, it can be specified as blank separated values.//
 

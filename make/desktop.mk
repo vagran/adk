@@ -69,10 +69,20 @@ endif
 ################################################################################
 # Executable binary
 
+ifndef ADK_INSTALL_MODE
+ADK_INSTALL_MODE = 0755
+endif
+
 ifeq ($(ADK_APP_TYPE),app)
 BINARY = $(ADK_OBJ_DIR)/$(ADK_APP_NAME)
+ifndef ADK_INSTALL_DIR
+ADK_INSTALL_DIR = $(ADK_PREFIX)/bin
+endif
 else ifeq ($(ADK_APP_TYPE),lib)
 BINARY = $(ADK_OBJ_DIR)/lib$(ADK_APP_NAME).so
+ifndef ADK_INSTALL_DIR
+ADK_INSTALL_DIR = $(ADK_PREFIX)/lib
+endif
 endif
 
 all: $(BINARY)
@@ -87,3 +97,9 @@ $(ADK_OBJ_DIR)/%.o: %.cpp
 define ADK_GCH_RECIPE
 	$(CC) -c $(COMMON_COMP_FLAGS) $(COMMON_CPP_FLAGS) $(CFLAGS) -x c++-header -o $@ $<
 endef
+
+ifdef BINARY
+install: $(BINARY)
+	$(INSTALL) -d $(ADK_INSTALL_DIR)
+	$(INSTALL) -m $(ADK_INSTALL_MODE) $(BINARY) $(ADK_INSTALL_DIR)
+endif
