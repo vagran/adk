@@ -14,8 +14,16 @@ endif
 ADK_DOC_DEPLOY_DIR += $(ADK_DOC_DIR)
 
 all:
-	$(RSYNC) -arvz --delete $(call ADK_SERV_DIR,$(ADK_DOC_DIR),pages)/ pages
-	$(RSYNC) -arvz --delete $(call ADK_SERV_DIR,$(ADK_DOC_DIR),media)/ media
+	if [ -d $(call ADK_SERV_DIR,$(ADK_DOC_DIR),pages) ]; then \
+		$(RSYNC) -arvz --delete $(call ADK_SERV_DIR,$(ADK_DOC_DIR),pages)/ pages; \
+	else \
+		echo "Warning: no pages directory"; \
+	fi
+	if [ -d $(call ADK_SERV_DIR,$(ADK_DOC_DIR),media) ]; then \
+		$(RSYNC) -arvz --delete $(call ADK_SERV_DIR,$(ADK_DOC_DIR),media)/ media; \
+	else \
+		echo "Warning: no media directory"; \
+	fi
 
 deploy:
 	$(foreach dir, $(ADK_DOC_DEPLOY_DIR), $(RSYNC) -arvz --delete pages/ $(call ADK_SERV_DIR,$(dir),pages) &&) true
