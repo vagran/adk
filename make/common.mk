@@ -137,7 +137,7 @@ ADK_OBJ_DIR = $(COMPILE_DIR)/$(ADK_PLATFORM)-$(ADK_BUILD_TYPE)
 $(ADK_OBJ_DIR):
 	[ -d $@ ] || $(MKPATH) $@
 
-.PHONY: adk_build_dir adk_clean_obj_dir adk_clean_build_dir
+.PHONY: adk_build_dir adk_clean_obj_dir adk_clean_build_dir adk_remove_build_dir
 
 adk_build_dir: $(ADK_OBJ_DIR)
 
@@ -148,8 +148,13 @@ adk_clean_obj_dir:
 
 adk_clean_build_dir: adk_clean_obj_dir
 	$(if $(wildcard $(COMPILE_DIR)/*), , $(RMPATH) $(COMPILE_DIR))
+	
+adk_remove_build_dir:
+	$(RMPATH) $(COMPILE_DIR)
 
 clean: adk_clean_build_dir
+
+clean_all: adk_remove_build_dir
 
 # ADK_APP_NAME
 endif
@@ -199,7 +204,7 @@ LIB_FLAGS += $(foreach file, $(LIB_DIRS), -L$(file))
 # ADK_APP_NAME
 endif
 
-.PHONY: all clean test
+.PHONY: all clean clean_all test
 
 # Default definition for testing target
 test:

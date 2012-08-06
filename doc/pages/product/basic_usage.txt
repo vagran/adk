@@ -53,6 +53,7 @@ Currently the following source file types are supported:
 The following make targets available:
   * '''all''' -- build specified application. Default target.
   * '''clean''' -- remove all files created during the build. If '''build''' directory has several subdirectories then only one corresponding to specified platform and build type is removed. If it is the only subdirectory then '''build''' directory is also removed.
+  * '''clean_all''' -- remove all files created during the build for all targets.
   * '''adk_build_dir''' -- create output directories. Can be used as dependency for custom user targets which produce some output. Should not be used as dependency for generated files themselves because they will be rebuilt even if nothing is changed (because directory modification timestamp is updated each time some file is added or removed into the directory).
 
 The following variables are available in the ADK makefile scope. They can be used when user is writing some extensions for make process in an application makefile.
