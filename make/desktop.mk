@@ -96,6 +96,7 @@ $(ADK_OBJ_DIR)/%.o: %.cpp
 
 define ADK_GCH_RECIPE
 	$(CC) -c $(COMMON_COMP_FLAGS) $(COMMON_CPP_FLAGS) $(CFLAGS) -x c++-header -o $@ $<
+	$(CC) -c $(COMMON_COMP_FLAGS) $(COMMON_CPP_FLAGS) $(CFLAGS) -x c++-header -MM -MT '$@' -o $(@:.gch=.d) $<
 endef
 
 ifdef BINARY

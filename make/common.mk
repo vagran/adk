@@ -168,6 +168,7 @@ ifdef ADK_APP_NAME
 # Precompiled headers
 PCHS += $(ADK_ROOT)/include/adk.h
 ADK_PCHS = $(foreach hdr, $(PCHS), $(ADK_OBJ_DIR)/$(notdir $(hdr)).gch)
+ADK_DEPS += $(ADK_PCHS:.gch=.d)
 
 # Default recipe should fail
 ifndef ADK_GCH_RECIPE
@@ -240,7 +241,7 @@ OBJS += $(call PAT_SUBST, %.c %.cpp %.S, %.o, $(notdir $(SRCS)))
 ADK_OBJS = $(foreach obj, $(sort $(OBJS)), $(ADK_OBJ_DIR)/$(obj))
 ADK_SRC_DIRS = $(sort $(SRC_DIRS))
 # Additional automatic dependencies for object files
-ADK_DEPS = $(ADK_OBJS:.o=.d)
+ADK_DEPS += $(ADK_OBJS:.o=.d)
 
 VPATH += $(ADK_SRC_DIRS)
 
