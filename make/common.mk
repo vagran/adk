@@ -212,7 +212,7 @@ endif
 test:
 
 # Default definition for installation target
-install: all
+install:
 
 ################################################################################
 # Common compilaion rules
