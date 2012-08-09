@@ -68,5 +68,5 @@ $(AUTO_SRC): $(ADK_OBJS) $(ADK_TEST_OBJS)
 	echo "$$AUTO_CHUNK" >> $@
 
 # Target for launching the tests
-test: adk_build_dir $(BINARY_NAME)
+test: $(BINARY_NAME)
 	(export LD_LIBRARY_PATH=$(call JOIN,:,$(LIB_DIRS)) && $(BINARY_NAME))

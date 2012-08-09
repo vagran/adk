@@ -43,6 +43,7 @@
 
 #include <adk/types.h>
 
+#include <adk/exception.h>
 #include <adk/logging.h>
 #include <adk/debug.h>
 
