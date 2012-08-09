@@ -22,4 +22,14 @@ typedef uint16_t            u16; /**< Unsigned 16 bits integer */
 typedef uint32_t            u32; /**< Unsigned 32 bits integer */
 typedef uint64_t            u64; /**< Unsigned 64 bits integer */
 
+#define MAX_U8              UCHAR_MAX
+#define MAX_U16             USHRT_MAX
+#define MAX_U32             UINT_MAX
+#define MAX_U64             ULLONG_MAX
+
+#define MAX_I8              CHAR_MAX
+#define MAX_I16             SHRT_MAX
+#define MAX_I32             INT_MAX
+#define MAX_I64             LLONG_MAX
+
 #endif /* TYPES_H_ */
