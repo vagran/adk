@@ -15,14 +15,20 @@
 
 #ifdef UNITTEST
 
-#define ASSERT_IMPL() do { \
-    UT_FAIL("Assert failed"); \
+#define ASSERT_IMPL(condStr) do { \
+    UT_FAIL("Assert failed: " condStr); \
 } while (false)
 
-#else /* UNITTEST */
+#elif defined(ADK_PLATFORM_AVR)
 
-#define ASSERT_IMPL() do { \
-    throw "Assert failed"; \
+#define ASSERT_IMPL(condStr) do { \
+    /* XXX throw assertion failure on AVR platform. */
+} while (false)
+
+#else
+
+#define ASSERT_IMPL(condStr) do { \
+    ADK_EXCEPTION(adk::Exception, "Assert failed: " condStr); \
 } while (false)
 
 #endif /* UNITTEST */
@@ -32,7 +38,7 @@
 #define ASSERT(x) do { \
     if (UNLIKELY(!(x))) { \
         ADK_CRITICAL("Assert failed: '%s'", # x); \
-        ASSERT_IMPL(); \
+        ASSERT_IMPL(# x); \
     } \
 } while (false)
 
