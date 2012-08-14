@@ -25,9 +25,13 @@ else ifeq ($(ADK_BUILD_TYPE),debug)
     CFLAGS += $(DEBUG_OPT_FLAGS) -ggdb3
 endif
 
+ifeq ($(ADK_USE_GUI),yes)
+
 # Get glade files
 GLADE_FILES += $(foreach src_dir, $(SRC_DIRS), $(call SCAN_PATH, $(src_dir), *.glade))
+
 ifneq ($(GLADE_FILES), )
+
 # Create object files from Glade XML files
 GLADE_OBJ_FILES = $(foreach file, $(GLADE_FILES), $(ADK_OBJ_DIR)/$(notdir $(file:.glade=.glade.o)))
 GLADE_HDR_FILES = $(foreach file, $(GLADE_FILES), $(ADK_OBJ_DIR)/$(notdir $(file:.glade=.glade.h)))
@@ -55,6 +59,10 @@ $(GLADE_AUTO_HDR): $(GLADE_HDR_FILES) $(ADK_BUILD_DIR)
 $(ADK_OBJ_DIR)/%.glade.o: %.glade $(ADK_BUILD_DIR)
 	$(OBJCOPY) -I binary -O $(OBJ_FORMAT) -B $(OBJ_ARCH) $< $@
 
+# GLADE_FILES
+endif
+
+# ADK_USE_GUI
 endif
 
 ifeq ($(ADK_APP_TYPE),lib)

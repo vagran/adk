@@ -93,9 +93,12 @@ export ADK_PLATFORM_ID_WIN64 = 4
 
 # Desktop libraries
 export DESKTOP_LIBS = \
-    glib-$(GLIB_VERSION) \
+	glib-$(GLIB_VERSION) \
     glibmm-$(GLIBMM_VERSION) \
-    sigc-$(SIGCPP_VERSION) \
+    sigc-$(SIGCPP_VERSION)
+
+# Desktop GUI libraries
+export DESKTOP_GUI_LIBS = \
     gtkmm-$(GTKMM_VERSION) \
     atkmm-$(ATKMM_VERSION) \
     cairomm-$(CAIROMM_VERSION)
@@ -105,18 +108,21 @@ export LIB_LIB_DIR = $(ADK_PREFIX)/lib
 
 # Inlcude directories for desktop libraries
 export DESKTOP_LIBS_INC_DIRS = \
-    $(LIB_INC_DIR)/freetype2 \
-    $(LIB_INC_DIR)/glib-$(GLIB_VERSION) \
+	$(LIB_INC_DIR)/glib-$(GLIB_VERSION) \
     $(LIB_LIB_DIR)/glib-$(GLIB_VERSION)/include \
+    $(LIB_INC_DIR)/glibmm-$(GLIBMM_VERSION) \
+    $(LIB_LIB_DIR)/glibmm-$(GLIBMM_VERSION)/include \
+    $(LIB_INC_DIR)/giomm-$(GIOMM_VERSION) \
+    $(LIB_INC_DIR)/sigc++-$(SIGCPP_VERSION) \
+    $(LIB_LIB_DIR)/sigc++-$(SIGCPP_VERSION)/include \
+
+# Inlcude directories for desktop GUI libraries
+export DESKTOP_GUI_LIBS_INC_DIRS = \
+    $(LIB_INC_DIR)/freetype2 \
     $(LIB_INC_DIR)/pango-$(PANGO_VERSION) \
     $(LIB_INC_DIR)/cairo \
     $(LIB_INC_DIR)/gdk-pixbuf-$(GDK_PIXBUF_VERSION) \
     $(LIB_INC_DIR)/gtk-$(GTK_VERSION) \
-    $(LIB_INC_DIR)/sigc++-$(SIGCPP_VERSION) \
-    $(LIB_LIB_DIR)/sigc++-$(SIGCPP_VERSION)/include \
-    $(LIB_INC_DIR)/glibmm-$(GLIBMM_VERSION) \
-    $(LIB_LIB_DIR)/glibmm-$(GLIBMM_VERSION)/include \
-    $(LIB_INC_DIR)/giomm-$(GIOMM_VERSION) \
     $(LIB_INC_DIR)/cairomm-$(CAIROMM_VERSION) \
     $(LIB_LIB_DIR)/cairomm-$(CAIROMM_VERSION)/include \
     $(LIB_INC_DIR)/pangomm-$(PANGOMM_VERSION) \

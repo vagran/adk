@@ -1,4 +1,4 @@
-/* /ADK/samples/desktop/main.cpp
+/* /ADK/samples/desktop_gui/main.cpp
  *
  * This file is a part of ADK library.
  * Copyright (c) 2012, Artyom Lebedev <artyom.lebedev@gmail.com>

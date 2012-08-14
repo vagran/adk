@@ -1,4 +1,4 @@
-# /ADK/samples/desktop/Makefile
+# /ADK/samples/desktop_gui/Makefile
 #
 # This file is a part of ADK library.
 # Copyright (c) 2012, Artyom Lebedev <artyom.lebedev@gmail.com>
@@ -9,9 +9,9 @@ SUBDIRS = lib
 
 ADK_PLATFORM = native
 ADK_APP_TYPE = app
-ADK_APP_NAME = desktop_sample_1
+ADK_APP_NAME = desktop_sample_gui
 
-LIBS += desktop_sample_2
+LIBS += desktop_sample_gui
 LIB_DIRS += lib/build/$(ADK_PLATFORM)-$(ADK_BUILD_TYPE)
 
 include $(ADK_ROOT)/make/make.mk

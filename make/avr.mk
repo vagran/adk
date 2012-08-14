@@ -51,6 +51,11 @@ $(ADK_OBJ_DIR)/%.o: %.c
 	$(CC) -c $(COMMON_COMP_FLAGS) $(CFLAGS) -o $@ $<
 	$(CC) -c $(COMMON_COMP_FLAGS) $(CFLAGS) -MM -MT '$@' -o $(@:.o=.d) $<
 
+define ADK_GCH_RECIPE
+	$(CC) -c $(COMMON_COMP_FLAGS) $(CFLAGS) -x c-header -o $@ $<
+	$(CC) -c $(COMMON_COMP_FLAGS) $(CFLAGS) -x c-header -MM -MT '$@' -o $(@:.gch=.d) $<
+endef
+
 #XXX cpp S
 
 ################################################################################

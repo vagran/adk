@@ -34,8 +34,14 @@
 #include <mutex>
 #include <condition_variable>
 
+#include <glibmm.h>
+#include <giomm.h>
+#include <sigc++/sigc++.h>
+
+#ifdef ADK_USE_GUI
 #include <gtkmm.h>
 #include <cairomm/cairomm.h>
+#endif /* ADK_USE_GUI */
 
 #ifdef UNITTEST
 #include <adk_ut.h>
@@ -49,7 +55,10 @@
 
 #include <adk/utils.h>
 #include <adk/bitmap.h>
+
+#ifdef ADK_USE_GUI
 #include <adk/glade.h>
+#endif /* ADK_USE_GUI */
 
 #endif /* ADK_PLATFORM_AVR */
 

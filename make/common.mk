@@ -71,6 +71,9 @@ ifdef ADK_APP_NAME
         # Binary architecture of object files
         OBJ_ARCH = i386
         LIB_DIRS += /lib /lib/tls/i686/cmov
+        ifndef ADK_USE_GUI
+            ADK_USE_GUI = yes
+        endif
     else ifeq ($(ADK_PLATFORM),linux64)
         ADK_PLATFORM_ID = $(ADK_PLATFORM_ID_LINUX64)
         DEFS += ADK_PLATFORM_LINUX64
@@ -85,6 +88,9 @@ ifdef ADK_APP_NAME
         # Binary architecture of object files
         OBJ_ARCH = i386
         LIB_DIRS += /lib
+        ifndef ADK_USE_GUI
+            ADK_USE_GUI = yes
+        endif
     else ifeq ($(ADK_PLATFORM),win32)
         ADK_PLATFORM_ID = $(ADK_PLATFORM_ID_WIN32)
         DEFS += ADK_PLATFORM_WIN32
@@ -213,6 +219,15 @@ test:
 
 # Default definition for installation target
 install:
+
+################################################################################
+# Used features
+
+ifeq ($(ADK_USE_GUI),yes)
+DEFS += ADK_USE_GUI
+DESKTOP_LIBS += $(DESKTOP_GUI_LIBS)
+DESKTOP_LIBS_INC_DIRS += $(DESKTOP_GUI_LIBS_INC_DIRS)
+endif 
 
 ################################################################################
 # Common compilaion rules
