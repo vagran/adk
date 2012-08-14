@@ -25,5 +25,7 @@ UT_TEST("Variables")
         py::ThreadLock lock;
     }
 
+    py::Object res = py::Run("a = 237");
+    UT(res.Get()) != UT_NULL;
 }
 UT_TEST_END
