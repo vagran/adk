@@ -10,8 +10,8 @@
  * Definitions related to Glade UI editor.
  */
 
-#ifndef GLADE_H_
-#define GLADE_H_
+#ifndef ADK_GLADE_H_
+#define ADK_GLADE_H_
 
 /* Automatically generated files for corresponding .glade files. */
 #ifndef UNITTEST
@@ -35,4 +35,4 @@
     Glib::ustring(ADK_GLADE_XML_START(__fileName), \
                   ADK_GLADE_XML_END(__fileName) - ADK_GLADE_XML_START(__fileName))
 
-#endif /* GLADE_H_ */
+#endif /* ADK_GLADE_H_ */

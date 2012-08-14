@@ -229,6 +229,12 @@ DESKTOP_LIBS += $(DESKTOP_GUI_LIBS)
 DESKTOP_LIBS_INC_DIRS += $(DESKTOP_GUI_LIBS_INC_DIRS)
 endif 
 
+ifeq ($(ADK_USE_PYTHON),yes)
+DEFS += ADK_USE_PYTHON
+DESKTOP_LIBS += $(PYTHON_LIB)
+DESKTOP_LIBS_INC_DIRS += $(PYTHON_INC_DIR)
+endif
+
 ################################################################################
 # Common compilaion rules
 

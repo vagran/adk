@@ -10,8 +10,8 @@
  * Generic logging framework.
  */
 
-#ifndef LOGGING_H_
-#define LOGGING_H_
+#ifndef ADK_LOGGING_H_
+#define ADK_LOGGING_H_
 
 #ifdef UNITTEST
 
@@ -37,4 +37,4 @@
 
 #endif /* UNITTEST */
 
-#endif /* LOGGING_H_ */
+#endif /* ADK_LOGGING_H_ */

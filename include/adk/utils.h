@@ -10,8 +10,8 @@
  * TODO insert description here.
  */
 
-#ifndef UTILS_H_
-#define UTILS_H_
+#ifndef ADK_UTILS_H_
+#define ADK_UTILS_H_
 
 /** Number of bits in byte */
 #define NBBY                        8
@@ -237,4 +237,4 @@ PutUnaligned(T value, void *p)
 
 } /* namespace adk */
 
-#endif /* UTILS_H_ */
+#endif /* ADK_UTILS_H_ */

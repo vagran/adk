@@ -21,6 +21,7 @@ export CAT = cat
 export MKDIR = mkdir
 export MKPATH = mkdir -p
 export RSYNC = rsync
+export PYTHON = $(ADK_PREFIX)/bin/python3
 
 # Default native platform
 ifndef ADK_NAT_PLATFORM
@@ -85,6 +86,8 @@ export SIGCPP_VERSION = 2.0
 export ATK_VERSION = 1.0
 export ATKMM_VERSION = 1.6
 
+export PYTHON_VERSION = 3.2m
+
 export ADK_PLATFORM_ID_AVR = 0
 export ADK_PLATFORM_ID_LINUX32 = 1
 export ADK_PLATFORM_ID_LINUX64 = 2
@@ -133,3 +136,7 @@ export DESKTOP_GUI_LIBS_INC_DIRS = \
     $(LIB_LIB_DIR)/gtkmm-$(GTKMM_VERSION)/include \
     $(LIB_INC_DIR)/atk-$(ATK_VERSION) \
     $(LIB_INC_DIR)/atkmm-$(ATKMM_VERSION)
+
+# Embedded Python
+export PYTHON_LIB = python$(PYTHON_VERSION)
+export PYTHON_INC_DIR = $(LIB_INC_DIR)/python$(PYTHON_VERSION)

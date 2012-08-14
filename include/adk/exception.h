@@ -10,8 +10,8 @@
  * ADK exception base class.
  */
 
-#ifndef EXCEPTION_H_
-#define EXCEPTION_H_
+#ifndef ADK_EXCEPTION_H_
+#define ADK_EXCEPTION_H_
 
 namespace adk {
 
@@ -92,4 +92,4 @@ public:
 
 } /* namespace adk */
 
-#endif /* EXCEPTION_H_ */
+#endif /* ADK_EXCEPTION_H_ */

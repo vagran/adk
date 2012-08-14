@@ -10,8 +10,8 @@
  * Debug features for ADK library.
  */
 
-#ifndef DEBUG_H_
-#define DEBUG_H_
+#ifndef ADK_DEBUG_H_
+#define ADK_DEBUG_H_
 
 #ifdef UNITTEST
 
@@ -49,4 +49,4 @@
 #endif /* DEBUG */
 
 
-#endif /* DEBUG_H_ */
+#endif /* ADK_DEBUG_H_ */

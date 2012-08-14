@@ -10,8 +10,8 @@
  * ADK common data types.
  */
 
-#ifndef TYPES_H_
-#define TYPES_H_
+#ifndef ADK_TYPES_H_
+#define ADK_TYPES_H_
 
 typedef int8_t              i8; /**< Signed 8 bits integer */
 typedef int16_t             i16; /**< Signed 16 bits integer */
@@ -32,4 +32,4 @@ typedef uint64_t            u64; /**< Unsigned 64 bits integer */
 #define MAX_I32             INT_MAX
 #define MAX_I64             LLONG_MAX
 
-#endif /* TYPES_H_ */
+#endif /* ADK_TYPES_H_ */

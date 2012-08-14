@@ -15,6 +15,11 @@
 #ifndef ADK_H_
 #define ADK_H_
 
+/* Python header should be the first because it can affect some global features. */
+#ifdef ADK_USE_PYTHON
+#include <Python.h>
+#endif /* ADK_USE_PYTHON */
+
 #include <adk/defs.h>
 
 #ifdef ADK_PLATFORM_AVR
@@ -59,6 +64,10 @@
 #ifdef ADK_USE_GUI
 #include <adk/glade.h>
 #endif /* ADK_USE_GUI */
+
+#ifdef ADK_USE_PYTHON
+#include <adk/python.h>
+#endif /* ADK_USE_PYTHON */
 
 #endif /* ADK_PLATFORM_AVR */
 

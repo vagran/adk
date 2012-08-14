@@ -10,8 +10,8 @@
  * Bitmap class implementation.
  */
 
-#ifndef BITMAP_H_
-#define BITMAP_H_
+#ifndef ADK_BITMAP_H_
+#define ADK_BITMAP_H_
 
 namespace adk {
 
@@ -322,4 +322,4 @@ public:
 
 } /* namespace adk */
 
-#endif /* BITMAP_H_ */
+#endif /* ADK_BITMAP_H_ */

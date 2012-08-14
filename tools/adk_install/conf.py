@@ -4,6 +4,7 @@
 # <package name>[:<target name>]
 packages = [
     # Development tools
+    'Python',
     'gmp',
     'mpfr',
     'mpc',
@@ -47,6 +48,11 @@ packages = [
 # 'no-obj-dir' - do not use separate directory for object files when True
 # 'post-install-cmd' - execute command after installation
 opts = {
+    'Python': {
+        'default': {
+            'config-params': '--enable-shared'
+        }
+    },
     'avr-libc': {
         'default': {
             'config-params': '--host=avr'

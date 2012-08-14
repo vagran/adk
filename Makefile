@@ -5,6 +5,6 @@
 # All rights reserved.
 # See COPYING file for copyright details.
 
-SUBDIRS = samples doc unittest
+SUBDIRS = samples doc src unittest
 
 include $(ADK_ROOT)/make/make.mk
