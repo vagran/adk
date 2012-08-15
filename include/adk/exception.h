@@ -27,16 +27,18 @@ protected:
     /** Exception message. */
     std::string _msg;
 private:
+
 #   ifdef DEBUG
     void
     _StrFileLine()
     {
         std::stringstream ss;
-        ss << "[" << __FILE__ << ":" << __LINE__ << "]: ";
+        ss << "[" << _file << ":" << _line << "]: ";
         ss << _msg;
         _msg = ss.str();
     }
-#   endif
+#   endif /* DEBUG */
+
 public:
     Exception(const char *msg): _msg(msg) {}
 

@@ -15,6 +15,15 @@
 
 using namespace adk;
 
+#define CheckValueInt(value, expected)      UT(value.Int()) == UT(expected)
+
+#define CheckValueFloat(value, expected)    UT(value.Float()) == UT(expected);
+
+#define CheckValueString(value, expected)   do { \
+    std::string s = value.Str(); \
+    UT(s.c_str()) == UT_CSTR(expected); \
+} while (false)
+
 UT_TEST("Variables")
 {
     py::Interpreter interpreter;
@@ -25,7 +34,17 @@ UT_TEST("Variables")
         py::ThreadLock lock;
     }
 
-    py::Object res = py::Run("a = 237");
-    UT(res.Get()) != UT_NULL;
+    {
+        py::ObjectDict locals = py::ObjectDict::New();
+        py::Object res = py::Run(
+            "i = 237\n"
+            "f = 2.5\n"
+            "s = 'test string'",
+            locals);
+        UT(res.IsNone()) == UT_TRUE;
+        CheckValueInt(locals["i"], 237);
+        CheckValueFloat(locals["f"], 2.5);
+        CheckValueString(locals["s"], "test string");
+    }
 }
 UT_TEST_END

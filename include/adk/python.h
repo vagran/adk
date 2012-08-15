@@ -13,7 +13,81 @@
 #ifndef ADK_PYTHON_H_
 #define ADK_PYTHON_H_
 
+namespace adk {
+
 namespace py {
+
+/** When Python produces an exception it is wrapped by this class. */
+class Exception: public adk::Exception {
+private:
+    PyObject *_excType, *_excValue, *_traceback;
+
+    static std::string
+    Describe(PyObject *excType, PyObject *excValue, PyObject *traceback);
+
+    Exception(PyObject *excType, PyObject *excValue, PyObject *traceback):
+        adk::Exception(Describe(excType, excValue, traceback)),
+        _excType(excType), _excValue(excValue), _traceback(traceback)
+    {
+    }
+
+#   ifdef DEBUG
+    Exception(const char *file, int line,
+              PyObject *excType, PyObject *excValue, PyObject *traceback):
+              adk::Exception(file, line, Describe(excType, excValue, traceback)),
+              _excType(excType), _excValue(excValue), _traceback(traceback)
+    {
+    }
+#   endif /* DEBUG */
+
+public:
+    virtual
+    ~Exception() noexcept
+    {}
+
+    /** Fetch active error indication. The error is cleared after that.
+     * Empty object is created if no active error (can be tested by bool
+     * operator).
+     * @return Exception object.
+     */
+    static Exception
+    Fetch(const char *file = nullptr, int line = 0)
+    {
+        if (PyErr_Occurred()) {
+            PyObject *excType, *excValue, *traceback;
+            PyErr_Fetch(&excType, &excValue, &traceback);
+            PyErr_Clear();
+            PyErr_NormalizeException(&excType, &excValue, &traceback);
+            if (file) {
+                return Exception(file, line, excType, excValue, traceback);
+            }
+            return Exception(excType, excValue, traceback);
+        }
+        return Exception(nullptr, nullptr, nullptr);
+    }
+
+    /** Test if exception was fetched. */
+    operator bool()
+    {
+        return _excType != nullptr;
+    }
+};
+
+#ifdef DEBUG
+#define __ADK_PY_FETCH_EXCEPTION() adk::py::Exception::Fetch(__FILE__, __LINE__)
+#else /* DEBUG */
+#define __ADK_PY_FETCH_EXCEPTION() adk::py::Exception::Fetch()
+#endif /* DEBUG */
+
+/** This macro can be for checking and fetching Python exception if any has
+ * occurred. Python exception is transformed to C++ exception and is thrown as
+ * usually.
+ */
+#define ADK_PY_CHECK_EXCEPTION() do { \
+    if (UNLIKELY(PyErr_Occurred())) { \
+        throw __ADK_PY_FETCH_EXCEPTION(); \
+    } \
+} while (false)
 
 /** Convenience class for global Python interpreter initialization and
  * finalization.
@@ -173,7 +247,7 @@ public:
         va_end(args);
         if (!obj) {
             /* Exception occurred. */
-            //XXX
+            ADK_PY_CHECK_EXCEPTION();
         }
         return obj;
     }
@@ -182,7 +256,7 @@ public:
     static Object
     None()
     {
-        return Object(Py_None);
+        return Object(Py_None, false);
     }
 
     bool
@@ -224,26 +298,137 @@ public:
         ASSERT(PyCallable_Check(_obj));
         Object argsObj(PyTuple_Pack(sizeof...(Args), args.Get()...));
         if (!argsObj) {
-            //XXX
+            ADK_PY_CHECK_EXCEPTION();
         }
         Object res(PyObject_CallObject(_obj, argsObj.Get()));
         if (!res) {
-            /* Exception occurred. */
-            //XXX
+            ADK_PY_CHECK_EXCEPTION();
         }
         return res;
     }
 
+    bool
+    HasAttr(const char *attrName) const
+    {
+        return PyObject_HasAttrString(_obj, attrName);
+    }
+
     /** Get object attribute by its name. */
     Object
-    Attr(const char *attrName) const
+    GetAttr(const char *attrName) const
     {
         Object res(PyObject_GetAttrString(_obj, attrName));
         if (!res) {
-            /* Exception occurred. */
-            //XXX
+            ADK_PY_CHECK_EXCEPTION();
         }
         return res;
+    }
+
+    void
+    SetAttr(const char *attrName, const Object &attrValue)
+    {
+        if (UNLIKELY(PyObject_SetAttrString(_obj, attrName, attrValue.Get()) == -1)) {
+            ADK_PY_CHECK_EXCEPTION();
+        }
+    }
+
+    void
+    DelAttr(const char *attrName)
+    {
+        if (UNLIKELY(PyObject_DelAttrString(_obj, attrName) == -1)) {
+            ADK_PY_CHECK_EXCEPTION();
+        }
+    }
+
+    std::string
+    Str() const;
+
+    std::string
+    Repr() const;
+
+    long
+    Int() const
+    {
+        long res = PyLong_AsLong(_obj);
+        ADK_PY_CHECK_EXCEPTION();
+        return res;
+    }
+
+    double
+    Float() const
+    {
+        double res = PyFloat_AsDouble(_obj);
+        ADK_PY_CHECK_EXCEPTION();
+        return res;
+    }
+
+    Py_ssize_t
+    Length() const
+    {
+        Py_ssize_t len = PyObject_Length(_obj);
+        if (UNLIKELY(len == -1)) {
+            ADK_PY_CHECK_EXCEPTION();
+        }
+        return len;
+    }
+
+    Object
+    GetItem(const Object &key) const
+    {
+        Object item(PyObject_GetItem(_obj, key.Get()));
+        if (UNLIKELY(!item)) {
+            ADK_PY_CHECK_EXCEPTION();
+        }
+        return item;
+    }
+
+    Object
+    GetItem(const char *key) const;
+
+    Object
+    operator [](const Object &key) const
+    {
+        return GetItem(key);
+    }
+
+    Object
+    operator [](const char *key) const
+    {
+        return GetItem(key);
+    }
+
+    void
+    SetItem(const Object &key, const Object &value)
+    {
+        if (UNLIKELY(PyObject_SetItem(_obj, key.Get(), value.Get()) == -1)) {
+            ADK_PY_CHECK_EXCEPTION();
+        }
+    }
+
+    void
+    DetItem(const Object &key)
+    {
+        if (UNLIKELY(PyObject_DelItem(_obj, key.Get()) == -1)) {
+            ADK_PY_CHECK_EXCEPTION();
+        }
+    }
+
+    /** Return type object. */
+    Object
+    Type() const
+    {
+        Object res(PyObject_Type(_obj));
+        if (UNLIKELY(!res)) {
+            ADK_PY_CHECK_EXCEPTION();
+        }
+        return res;
+    }
+
+    /** Check if the object is "None" */
+    bool
+    IsNone() const
+    {
+        return _obj == Py_None;
     }
 };
 
@@ -252,14 +437,17 @@ class ObjectSequence: public Object {
 public:
     ObjectSequence(PyObject *obj = nullptr, bool isNew = true): Object(obj, isNew)
     {
+        ASSERT(!_obj || PySequence_Check(_obj));
     }
 
     ObjectSequence(const Object &obj): Object(obj)
     {
+        ASSERT(!_obj || PySequence_Check(_obj));
     }
 
     ObjectSequence(Object &&obj): Object(std::move(obj))
     {
+        ASSERT(!_obj || PySequence_Check(_obj));
     }
 
     class Iterator {
@@ -309,21 +497,24 @@ public:
     }
 };
 
-class ObjectUnicode: public Object {
+class ObjectUnicode: public ObjectSequence {
 public:
-    ObjectUnicode(PyObject *obj = nullptr, bool isNew = true): Object(obj, isNew)
+    ObjectUnicode(PyObject *obj = nullptr, bool isNew = true): ObjectSequence(obj, isNew)
     {
+        ASSERT(!_obj || PyUnicode_Check(_obj));
     }
 
-    ObjectUnicode(const Object &obj): Object(obj)
+    ObjectUnicode(const Object &obj): ObjectSequence(obj)
     {
+        ASSERT(!_obj || PyUnicode_Check(_obj));
     }
 
-    ObjectUnicode(Object &&obj): Object(std::move(obj))
+    ObjectUnicode(Object &&obj): ObjectSequence(std::move(obj))
     {
+        ASSERT(!_obj || PyUnicode_Check(_obj));
     }
 
-    ObjectUnicode(const char *s): Object(PyUnicode_FromString(s))
+    ObjectUnicode(const char *s): ObjectSequence(PyUnicode_FromString(s))
     {
     }
 
@@ -333,6 +524,47 @@ public:
         ASSERT(PyUnicode_Check(_obj));
         Object bytesObj(PyUnicode_AsUTF8String(_obj));
         return std::string(PyBytes_AsString(bytesObj.Get()));
+    }
+};
+
+class ObjectDict: public Object {
+public:
+    ObjectDict(PyObject *obj = nullptr, bool isNew = true): Object(obj, isNew)
+    {
+        ASSERT(!_obj || PyDict_Check(_obj));
+    }
+
+    ObjectDict(const Object &obj): Object(obj)
+    {
+        ASSERT(!_obj || PyDict_Check(_obj));
+    }
+
+    ObjectDict(Object &&obj): Object(std::move(obj))
+    {
+        ASSERT(!_obj || PyDict_Check(_obj));
+    }
+
+    /** Create and return new empty dictionary. */
+    static ObjectDict
+    New()
+    {
+        return ObjectDict(PyDict_New());
+    }
+
+    void
+    Clear()
+    {
+        PyDict_Clear(_obj);
+    }
+
+    bool
+    Contains(const Object &key)
+    {
+        int res = PyDict_Contains(_obj, key.Get());
+        if (UNLIKELY(res == -1)) {
+            ADK_PY_CHECK_EXCEPTION();
+        }
+        return res;
     }
 };
 
@@ -346,80 +578,22 @@ public:
     }
 };
 
-/** When Python produces an exception it is wrapped by this class. */
-class Exception: public adk::Exception {
-private:
-    Object _excType, _excValue, _traceback;
-
-    static std::string
-    Describe(const Object &_excType, const Object &_excValue, const Object &_traceback)
-    {
-        ObjectModule tbMod("traceback");
-        Object formatFunc(tbMod.Attr("format_exception"));
-        ObjectSequence result(formatFunc(_excType, _excValue,
-                                         _traceback ? _traceback : Object::None()));
-        std::string desc;
-        for (auto line: result) {
-            ObjectUnicode s(line);
-            desc += s.GetString();
-        }
-        return desc;
-    }
-
-    Exception(PyObject *excType, PyObject *excValue, PyObject *traceback):
-        adk::Exception(Describe(Object(excType, false),
-                                Object(excValue, false),
-                                Object(traceback, false))),
-        _excType(excType, false), _excValue(excValue, false),
-        _traceback(traceback, false)
-    {
-    }
-
-public:
-    virtual
-    ~Exception() noexcept
-    {}
-
-    /** Fetch active error indication. The error is cleared after that.
-     * Empty object is created if no active error (can be tested by bool
-     * operator).
-     * @return Exception object.
-     */
-    static Exception
-    Fetch()
-    {
-        if (PyErr_Occurred()) {
-            PyObject *excType, *excValue, *traceback;
-            PyErr_Fetch(&excType, &excValue, &traceback);
-            PyErr_Clear();
-            PyErr_NormalizeException(&excType, &excValue, &traceback);
-            return Exception(excType, excValue, traceback);
-        }
-        return Exception(nullptr, nullptr, nullptr);
-    }
-
-    std::string
-    Describe()
-    {
-        return Describe(_excType, _excValue, _traceback);
-    }
-
-    /** Test if exception was fetched. */
-    operator bool()
-    {
-        return _excType;
-    }
-};
-
 /** Run Python code from the specified string.
- * XXX exceptions
  * @param s String with the code.
+ * @param locals Local namespace dictionary.
+ * @param globals Global namespace dictionary.
+ * @param start Starting token.
+ * @param flags Optional compiler flags.
  * @return Resulted Python object.
  */
 Object
-Run(const std::string &s, int start = Py_file_input, Object globals = Object(),
-    Object locals = Object(), PyCompilerFlags *flags = nullptr);
+Run(const std::string &s,
+    Object locals = ObjectDict::New(), Object globals = ObjectDict::New(),
+    int start = Py_file_input,
+    PyCompilerFlags *flags = nullptr);
 
 } /* namespace py */
+
+} /* namespace adk */
 
 #endif /* ADK_PYTHON_H_ */

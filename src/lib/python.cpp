@@ -15,17 +15,61 @@
 using namespace adk;
 using namespace py;
 
+std::string
+py::Exception::Describe(PyObject *excType, PyObject *excValue, PyObject *traceback)
+{
+    if (UNLIKELY(!excType)) {
+        return std::string("No exception");
+    }
+    ObjectModule tbMod("traceback");
+    Object formatFunc(tbMod.GetAttr("format_exception"));
+    ObjectSequence result(formatFunc(Object(excType, false),
+                                     Object(excValue, false),
+                                     traceback ? Object(traceback, false) : Object::None()));
+    std::string desc;
+    for (auto line: result) {
+        ObjectUnicode s(line);
+        desc += s.GetString();
+    }
+    return desc;
+}
+
+std::string
+py::Object::Str() const
+{
+    ObjectUnicode s(PyObject_Str(_obj));
+    if (UNLIKELY(!s)) {
+        ADK_PY_CHECK_EXCEPTION();
+    }
+    return s.GetString();
+}
+
+std::string
+py::Object::Repr() const
+{
+    ObjectUnicode s(PyObject_Repr(_obj));
+    if (UNLIKELY(!s)) {
+        ADK_PY_CHECK_EXCEPTION();
+    }
+    return s.GetString();
+}
+
 Object
-py::Run(const std::string &s, int start, Object globals, Object locals,
-    PyCompilerFlags *flags)
+py::Object::GetItem(const char *key) const
+{
+    ObjectUnicode s(key);
+    return GetItem(s);
+}
+
+Object
+py::Run(const std::string &s, Object locals, Object globals, int start,
+        PyCompilerFlags *flags)
 {
     Object result(PyRun_StringFlags(s.c_str(), start,
                                     globals.Get(), locals.Get(), flags));
     if (!result) {
         /* Exception occurred. */
-        Exception exc = Exception::Fetch();
-        ADK_INFO("exc:\n%s", exc.Describe().c_str());
-        //XXX
+        ADK_PY_CHECK_EXCEPTION();
     }
     return result;
 }
