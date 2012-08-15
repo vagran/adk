@@ -303,8 +303,11 @@ public:
     }
 
     PyObject *
-    Get() const
+    Get(bool newRef = false) const
     {
+        if (_obj && newRef) {
+            Py_INCREF(_obj);
+        }
         return _obj;
     }
 
@@ -619,6 +622,22 @@ public:
         Object(PyImport_ImportModule(name))
     {
 
+    }
+
+    /** This constructor creates new module. */
+    ObjectModule(PyModuleDef *def):
+        Object(PyModule_Create(def))
+    {
+
+    }
+
+    /** Add object to the module. */
+    void
+    AddObject(const char *name, const Object &obj)
+    {
+        if (UNLIKELY(PyModule_AddObject(_obj, name, obj.Get(true)) == -1)) {
+            ADK_PY_CHECK_EXCEPTION();
+        }
     }
 };
 
