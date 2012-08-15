@@ -26,6 +26,9 @@ AUTO_SRC = $(ADK_OBJ_DIR)/auto_stabs.cpp
 AUTO_OBJ = $(AUTO_SRC:.cpp=.o)
 
 ADK_TEST_OBJS = $(foreach src, $(notdir $(ADK_TEST_SRCS)), $(ADK_OBJ_DIR)/$(src:.cpp=.o))
+ADK_TEST_DEPS += $(ADK_TEST_OBJS:.o=.d)
+# include dependencies if exist
+-include $(ADK_TEST_DEPS)
 
 define AUTO_CHUNK
 
@@ -48,7 +51,7 @@ $(BINARY_NAME): $(ADK_OBJS) $(ADK_TEST_OBJS) $(AUTO_OBJ)
 
 define ADK_GCH_RECIPE
 	$(CC) -c $(COMMON_COMP_FLAGS) $(COMMON_CPP_FLAGS) $(CFLAGS) -x c++-header -o $@ $<
-	$(CC) -c $(COMMON_COMP_FLAGS) $(COMMON_CPP_FLAGS) $(CFLAGS) -x c++-header -MM -MT '$@' -o $@ $<
+	$(CC) -c $(COMMON_COMP_FLAGS) $(COMMON_CPP_FLAGS) $(CFLAGS) -x c++-header -MM -MT '$@' -o $(@:.gch=.d) $<
 endef
 
 $(ADK_OBJ_DIR)/%.o: %.cpp

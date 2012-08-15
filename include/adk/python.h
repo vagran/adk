@@ -111,6 +111,7 @@ public:
 
     Object(Object &&obj): _obj(obj._obj)
     {
+        obj._obj = nullptr;
     }
 
     /** Assignment is always treated as borrowed reference. If it is not, the
@@ -357,11 +358,12 @@ private:
         Object formatFunc(tbMod.Attr("format_exception"));
         ObjectSequence result(formatFunc(_excType, _excValue,
                                          _traceback ? _traceback : Object::None()));
+        std::string desc;
         for (auto line: result) {
             ObjectUnicode s(line);
-            ADK_INFO("%s", s.GetString().c_str());
+            desc += s.GetString();
         }
-        return std::string("xxx");
+        return desc;
     }
 
     Exception(PyObject *excType, PyObject *excValue, PyObject *traceback):
