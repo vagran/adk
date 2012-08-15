@@ -28,8 +28,7 @@ py::Exception::Describe(PyObject *excType, PyObject *excValue, PyObject *traceba
                                      traceback ? Object(traceback, false) : Object::None()));
     std::string desc;
     for (auto line: result) {
-        ObjectUnicode s(line);
-        desc += s.GetString();
+        desc += line.Str();
     }
     return desc;
 }
@@ -65,6 +64,11 @@ Object
 py::Run(const std::string &s, Object locals, Object globals, int start,
         PyCompilerFlags *flags)
 {
+    /* Add 'builtins' dictionary automatically. */
+    ObjectDict builtins = ObjectDict::Builtins();
+    locals.SetItem("__builtins__", builtins);
+    globals.SetItem("__builtins__", builtins);
+
     Object result(PyRun_StringFlags(s.c_str(), start,
                                     globals.Get(), locals.Get(), flags));
     if (!result) {

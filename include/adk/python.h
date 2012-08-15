@@ -188,6 +188,26 @@ public:
         obj._obj = nullptr;
     }
 
+    Object(int value)
+    {
+        _obj = PyLong_FromLong(value);
+    }
+
+    Object(long value)
+    {
+        _obj = PyLong_FromLong(value);
+    }
+
+    Object(double value)
+    {
+        _obj = PyFloat_FromDouble(value);
+    }
+
+    Object(const char *value)
+    {
+        _obj = PyUnicode_FromString(value);
+    }
+
     /** Assignment is always treated as borrowed reference. If it is not, the
      * following pattern can be used:
      * @code
@@ -286,25 +306,6 @@ public:
     Get() const
     {
         return _obj;
-    }
-
-    /** Call callable object. Arguments should be @ref Object class
-     * references.
-     */
-    template <class... Args>
-    Object
-    operator ()(const Args&... args) const
-    {
-        ASSERT(PyCallable_Check(_obj));
-        Object argsObj(PyTuple_Pack(sizeof...(Args), args.Get()...));
-        if (!argsObj) {
-            ADK_PY_CHECK_EXCEPTION();
-        }
-        Object res(PyObject_CallObject(_obj, argsObj.Get()));
-        if (!res) {
-            ADK_PY_CHECK_EXCEPTION();
-        }
-        return res;
     }
 
     bool
@@ -429,6 +430,42 @@ public:
     IsNone() const
     {
         return _obj == Py_None;
+    }
+
+    /** Call callable object. Arguments should be @ref Object class
+     * references.
+     */
+    template <class... Args>
+    Object
+    operator ()(const Args&... args) const
+    {
+        ASSERT(PyCallable_Check(_obj));
+        Object argsObj(PyTuple_Pack(sizeof...(Args), args.Get()...));
+        if (!argsObj) {
+            ADK_PY_CHECK_EXCEPTION();
+        }
+        Object res(PyObject_CallObject(_obj, argsObj.Get()));
+        if (!res) {
+            ADK_PY_CHECK_EXCEPTION();
+        }
+        return res;
+    }
+
+    /** Call object method with specified name.
+     *
+     * @param name Method name.
+     * @param args Arguments (of type 'const Object &') to the method.
+     * @return Method return value.
+     */
+    template <class... Args>
+    Object
+    CallMethod(const char *name, const Args&... args)
+    {
+        Object method(GetAttr(name));
+        if (UNLIKELY(!method)) {
+            ADK_PY_CHECK_EXCEPTION();
+        }
+        return method(args...);
     }
 };
 
@@ -565,6 +602,13 @@ public:
             ADK_PY_CHECK_EXCEPTION();
         }
         return res;
+    }
+
+    /** Get "builtins" dictionary. */
+    static ObjectDict
+    Builtins()
+    {
+        return ObjectDict(PyEval_GetBuiltins(), false);
     }
 };
 
