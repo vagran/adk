@@ -67,3 +67,23 @@ UT_TEST("Variables")
     }
 }
 UT_TEST_END
+
+static PyObject *
+TestFuncSum(PyObject *self, PyObject *args)
+{
+    return py::Object(237).Steal();
+}
+
+ADK_PYTHON_MODULE(test_module)
+{
+    Doc("Sample test module");
+    DefFunc("TestFuncSum", TestFuncSum);
+    ADK_INFO("xxx");
+}
+
+UT_TEST("Extension by C++")
+{
+    py::Interpreter interpreter;
+
+}
+UT_TEST_END

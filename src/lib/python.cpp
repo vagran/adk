@@ -77,3 +77,11 @@ py::Run(const std::string &s, Object locals, Object globals, int start,
     }
     return result;
 }
+
+void
+py::internal::ModuleRegistrator::Register(const char *name, InitFunc initFunc)
+{
+    _moduleDef.m_name = name;
+    _moduleDef.m_size = -1;
+    PyImport_AppendInittab(name, initFunc);
+}

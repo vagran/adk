@@ -67,6 +67,7 @@
 
 #ifdef ADK_USE_PYTHON
 #include <adk/python.h>
+#include <adk/python_ext.h>
 #endif /* ADK_USE_PYTHON */
 
 #endif /* ADK_PLATFORM_AVR */

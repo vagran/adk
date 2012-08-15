@@ -292,7 +292,7 @@ public:
 
     /** Steal reference to the object. The result should be passed to some
      * function which steals the object reference.
-     * @return Pointer to object.
+     * @return Pointer to the object.
      */
     PyObject *
     Steal()
@@ -302,6 +302,12 @@ public:
         return obj;
     }
 
+    /** Get reference to the object.
+     *
+     * @param newRef Return new reference if @a true, borrowed reference if
+     *      @a false.
+     * @return Pointer to the object.
+     */
     PyObject *
     Get(bool newRef = false) const
     {

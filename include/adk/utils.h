@@ -29,9 +29,10 @@
 #define __CONCAT2(x, y)             x##y
 #endif
 /** Macro for concatenating identifiers. */
-#ifndef __CONCAT
-#define __CONCAT(x, y)              __CONCAT2(x, y)
+#ifdef __CONCAT
+#undef __CONCAT
 #endif
+#define __CONCAT(x, y)              __CONCAT2(x, y)
 
 #ifndef __STR2
 #define __STR2(x)                   # x
