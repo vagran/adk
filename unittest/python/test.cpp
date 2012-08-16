@@ -71,19 +71,96 @@ UT_TEST_END
 static PyObject *
 TestFuncSum(PyObject *self, PyObject *args)
 {
-    return py::Object(237).Steal();
+    std::vector<py::Object> argsObj = py::ParseArguments(args, 2, 2);
+    if (PyErr_Occurred()) {
+        return nullptr;
+    }
+    return py::Object(argsObj[0].Int() + argsObj[1].Int()).Steal();
 }
+
+/* Exposed class test. */
+class TestClass: public py::ExposedClassBase {
+private:
+public:
+    long base;
+    static bool constrCalled, destrCalled;
+
+    TestClass(py::Object args, py::Object kwArgs): base(0)
+    {
+        constrCalled = true;
+    }
+
+    virtual
+    ~TestClass()
+    {
+        destrCalled = true;
+    }
+
+    /* Some overridden standard methods. */
+
+    int
+    Init(py::Object args, py::Object kwArgs)
+    {
+        std::vector<py::Object> argsObj = args.ParseArguments(1, 1);
+        base = argsObj[0].Int();
+        return 0;
+    }
+
+    py::Object
+    Repr()
+    {
+        return py::Object("TestClass::Repr");
+    }
+
+    py::Object
+    Str()
+    {
+        return py::Object("TestClass::Str");
+    }
+
+    Py_hash_t
+    Hash()
+    {
+        return py::Object(237);
+    }
+
+    /* Calling operator automatically exposed to Python as '__call__' method. */
+    py::Object
+    operator()(py::Object args, py::Object kwArgs)
+    {
+        std::vector<py::Object> argsObj = args.ParseArguments(2, 2);
+        return py::Object(argsObj[0].Int() + argsObj[1].Int());
+    }
+
+    py::Object
+    TestMethod(py::Object args, py::Object kwArgs)
+    {
+        std::vector<py::Object> argsObj = args.ParseArguments(2, 2);
+        return py::Object(args[0].Int() + base);
+    }
+};
+
+bool TestClass::constrCalled, TestClass::destrCalled;
 
 ADK_PYTHON_MODULE(test_module)
 {
     Doc("Sample test module");
-    DefFunc("TestFuncSum", TestFuncSum);
-    ADK_INFO("xxx");
+    DefFunc("TestFuncSum", TestFuncSum, "Sample test function");
+    DefClass<TestClass>("TestClass", "Sample test class");
 }
 
 UT_TEST("Extension by C++")
 {
     py::Interpreter interpreter;
-
+    py::ObjectDict locals = py::ObjectDict::New();
+    py::Object res = py::Run(
+        "import test_module\n"
+        "mod_help = test_module.__doc__\n"
+        "result = test_module.TestFuncSum(200, 37)\n"
+        "func_help = test_module.TestFuncSum.__doc__\n",
+        locals);
+    CheckValueInt(locals["result"], 237);
+    CheckValueString(locals["mod_help"], "Sample test module");
+    CheckValueString(locals["func_help"], "Sample test function");
 }
 UT_TEST_END

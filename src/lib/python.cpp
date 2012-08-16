@@ -83,5 +83,42 @@ py::internal::ModuleRegistrator::Register(const char *name, InitFunc initFunc)
 {
     _moduleDef.m_name = name;
     _moduleDef.m_size = -1;
+    _moduleDef.m_methods = &_methods.front();
     PyImport_AppendInittab(name, initFunc);
+    //XXX classes
+}
+
+void
+py::internal::ModuleRegistrator::_AddMethod(const char *name, PyCFunction func,
+                                            int flags, const char *doc)
+{
+    _methods.resize(_methods.size() + 1);
+    PyMethodDef *def = &_methods.back() - 1;
+    def->ml_name = name;
+    def->ml_meth = func;
+    def->ml_flags = flags;
+    def->ml_doc = doc;
+}
+
+void
+py::internal::ModuleRegistrator::DefFunc(const char *name,  PyNoArgsFunction func,
+                                         const char *doc)
+{
+    _AddMethod(name, reinterpret_cast<PyCFunction>(func), METH_NOARGS, doc);
+}
+
+void
+py::internal::ModuleRegistrator::DefFunc(const char *name, PyCFunction func,
+                                         const char *doc)
+{
+    _AddMethod(name, func, METH_VARARGS, doc);
+}
+
+void
+py::internal::ModuleRegistrator::DefFunc(const char *name,
+                                         PyCFunctionWithKeywords func,
+                                         const char *doc)
+{
+    _AddMethod(name, reinterpret_cast<PyCFunction>(func),
+               METH_VARARGS | METH_KEYWORDS, doc);
 }

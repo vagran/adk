@@ -476,7 +476,47 @@ public:
         }
         return method(args...);
     }
+
+    /** Parse arguments tuple.
+     *
+     * @param maxArgs Maximal number of arguments.
+     * @param minArgs Minimal number of arguments.
+     * @return Vector with arguments. TypeError Python exception is raised in
+     *      case of error. The caller should check this by PyErr_Occurred
+     *      function and return @a nullptr from the method if error occurred.
+     */
+    std::vector<Object>
+    ParseArguments(int maxArgs = -1, int minArgs = -1) const
+    {
+        ASSERT(PyTuple_Check(_obj));
+        Py_ssize_t size = PyTuple_Size(_obj);
+        if (minArgs != -1 && size < minArgs) {
+            PyErr_Format(PyExc_TypeError,
+                         "The function expects at least %d arguments (%d given)",
+                         minArgs, size);
+            return std::vector<Object>();
+        }
+        if (maxArgs != -1 && size > maxArgs) {
+            PyErr_Format(PyExc_TypeError,
+                         "The function expects at most %d arguments (%d given)",
+                         maxArgs, size);
+            return std::vector<Object>();
+        }
+        std::vector<Object> result(size);
+        for (Py_ssize_t i = 0; i < size; i++) {
+            result[i] = PyTuple_GetItem(_obj, i);
+        }
+        return result;
+    }
 };
+
+/** Convenience wrapper function for @ref Object::ParseArguments method. */
+template <class... Args>
+std::vector<Object>
+ParseArguments(PyObject *obj, Args&&... args)
+{
+    return Object(obj, false).ParseArguments(std::forward<Args>(args)...);
+}
 
 /** Wrapper for Python sequence protocol API. */
 class ObjectSequence: public Object {
