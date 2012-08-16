@@ -479,6 +479,9 @@ public:
 
     /** Parse arguments tuple.
      *
+     * @param func Name of calling function.
+     * @param file Source file name.
+     * @param line Line number in source file.
      * @param maxArgs Maximal number of arguments.
      * @param minArgs Minimal number of arguments.
      * @return Vector with arguments. TypeError Python exception is raised in
@@ -486,20 +489,33 @@ public:
      *      function and return @a nullptr from the method if error occurred.
      */
     std::vector<Object>
-    ParseArguments(int maxArgs = -1, int minArgs = -1) const
+    ParseArguments(const char *func, const char *file, int line,
+                   int maxArgs = -1, int minArgs = -1) const
     {
         ASSERT(PyTuple_Check(_obj));
         Py_ssize_t size = PyTuple_Size(_obj);
         if (minArgs != -1 && size < minArgs) {
-            PyErr_Format(PyExc_TypeError,
-                         "The function expects at least %d arguments (%d given)",
-                         minArgs, size);
+            if (func) {
+                PyErr_Format(PyExc_TypeError,
+                             "[%s:%d] Function '%s' expects at least %d arguments (%d given)",
+                             file, line, func, minArgs, size);
+            } else {
+                PyErr_Format(PyExc_TypeError,
+                             "The function expects at least %d arguments (%d given)",
+                             minArgs, size);
+            }
             return std::vector<Object>();
         }
         if (maxArgs != -1 && size > maxArgs) {
-            PyErr_Format(PyExc_TypeError,
-                         "The function expects at most %d arguments (%d given)",
-                         maxArgs, size);
+            if (file) {
+                PyErr_Format(PyExc_TypeError,
+                             "[%s:%d] Function '%s' expects at most %d arguments (%d given)",
+                             file, line, func, maxArgs, size);
+            } else {
+                PyErr_Format(PyExc_TypeError,
+                             "The function expects at most %d arguments (%d given)",
+                             maxArgs, size);
+            }
             return std::vector<Object>();
         }
         std::vector<Object> result(size);
@@ -507,6 +523,12 @@ public:
             result[i] = PyTuple_GetItem(_obj, i);
         }
         return result;
+    }
+
+    std::vector<Object>
+    ParseArguments(int maxArgs = -1, int minArgs = -1) const
+    {
+        return ParseArguments(nullptr, nullptr, 0, maxArgs, minArgs);
     }
 };
 
@@ -517,6 +539,16 @@ ParseArguments(PyObject *obj, Args&&... args)
 {
     return Object(obj, false).ParseArguments(std::forward<Args>(args)...);
 }
+
+template <class... Args>
+std::vector<Object>
+ParseArguments(const Object &obj, Args&&... args)
+{
+    return obj.ParseArguments(std::forward<Args>(args)...);
+}
+
+#define ADK_PY_PARSE_ARGUMENTS(obj, ...) \
+    adk::py::ParseArguments(obj, __PRETTY_FUNCTION__, __FILE__, __LINE__, ## __VA_ARGS__)
 
 /** Wrapper for Python sequence protocol API. */
 class ObjectSequence: public Object {

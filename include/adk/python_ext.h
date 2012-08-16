@@ -23,7 +23,7 @@ class ExposedClassBase {
 private:
     struct {
         PyObject_HEAD
-    } obj = { PyObject_HEAD_INIT(nullptr) };
+    } obj;
 public:
     virtual
     ~ExposedClassBase()
@@ -110,11 +110,17 @@ protected:
         {
             ExposedClassBase *clsObj =
                 static_cast<ExposedClassBase *>
-                (PyMem_Malloc(type->tp_basicsize + type->tp_itemsize * nItems));
+                (PyMem_Malloc(adk::RoundUp2(type->tp_basicsize + type->tp_itemsize * nItems, sizeof(void *))));
             if (UNLIKELY(!clsObj)) {
                 return PyErr_NoMemory();
             }
-            return clsObj->GetObject();
+            PyObject *obj = clsObj->GetObject();
+            obj->ob_refcnt = 1;
+            obj->ob_type = type;
+            if (nItems) {
+                reinterpret_cast<PyVarObject *>(obj)->ob_size = nItems;
+            }
+            return obj;
         }
 
         static void
@@ -134,9 +140,19 @@ protected:
             _typeObj.tp_basicsize = size;
             _typeObj.tp_alloc = _Alloc;
             _typeObj.tp_free = _Free;
+            _typeObj.tp_flags = Py_TPFLAGS_DEFAULT;
         }
 
         virtual ~ClassRegistratorBase() {}
+
+        void
+        AddToModule(ObjectModule &module)
+        {
+            if (PyType_Ready(&_typeObj) < 0) {
+                ADK_EXCEPTION(adk::Exception, "PyType_Ready() failed");
+            }
+            module.AddObject(_typeObj.tp_name, Object(&_typeObj.ob_base.ob_base, false));
+        }
     };
 private:
     /* Registered classes. */
@@ -257,7 +273,12 @@ protected:
     PyObject *
     InitModule()
     {
-        return PyModule_Create(&_moduleDef);
+        ObjectModule module(&_moduleDef);
+        /* Register classes. */
+        for (auto &cls: _classes) {
+            cls->AddToModule(module);
+        }
+        return module.Steal();
     }
 
     /** Add documentation string to the module. */

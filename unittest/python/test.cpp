@@ -71,7 +71,7 @@ UT_TEST_END
 static PyObject *
 TestFuncSum(PyObject *self, PyObject *args)
 {
-    std::vector<py::Object> argsObj = py::ParseArguments(args, 2, 2);
+    std::vector<py::Object> argsObj = ADK_PY_PARSE_ARGUMENTS(args, 2, 2);
     if (PyErr_Occurred()) {
         return nullptr;
     }
@@ -101,7 +101,10 @@ public:
     int
     Init(py::Object args, py::Object kwArgs)
     {
-        std::vector<py::Object> argsObj = args.ParseArguments(1, 1);
+        std::vector<py::Object> argsObj = ADK_PY_PARSE_ARGUMENTS(args, 1, 1);
+        if (PyErr_Occurred()) {
+            return -1;
+        }
         base = argsObj[0].Int();
         return 0;
     }
@@ -109,33 +112,43 @@ public:
     py::Object
     Repr()
     {
-        return py::Object("TestClass::Repr");
+        std::stringstream ss;
+        ss << "TestClass::Repr " << base;
+        return py::Object(ss.str().c_str());
     }
 
     py::Object
     Str()
     {
-        return py::Object("TestClass::Str");
+        std::stringstream ss;
+        ss << "TestClass::Str " << base;
+        return py::Object(ss.str().c_str());
     }
 
     Py_hash_t
     Hash()
     {
-        return py::Object(237);
+        return base;
     }
 
     /* Calling operator automatically exposed to Python as '__call__' method. */
     py::Object
     operator()(py::Object args, py::Object kwArgs)
     {
-        std::vector<py::Object> argsObj = args.ParseArguments(2, 2);
-        return py::Object(argsObj[0].Int() + argsObj[1].Int());
+        std::vector<py::Object> argsObj = ADK_PY_PARSE_ARGUMENTS(args, 2, 2);
+        if (PyErr_Occurred()) {
+            return py::Object();
+        }
+        return py::Object(base + argsObj[0].Int() + argsObj[1].Int());
     }
 
     py::Object
     TestMethod(py::Object args, py::Object kwArgs)
     {
-        std::vector<py::Object> argsObj = args.ParseArguments(2, 2);
+        std::vector<py::Object> argsObj = ADK_PY_PARSE_ARGUMENTS(args, 2, 2);
+        if (PyErr_Occurred()) {
+            return py::Object();
+        }
         return py::Object(args[0].Int() + base);
     }
 };
@@ -157,10 +170,24 @@ UT_TEST("Extension by C++")
         "import test_module\n"
         "mod_help = test_module.__doc__\n"
         "result = test_module.TestFuncSum(200, 37)\n"
-        "func_help = test_module.TestFuncSum.__doc__\n",
+        "func_help = test_module.TestFuncSum.__doc__\n"
+        "\n"
+        "obj = test_module.TestClass(300)\n"
+        "obj_hash = hash(obj)\n"
+        "obj_str = str(obj)\n"
+        "obj_repr = repr(obj)\n"
+        "obj_call = obj(10, 15)\n",
         locals);
+    UT(res.IsNone()) == UT_TRUE;
     CheckValueInt(locals["result"], 237);
     CheckValueString(locals["mod_help"], "Sample test module");
     CheckValueString(locals["func_help"], "Sample test function");
+    CheckValueInt(locals["obj_hash"], 300);
+    CheckValueString(locals["obj_str"], "TestClass::Str 300");
+    CheckValueString(locals["obj_repr"], "TestClass::Repr 300");
+    CheckValueInt(locals["obj_call"], 325);
+
+    res = locals["obj"](py::Object(30), py::Object(40));
+    CheckValueInt(res, 370);
 }
 UT_TEST_END
