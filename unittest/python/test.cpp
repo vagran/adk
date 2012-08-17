@@ -68,14 +68,14 @@ UT_TEST("Variables")
 }
 UT_TEST_END
 
-static PyObject *
-TestFuncSum(PyObject *self, PyObject *args)
+static py::Object
+TestFuncSum(py::Object self, py::Object args)
 {
     std::vector<py::Object> argsObj = ADK_PY_PARSE_ARGUMENTS(args, 2, 2);
     if (PyErr_Occurred()) {
-        return nullptr;
+        return py::Object();
     }
-    return py::Object(argsObj[0].Int() + argsObj[1].Int()).Steal();
+    return py::Object(argsObj[0].Int() + argsObj[1].Int());
 }
 
 /* Exposed class test. */
@@ -158,8 +158,9 @@ bool TestClass::constrCalled, TestClass::destrCalled;
 ADK_PYTHON_MODULE(test_module)
 {
     Doc("Sample test module");
-    DefFunc("TestFuncSum", TestFuncSum, "Sample test function");
-    DefClass<TestClass>("TestClass", "Sample test class");
+    DefFunc<TestFuncSum>("TestFuncSum", "Sample test function");
+    DefClass<TestClass>("TestClass", "Sample test class").
+        DefMethod("TestMethod", &TestClass::TestMethod);
 }
 
 UT_TEST("Extension by C++")

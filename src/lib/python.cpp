@@ -99,26 +99,3 @@ py::internal::ModuleRegistrator::_AddMethod(const char *name, PyCFunction func,
     def->ml_flags = flags;
     def->ml_doc = doc;
 }
-
-void
-py::internal::ModuleRegistrator::DefFunc(const char *name,  PyNoArgsFunction func,
-                                         const char *doc)
-{
-    _AddMethod(name, reinterpret_cast<PyCFunction>(func), METH_NOARGS, doc);
-}
-
-void
-py::internal::ModuleRegistrator::DefFunc(const char *name, PyCFunction func,
-                                         const char *doc)
-{
-    _AddMethod(name, func, METH_VARARGS, doc);
-}
-
-void
-py::internal::ModuleRegistrator::DefFunc(const char *name,
-                                         PyCFunctionWithKeywords func,
-                                         const char *doc)
-{
-    _AddMethod(name, reinterpret_cast<PyCFunction>(func),
-               METH_VARARGS | METH_KEYWORDS, doc);
-}

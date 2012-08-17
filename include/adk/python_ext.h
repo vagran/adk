@@ -96,9 +96,36 @@ class ModuleRegistrator {
 private:
     std::vector<PyMethodDef> _methods;
 
+    typedef Object (*TNoArgsFunc)(Object);
+    typedef Object (*TVarArgsFunc)(Object, Object);
+    typedef Object (*TKwArgsFunc)(Object, Object, Object);
+
     /** Update methods table with a new method. */
     void
     _AddMethod(const char *name, PyCFunction func, int flags, const char *doc);
+
+    template <TNoArgsFunc func>
+    static PyObject *
+    _MethodWrapper(PyObject *self)
+    {
+        return func(Object(self, false)).Steal();
+    }
+
+    template <TVarArgsFunc func>
+    static PyObject *
+    _MethodWrapper(PyObject *self, PyObject *args)
+    {
+        return func(Object(self, false), Object(args, false)).Steal();
+    }
+
+    template <TKwArgsFunc func>
+    static PyObject *
+    _MethodWrapper(PyObject *self, PyObject *args, PyObject *kwArgs)
+    {
+        return func(Object(self, false), Object(args, false),
+                    Object(kwArgs, false)).Steal();
+    }
+
 protected:
     class ClassRegistratorBase {
     protected:
@@ -250,6 +277,10 @@ protected:
             }
             //XXX more built-in methods to implement
         }
+
+        typedef Object (Cls::*T_NoArgsMethod)();
+        typedef Object (Cls::*T_VarArgsMethod)(Object);
+        typedef Object (Cls::*T_KwArgsMethod)(Object, Object);
     public:
         ClassRegistrator(ModuleRegistrator &modReg, const char *name,
                          const char *doc = nullptr):
@@ -258,6 +289,29 @@ protected:
             _SetBuiltinMethods();
         }
 
+        ClassRegistrator &
+        DefMethod(const char *name, T_NoArgsMethod method,
+                  const char *doc = nullptr)
+        {
+            //XXX
+            return *this;
+        }
+
+        ClassRegistrator &
+        DefMethod(const char *name, T_VarArgsMethod method,
+                  const char *doc = nullptr)
+        {
+            //XXX
+            return *this;
+        }
+
+        ClassRegistrator &
+        DefMethod(const char *name, T_KwArgsMethod method,
+                  const char *doc = nullptr)
+        {
+            //XXX
+            return *this;
+        }
     };
 
     ModuleRegistrator(): _methods(1)
@@ -295,15 +349,29 @@ protected:
      *      corresponding calling convention will be declared.
      * @param doc Optional documentation string.
      */
+    template <TNoArgsFunc func>
     void
-    DefFunc(const char *name, PyNoArgsFunction func, const char *doc = nullptr);
+    DefFunc(const char *name, const char *doc = nullptr)
+    {
+        _AddMethod(name, reinterpret_cast<PyCFunction>(_MethodWrapper<func>),
+                   METH_NOARGS, doc);
+    }
 
+    template <TVarArgsFunc func>
     void
-    DefFunc(const char *name, PyCFunction func, const char *doc = nullptr);
+    DefFunc(const char *name, const char *doc = nullptr)
+    {
+        _AddMethod(name, reinterpret_cast<PyCFunction>(_MethodWrapper<func>),
+                   METH_VARARGS, doc);
+    }
 
+    template <TKwArgsFunc func>
     void
-    DefFunc(const char *name, PyCFunctionWithKeywords func,
-            const char *doc = nullptr);
+    DefFunc(const char *name, const char *doc = nullptr)
+    {
+        _AddMethod(name, reinterpret_cast<PyCFunction>(_MethodWrapper<func>),
+                   METH_KEYWORDS, doc);
+    }
 
     template <class Cls>
     ClassRegistrator<Cls> &
