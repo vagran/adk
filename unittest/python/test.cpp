@@ -24,7 +24,6 @@ using namespace adk;
     UT(s.c_str()) == UT_CSTR(expected); \
 } while (false)
 
-#if 0
 UT_TEST("Variables")
 {
     py::Interpreter interpreter;
@@ -37,24 +36,7 @@ UT_TEST("Variables")
 
     {
         py::ObjectDict locals = py::ObjectDict::New();
-        py::Object res = py::Run(
-            "i = 237\n"
-            "f = 2.5\n"
-            "s = 'test string'\n"
-            "\n"
-            "def TestFunc(a, b):\n"
-            "   return a + b\n"
-            "\n"
-            "class TestClass:\n"
-            "   prop = 10\n"
-            "\n"
-            "   def __init__(self, base):\n"
-            "       self.base = base\n"
-            "   def Sum(self, x):\n"
-            "       return self.base + x\n"
-            "\n"
-            "testObj = TestClass(20)\n",
-            locals);
+        py::Object res = py::Run(ADK_PY_FILE(test_embedding), locals);
         UT(res.IsNone()) == UT_TRUE;
         CheckValueInt(locals["i"], 237);
         CheckValueFloat(locals["f"], 2.5);
@@ -68,8 +50,8 @@ UT_TEST("Variables")
     }
 }
 UT_TEST_END
-#endif
 
+/* Exposed function test. */
 static py::Object
 TestFuncSum(py::Object self, py::Object args)
 {
@@ -85,17 +67,14 @@ class TestClass: public py::ExposedClassBase {
 private:
 public:
     long base;
-    static bool constrCalled, destrCalled;
 
     TestClass(py::Object args, py::Object kwArgs): base(0)
     {
-        constrCalled = true;
     }
 
     virtual
     ~TestClass()
     {
-        destrCalled = true;
     }
 
     /* Some overridden standard methods. */
@@ -161,8 +140,7 @@ public:
     }
 };
 
-bool TestClass::constrCalled, TestClass::destrCalled;
-
+/* Exposed module description. */
 ADK_PYTHON_MODULE(test_module)
 {
     Doc("Sample test module");
@@ -172,27 +150,11 @@ ADK_PYTHON_MODULE(test_module)
         DefMethod<&TestClass::TestMethodNoArgs>("TestMethodNoArgs");
 }
 
-#if 0
 UT_TEST("Extension by C++")
 {
     py::Interpreter interpreter;
     py::ObjectDict locals = py::ObjectDict::New();
-    py::Object res = py::Run(
-        "import test_module\n"
-        "mod_help = test_module.__doc__\n"
-        "result = test_module.TestFuncSum(200, 37)\n"
-        "func_help = test_module.TestFuncSum.__doc__\n"
-        "\n"
-        "class_help = test_module.TestClass.__doc__\n"
-        "obj = test_module.TestClass(300)\n"
-        "obj_hash = hash(obj)\n"
-        "obj_str = str(obj)\n"
-        "obj_repr = repr(obj)\n"
-        "obj_call = obj(10, 15)\n"
-        "meth_help = test_module.TestClass.TestMethod.__doc__\n"
-        "meth_call = obj.TestMethod(42)\n"
-        "meth2_call = obj.TestMethodNoArgs()\n",
-        locals);
+    py::Object res = py::Run(ADK_PY_FILE(test_extending), locals);
     UT(res.IsNone()) == UT_TRUE;
     CheckValueInt(locals["result"], 237);
     CheckValueString(locals["mod_help"], "Sample test module");
@@ -205,9 +167,8 @@ UT_TEST("Extension by C++")
     CheckValueString(locals["meth_help"], "Sample test method");
     CheckValueInt(locals["meth_call"], 342);
     CheckValueInt(locals["meth2_call"], 300);
-
+    /* Call object from C++ via Python layer (C++ => Python => C++)*/
     res = locals["obj"](py::Object(30), py::Object(40));
     CheckValueInt(res, 370);
 }
 UT_TEST_END
-#endif
