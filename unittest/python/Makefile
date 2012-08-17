@@ -12,9 +12,6 @@ ADK_TEST_DESC = Embedded Python functionality
 
 ADK_USE_PYTHON = yes
 
-INCLUDE_DIRS += $(DESKTOP_LIBS_INC_DIRS)
-LIBS += $(DESKTOP_LIBS)
-
 ADK_TEST_SRCS = $(wildcard $(ADK_ROOT)/src/lib/*.cpp)
 
 include $(ADK_ROOT)/make/make.mk

@@ -14,9 +14,7 @@
 #define ADK_GLADE_H_
 
 /* Automatically generated files for corresponding .glade files. */
-#ifndef UNITTEST
 #include <auto_adk_glade.h>
-#endif
 
 /** Start of embedded Glade XML. */
 #define ADK_GLADE_XML_START(__fileName) &_binary_ ## __fileName ## _glade_start

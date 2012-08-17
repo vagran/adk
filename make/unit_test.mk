@@ -19,8 +19,9 @@ DEFS += UNITTEST
 
 CFLAGS += -ggdb3 -DDEBUG -O0
 
-LIBS += stdc++ c $(DESKTOP_LIBS)
-INCLUDE_DIRS += $(DESKTOP_LIBS_INC_DIRS)
+LIBS += c
+
+include $(ADK_ROOT)/make/desktop_ut_shared.mk
 
 AUTO_SRC = $(ADK_OBJ_DIR)/auto_stabs.cpp
 AUTO_OBJ = $(AUTO_SRC:.cpp=.o)

@@ -24,6 +24,7 @@ using namespace adk;
     UT(s.c_str()) == UT_CSTR(expected); \
 } while (false)
 
+#if 0
 UT_TEST("Variables")
 {
     py::Interpreter interpreter;
@@ -67,6 +68,7 @@ UT_TEST("Variables")
     }
 }
 UT_TEST_END
+#endif
 
 static py::Object
 TestFuncSum(py::Object self, py::Object args)
@@ -170,6 +172,7 @@ ADK_PYTHON_MODULE(test_module)
         DefMethod<&TestClass::TestMethodNoArgs>("TestMethodNoArgs");
 }
 
+#if 0
 UT_TEST("Extension by C++")
 {
     py::Interpreter interpreter;
@@ -207,3 +210,4 @@ UT_TEST("Extension by C++")
     CheckValueInt(res, 370);
 }
 UT_TEST_END
+#endif
