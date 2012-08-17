@@ -24,9 +24,8 @@ export RSYNC = rsync
 export PYTHON = $(ADK_PREFIX)/bin/python3
 
 # Default native platform
-ifndef ADK_NAT_PLATFORM
-export ADK_NAT_PLATFORM = linux64
-endif
+ADK_NAT_PLATFORM ?= linux64
+export ADK_NAT_PLATFORM
 
 # Native compilation tools
 export NAT_CC = $(TOOLS_BIN)/$(NAT_TOOLS_PREFIX)gcc

@@ -39,8 +39,6 @@ Optional variables in the makefile:
   * '''DEBUG_OPT_FLAGS''' -- optimization flags for debug build. They overwrite default flags if specified.
   * '''RELEASE_OPT_FLAGS''' -- optimization flags for release build. They overwrite default flags if specified.
   * '''LIB_DIRS''' -- additional directories to search for libraries.
-  * '''GLADE_FILES''' -- additional "*.glade" XML files to embed into the executable binary.
-  * '''PY_FILES''' -- additional "*.py" script files to embed into the executable binary.
 
 //:!: Everywhere a list of values is acceptable in makefile variables, it can be specified as blank separated values.//
 

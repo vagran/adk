@@ -10,9 +10,7 @@
 ifeq ($(ADK_APP_TYPE),unit_test)
     # Unit test
 
-    ifndef ADK_PLATFORM
-    ADK_PLATFORM = native
-    endif
+    ADK_PLATFORM ?= native
     
     ADK_PLATFORM_MAKEFILE = unit_test.mk
     ADK_APP_NAME = $(ADK_TEST_NAME)
@@ -71,9 +69,7 @@ ifdef ADK_APP_NAME
         # Binary architecture of object files
         OBJ_ARCH = i386
         LIB_DIRS += /lib /lib/tls/i686/cmov
-        ifndef ADK_USE_GUI
-            ADK_USE_GUI = yes
-        endif
+        ADK_USE_GUI ?= yes
     else ifeq ($(ADK_PLATFORM),linux64)
         ADK_PLATFORM_ID = $(ADK_PLATFORM_ID_LINUX64)
         DEFS += ADK_PLATFORM_LINUX64
@@ -88,9 +84,7 @@ ifdef ADK_APP_NAME
         # Binary architecture of object files
         OBJ_ARCH = i386
         LIB_DIRS += /lib
-        ifndef ADK_USE_GUI
-            ADK_USE_GUI = yes
-        endif
+        ADK_USE_GUI ?= yes
     else ifeq ($(ADK_PLATFORM),win32)
         ADK_PLATFORM_ID = $(ADK_PLATFORM_ID_WIN32)
         DEFS += ADK_PLATFORM_WIN32

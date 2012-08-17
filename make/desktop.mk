@@ -6,14 +6,10 @@
 # See COPYING file for copyright details.
 
 # Compiler optimization flags for debug build
-ifndef DEBUG_OPT_FLAGS
-DEBUG_OPT_FLAGS = -O0
-endif
+DEBUG_OPT_FLAGS ?= -O0
 
 # Compiler optimization flags for release build
-ifndef RELEASE_OPT_FLAGS
-RELEASE_OPT_FLAGS = -O2
-endif
+RELEASE_OPT_FLAGS ?= -O2
 
 ifeq ($(ADK_BUILD_TYPE),release)
 	CFLAGS += $(RELEASE_OPT_FLAGS)
@@ -35,20 +31,15 @@ endif
 ################################################################################
 # Executable binary
 
-ifndef ADK_INSTALL_MODE
-ADK_INSTALL_MODE = 0755
-endif
+ADK_INSTALL_MODE ?= 0755
 
 ifeq ($(ADK_APP_TYPE),app)
 BINARY = $(ADK_OBJ_DIR)/$(ADK_APP_NAME)
-ifndef ADK_INSTALL_DIR
-ADK_INSTALL_DIR = $(ADK_PREFIX)/bin
-endif
+ADK_INSTALL_DIR ?= $(ADK_PREFIX)/bin
+
 else ifeq ($(ADK_APP_TYPE),lib)
 BINARY = $(ADK_OBJ_DIR)/lib$(ADK_APP_NAME).so
-ifndef ADK_INSTALL_DIR
-ADK_INSTALL_DIR = $(ADK_PREFIX)/lib
-endif
+ADK_INSTALL_DIR ?= $(ADK_PREFIX)/lib
 endif
 
 all: $(BINARY)
