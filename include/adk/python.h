@@ -497,7 +497,7 @@ public:
         if (minArgs != -1 && size < minArgs) {
             if (func) {
                 PyErr_Format(PyExc_TypeError,
-                             "[%s:%d] Function '%s' expects at least %d arguments (%d given)",
+                             "[%s:%d] Function '%s()' expects at least %d arguments (%d given)",
                              file, line, func, minArgs, size);
             } else {
                 PyErr_Format(PyExc_TypeError,
@@ -509,7 +509,7 @@ public:
         if (maxArgs != -1 && size > maxArgs) {
             if (file) {
                 PyErr_Format(PyExc_TypeError,
-                             "[%s:%d] Function '%s' expects at most %d arguments (%d given)",
+                             "[%s:%d] Function '%s()' expects at most %d arguments (%d given)",
                              file, line, func, maxArgs, size);
             } else {
                 PyErr_Format(PyExc_TypeError,
@@ -548,7 +548,7 @@ ParseArguments(const Object &obj, Args&&... args)
 }
 
 #define ADK_PY_PARSE_ARGUMENTS(obj, ...) \
-    adk::py::ParseArguments(obj, __PRETTY_FUNCTION__, __FILE__, __LINE__, ## __VA_ARGS__)
+    adk::py::ParseArguments(obj, __FUNCTION__, __FILE__, __LINE__, ## __VA_ARGS__)
 
 /** Wrapper for Python sequence protocol API. */
 class ObjectSequence: public Object {

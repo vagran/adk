@@ -87,6 +87,25 @@ public:
     {
         return Object();
     }
+
+    /** Print object to file. */
+    int
+    Print(FILE *fp, int flags)
+    {
+        return 0;
+    }
+
+    Object
+    GetAttr(Object attrName)
+    {
+        return Object();
+    }
+
+    int
+    SetAttr(Object attrName, Object attrValue)
+    {
+        return 0;
+    }
 };
 
 namespace internal {
@@ -253,6 +272,27 @@ protected:
             Py_TYPE(ptr)->tp_free(ptr);
         }
 
+        static int
+        _Print(PyObject *self, FILE *fp, int flags)
+        {
+            Cls *pCls = ExposedClassBase::GetClassObject<Cls>(self);
+            return pCls->Print(fp, flags);
+        }
+
+        static PyObject *
+        _GetAttr(PyObject *self, PyObject *attrName)
+        {
+            Cls *pCls = ExposedClassBase::GetClassObject<Cls>(self);
+            return pCls->GetAttr(Object(attrName, false)).Steal();
+        }
+
+        static int
+        _SetAttr(PyObject *self, PyObject *attrName, PyObject *attrValue)
+        {
+            Cls *pCls = ExposedClassBase::GetClassObject<Cls>(self);
+            return pCls->SetAttr(Object(attrName, false), Object(attrValue, false));
+        }
+
         /** Set all built-in methods for a class. */
         void
         _SetBuiltinMethods()
@@ -275,41 +315,98 @@ protected:
             if (&Cls::operator() != &ExposedClassBase::operator()) {
                 _typeObj.tp_call = _Call;
             }
-            //XXX more built-in methods to implement
+            if (&Cls::Print != &ExposedClassBase::Print) {
+                _typeObj.tp_print = _Print;
+            }
+            if (&Cls::GetAttr != &ExposedClassBase::GetAttr) {
+                _typeObj.tp_getattro = _GetAttr;
+            }
+            if (&Cls::SetAttr != &ExposedClassBase::SetAttr) {
+                _typeObj.tp_setattro = _SetAttr;
+            }
         }
 
         typedef Object (Cls::*T_NoArgsMethod)();
         typedef Object (Cls::*T_VarArgsMethod)(Object);
         typedef Object (Cls::*T_KwArgsMethod)(Object, Object);
+
+        std::vector <PyMethodDef> _methods;
+
+        template <T_NoArgsMethod method>
+        static PyObject *
+        _MethodWrapper(PyObject *self)
+        {
+            return (Cls::template GetClassObject<Cls>(self)->*method)().Steal();
+        }
+
+        template <T_VarArgsMethod method>
+        static PyObject *
+        _MethodWrapper(PyObject *self, PyObject *args)
+        {
+            return (Cls::template GetClassObject<Cls>(self)->*method)
+                (Object(args, false)).Steal();
+        }
+
+        template <T_KwArgsMethod method>
+        static PyObject *
+        _MethodWrapper(PyObject *self, PyObject *args, PyObject *kwArgs)
+        {
+            return (Cls::template GetClassObject<Cls>(self)->*method)
+                (Object(args, false), Object(kwArgs, false)).Steal();
+        }
+
+        /** Add new exposed method to the class. */
+        void
+        _AddMethod(const char *name, PyCFunction func, int flags, const char *doc)
+        {
+            _methods.resize(_methods.size() + 1);
+            PyMethodDef *def = &_methods.back() - 1;
+            def->ml_name = name;
+            def->ml_meth = func;
+            def->ml_flags = flags;
+            def->ml_doc = doc;
+            _typeObj.tp_methods = &_methods.front();
+        }
     public:
         ClassRegistrator(ModuleRegistrator &modReg, const char *name,
                          const char *doc = nullptr):
-            ClassRegistratorBase(modReg, sizeof(Cls), name, doc)
+            ClassRegistratorBase(modReg, sizeof(Cls), name, doc),
+            _methods(1)
         {
             _SetBuiltinMethods();
         }
 
+        /** Expose class method.
+         *
+         * @param method Pointer to class method.
+         * @param name Exposed method name.
+         * @param doc Optional documentation string.
+         * @return Reference to registrator class in order to allow chaining.
+         */
+        template <T_NoArgsMethod method>
         ClassRegistrator &
-        DefMethod(const char *name, T_NoArgsMethod method,
-                  const char *doc = nullptr)
+        DefMethod(const char *name, const char *doc = nullptr)
         {
-            //XXX
+            _AddMethod(name, reinterpret_cast<PyCFunction>(_MethodWrapper<method>),
+                       METH_NOARGS, doc);
             return *this;
         }
 
+        template <T_VarArgsMethod method>
         ClassRegistrator &
-        DefMethod(const char *name, T_VarArgsMethod method,
-                  const char *doc = nullptr)
+        DefMethod(const char *name, const char *doc = nullptr)
         {
-            //XXX
+            _AddMethod(name, reinterpret_cast<PyCFunction>(_MethodWrapper<method>),
+                       METH_VARARGS, doc);
             return *this;
         }
 
+        template <T_KwArgsMethod method>
         ClassRegistrator &
-        DefMethod(const char *name, T_KwArgsMethod method,
-                  const char *doc = nullptr)
+        DefMethod(const char *name, const char *doc = nullptr)
         {
-            //XXX
+            _AddMethod(name, reinterpret_cast<PyCFunction>(_MethodWrapper<method>),
+                       METH_KEYWORDS, doc);
             return *this;
         }
     };

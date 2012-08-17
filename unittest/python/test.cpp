@@ -143,13 +143,19 @@ public:
     }
 
     py::Object
-    TestMethod(py::Object args, py::Object kwArgs)
+    TestMethod(py::Object args)
     {
-        std::vector<py::Object> argsObj = ADK_PY_PARSE_ARGUMENTS(args, 2, 2);
+        std::vector<py::Object> argsObj = ADK_PY_PARSE_ARGUMENTS(args, 1, 1);
         if (PyErr_Occurred()) {
             return py::Object();
         }
-        return py::Object(args[0].Int() + base);
+        return py::Object(argsObj[0].Int() + base);
+    }
+
+    py::Object
+    TestMethodNoArgs()
+    {
+        return py::Object(base);
     }
 };
 
@@ -160,7 +166,8 @@ ADK_PYTHON_MODULE(test_module)
     Doc("Sample test module");
     DefFunc<TestFuncSum>("TestFuncSum", "Sample test function");
     DefClass<TestClass>("TestClass", "Sample test class").
-        DefMethod("TestMethod", &TestClass::TestMethod);
+        DefMethod<&TestClass::TestMethod>("TestMethod", "Sample test method").
+        DefMethod<&TestClass::TestMethodNoArgs>("TestMethodNoArgs");
 }
 
 UT_TEST("Extension by C++")
@@ -173,20 +180,28 @@ UT_TEST("Extension by C++")
         "result = test_module.TestFuncSum(200, 37)\n"
         "func_help = test_module.TestFuncSum.__doc__\n"
         "\n"
+        "class_help = test_module.TestClass.__doc__\n"
         "obj = test_module.TestClass(300)\n"
         "obj_hash = hash(obj)\n"
         "obj_str = str(obj)\n"
         "obj_repr = repr(obj)\n"
-        "obj_call = obj(10, 15)\n",
+        "obj_call = obj(10, 15)\n"
+        "meth_help = test_module.TestClass.TestMethod.__doc__\n"
+        "meth_call = obj.TestMethod(42)\n"
+        "meth2_call = obj.TestMethodNoArgs()\n",
         locals);
     UT(res.IsNone()) == UT_TRUE;
     CheckValueInt(locals["result"], 237);
     CheckValueString(locals["mod_help"], "Sample test module");
     CheckValueString(locals["func_help"], "Sample test function");
+    CheckValueString(locals["class_help"], "Sample test class");
     CheckValueInt(locals["obj_hash"], 300);
     CheckValueString(locals["obj_str"], "TestClass::Str 300");
     CheckValueString(locals["obj_repr"], "TestClass::Repr 300");
     CheckValueInt(locals["obj_call"], 325);
+    CheckValueString(locals["meth_help"], "Sample test method");
+    CheckValueInt(locals["meth_call"], 342);
+    CheckValueInt(locals["meth2_call"], 300);
 
     res = locals["obj"](py::Object(30), py::Object(40));
     CheckValueInt(res, 370);
