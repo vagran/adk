@@ -45,6 +45,10 @@ Optional variables in the makefile:
   * '''GLADE_FILES''' -- additional "*.glade" XML files to embed into the executable binary.
   * '''PY_FILES''' -- additional "*.py" script files to embed into the executable binary.
 
+Optional flag variables -- they can have values "yes" or "no" to enable or disable corresponding feature:
+  * '''ADK_USE_GUI''' -- use GUI components (based on Gtk+ library). "yes" by default for desktop targets.
+  * '''ADK_USE_PYTHON''' -- embedded Python support. "no" by default.
+
 //:!: Everywhere a list of values is acceptable in makefile variables, it can be specified as blank separated values.//
 
 After that run '''make''' specifying just created makefile. Current directory (and optionally directories specified by '''SRC_DIRS''' variable) will be searched for source files (matching name patterns for supported source file types) and all found files are compiled. The result will be available in '''build''' directory and subdirectory named by target platform and build type.

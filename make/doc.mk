@@ -13,20 +13,22 @@ endif
 
 ADK_DOC_DEPLOY_DIR += $(ADK_DOC_DIR)
 
+ADK_DOC_RSYNC_FLAGS = -rvzl --delete
+
 .PHONY: update
 
 update:
 	if [ -d $(call ADK_SERV_DIR,$(ADK_DOC_DIR),pages) ]; then \
-		$(RSYNC) -arvz --delete $(call ADK_SERV_DIR,$(ADK_DOC_DIR),pages)/ pages; \
+		$(RSYNC) $(ADK_DOC_RSYNC_FLAGS) $(call ADK_SERV_DIR,$(ADK_DOC_DIR),pages)/ pages; \
 	else \
 		echo "Warning: no pages directory"; \
 	fi
 	if [ -d $(call ADK_SERV_DIR,$(ADK_DOC_DIR),media) ]; then \
-		$(RSYNC) -arvz --delete $(call ADK_SERV_DIR,$(ADK_DOC_DIR),media)/ media; \
+		$(RSYNC) $(ADK_DOC_RSYNC_FLAGS) $(call ADK_SERV_DIR,$(ADK_DOC_DIR),media)/ media; \
 	else \
 		echo "Warning: no media directory"; \
 	fi
 
 deploy:
-	$(foreach dir, $(ADK_DOC_DEPLOY_DIR), $(RSYNC) -arvz --delete pages/ $(call ADK_SERV_DIR,$(dir),pages) &&) true
-	$(foreach dir, $(ADK_DOC_DEPLOY_DIR), $(RSYNC) -arvz --delete media/ $(call ADK_SERV_DIR,$(dir),media) &&) true
+	$(foreach dir, $(ADK_DOC_DEPLOY_DIR), $(RSYNC) $(ADK_DOC_RSYNC_FLAGS) pages/ $(call ADK_SERV_DIR,$(dir),pages) &&) true
+	$(foreach dir, $(ADK_DOC_DEPLOY_DIR), $(RSYNC) $(ADK_DOC_RSYNC_FLAGS) media/ $(call ADK_SERV_DIR,$(dir),media) &&) true
