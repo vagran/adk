@@ -113,15 +113,21 @@ public:
  * finalization.
  */
 class Interpreter {
+private:
+    static std::atomic<int> _refCount;
 public:
     Interpreter()
     {
-        Py_InitializeEx(0);
+        if (_refCount.fetch_add(1) == 0) {
+            Py_InitializeEx(0);
+        }
     }
 
     ~Interpreter()
     {
-        Py_Finalize();
+        if (_refCount.fetch_sub(1) == 1) {
+            Py_Finalize();
+        }
     }
 };
 

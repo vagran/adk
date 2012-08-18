@@ -15,6 +15,8 @@
 using namespace adk;
 using namespace py;
 
+std::atomic<int> py::Interpreter::_refCount;
+
 std::string
 py::Exception::Describe(PyObject *excType, PyObject *excValue, PyObject *traceback)
 {
