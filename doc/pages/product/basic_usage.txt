@@ -39,6 +39,9 @@ Optional variables in the makefile:
   * '''DEBUG_OPT_FLAGS''' -- optimization flags for debug build. They overwrite default flags if specified.
   * '''RELEASE_OPT_FLAGS''' -- optimization flags for release build. They overwrite default flags if specified.
   * '''LIB_DIRS''' -- additional directories to search for libraries.
+  * '''PCHS''' -- full paths to headers for which pre-compiled headers should be generated.
+  * '''ADK_INSTALL_DIR''' -- directory to install compiled binary to.
+  * '''ADK_INSTALL_MODE''' -- octal number for file mode for installed binary.
   * '''GLADE_FILES''' -- additional "*.glade" XML files to embed into the executable binary.
   * '''PY_FILES''' -- additional "*.py" script files to embed into the executable binary.
 
@@ -54,7 +57,9 @@ Currently the following source file types are supported:
 The following make targets available:
   * '''all''' -- build specified application. Default target.
   * '''clean''' -- remove all files created during the build. If '''build''' directory has several subdirectories then only one corresponding to specified platform and build type is removed. If it is the only subdirectory then '''build''' directory is also removed.
-  * '''adk_build_dir''' -- create output directories. Can be used as dependency for custom user targets which produce some output. Should not be used as dependency for generated files themselves because they will be rebuilt even if nothing is changed (because directory modification timestamp is updated each time some file is added or removed into the directory).
+  * '''clean_all''' -- remove all files created during the build for all targets.
+  * '''install''' -- install build output files to ''$(ADK_PREFIX)''.
+  * '''$(ADK_BUILD_DIR)''' -- create output directories. Can be used as dependency for custom user targets which produce some output. Should not be used as dependency for generated files themselves because they will be rebuilt even if nothing is changed (because directory modification timestamp is updated each time some file is added or removed into the directory).
 
 The following variables are available in the ADK makefile scope. They can be used when user is writing some extensions for make process in an application makefile.
   * '''ADK_OBJ_DIR''' -- output directory where all produced files should be stored.
@@ -78,6 +83,7 @@ Documentation standard for ADK is [[http://www.dokuwiki.org/dokuwiki|Dokuwiki]] 
 
 The following make targets are supported:
   * '''all''' -- copies documentation files from the server directory to the source files directory.
+  * '''update''' -- update documentation files from deployment directory.
   * '''deploy''' -- copies documentation files from source files directory to the server directory and all specified additional deployment directories if any.
 
 FIXME doxygen
