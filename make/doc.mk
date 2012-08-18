@@ -13,7 +13,9 @@ endif
 
 ADK_DOC_DEPLOY_DIR += $(ADK_DOC_DIR)
 
-all:
+.PHONY: update
+
+update:
 	if [ -d $(call ADK_SERV_DIR,$(ADK_DOC_DIR),pages) ]; then \
 		$(RSYNC) -arvz --delete $(call ADK_SERV_DIR,$(ADK_DOC_DIR),pages)/ pages; \
 	else \
