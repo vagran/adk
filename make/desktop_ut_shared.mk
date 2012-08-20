@@ -35,7 +35,7 @@ $(ADK_OBJ_DIR)/%.glade.h: %.glade $(ADK_BUILD_DIR)
 
 # Object file from Glade XML
 $(ADK_OBJ_DIR)/%.glade.o: %.glade $(ADK_BUILD_DIR)
-	$(OBJCOPY) -I binary -O $(OBJ_FORMAT) -B $(OBJ_ARCH) $< $@
+	$(call EMBED_BINARY, $<, $@)
 
 # GLADE_FILES
 endif
@@ -76,7 +76,7 @@ $(ADK_OBJ_DIR)/%.py.h: %.py $(ADK_BUILD_DIR)
 
 # Object file from Python file
 $(ADK_OBJ_DIR)/%.py.o: %.py $(ADK_BUILD_DIR)
-	$(OBJCOPY) -I binary -O $(OBJ_FORMAT) -B $(OBJ_ARCH) $< $@
+	$(call EMBED_BINARY, $<, $@)
 
 # PY_FILES
 endif

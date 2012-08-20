@@ -721,6 +721,10 @@ public:
 
 class ObjectModule: public Object {
 public:
+    ObjectModule(PyObject *obj = nullptr, bool isNew = true): Object(obj, isNew)
+    {
+    }
+
     /** The constructor imports the module with the specified name. */
     ObjectModule(const char *name):
         Object(PyImport_ImportModule(name))

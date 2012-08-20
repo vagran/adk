@@ -124,6 +124,17 @@ space +=
 # Join elements in list specified in argument 2 using separator from argument 1.
 JOIN = $(subst $(space),$1,$(strip $2))
 
+# Produce arbitrary binary file object file creating command. Parameters:
+# $1 - path to source binary file
+# $2 - path to target object file
+define EMBED_BINARY
+if [ -z $$(dir $1) ]; then \
+	$(OBJCOPY) -I binary -O $(OBJ_FORMAT) -B $(OBJ_ARCH) $1 $2; \
+else \
+	(cd $(dir $1) && $(OBJCOPY) -I binary -O $(OBJ_FORMAT) -B $(OBJ_ARCH) $(notdir $1) $2); \
+fi;
+endef
+
 ################################################################################
 # Output directories
 
