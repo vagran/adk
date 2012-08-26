@@ -13,7 +13,7 @@ endif
 
 ADK_DOC_DEPLOY_DIR += $(ADK_DOC_DIR)
 
-ADK_DOC_RSYNC_FLAGS = -rvzl --delete
+ADK_DOC_RSYNC_FLAGS = -rvzlh --delete --inplace
 
 .PHONY: update
 

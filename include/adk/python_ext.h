@@ -18,13 +18,27 @@ namespace adk {
 
 namespace py {
 
-/** Base class for all user classes exposed from C++ to Python. */
+/** Base class for all user classes exposed from C++ to Python. Template is
+ * used to make static members different for derived classes.
+ */
+template <class TDerived>
 class ExposedClassBase {
 private:
     struct {
         PyObject_HEAD
     } obj;
+
 public:
+    /** Associated type object. */
+    static PyTypeObject *pTypeObject;
+
+    ExposedClassBase()
+    {
+        ASSERT(pTypeObject);
+        obj.ob_base.ob_refcnt = 1;
+        obj.ob_base.ob_type = pTypeObject;
+    }
+
     virtual
     ~ExposedClassBase()
     {
@@ -38,15 +52,13 @@ public:
     }
 
     /** Get pointer to this class object by its underlying Python object pointer. */
-    template <class Cls = ExposedClassBase>
-    static Cls *
+    static TDerived *
     GetClassObject(PyObject *pObj)
     {
         /* offsetof will produce compilation error */
         size_t offset =
-            reinterpret_cast<uintptr_t>(&reinterpret_cast<Cls *>(static_cast<uintptr_t>(1))->obj) - 1;
-        return static_cast<Cls *>(reinterpret_cast<ExposedClassBase *>
-            (reinterpret_cast<u8 *>(pObj) - offset));
+            reinterpret_cast<uintptr_t>(&reinterpret_cast<ExposedClassBase<TDerived> *>(static_cast<uintptr_t>(1))->obj) - 1;
+        return reinterpret_cast<TDerived *>(reinterpret_cast<u8 *>(pObj) - offset);
     }
 
     /* Built-in method default implementation. Actually they are not exposed
@@ -108,6 +120,9 @@ public:
     }
 };
 
+template <class TDerived>
+PyTypeObject *adk::py::ExposedClassBase<TDerived>::pTypeObject;
+
 namespace internal {
 
 /** Helper class for modules registration. */
@@ -154,8 +169,8 @@ protected:
         static PyObject *
         _Alloc(PyTypeObject *type, Py_ssize_t nItems)
         {
-            ExposedClassBase *clsObj =
-                static_cast<ExposedClassBase *>
+            ExposedClassBase<ExposedClassBase<void>> *clsObj =
+                static_cast<ExposedClassBase<ExposedClassBase<void>> *>
                 (PyMem_Malloc(adk::RoundUp2(type->tp_basicsize + type->tp_itemsize * nItems, sizeof(void *))));
             if (UNLIKELY(!clsObj)) {
                 return PyErr_NoMemory();
@@ -172,8 +187,8 @@ protected:
         static void
         _Free(void *ptr)
         {
-            ExposedClassBase *clsObj =
-                ExposedClassBase::GetClassObject(static_cast<PyObject *>(ptr));
+            void *clsObj =
+                ExposedClassBase<ExposedClassBase<void>>::GetClassObject(static_cast<PyObject *>(ptr));
             PyMem_Free(clsObj);
         }
     public:
@@ -214,7 +229,7 @@ protected:
         static int
         _Init(PyObject *self, PyObject *args, PyObject *kwArgs)
         {
-            Cls *pCls = ExposedClassBase::GetClassObject<Cls>(self);
+            Cls *pCls = ExposedClassBase<Cls>::GetClassObject(self);
             return pCls->Init(Object(args, false), Object(kwArgs, false));
         }
 
@@ -222,7 +237,7 @@ protected:
         static PyObject *
         _Repr(PyObject *self)
         {
-            Cls *pCls = ExposedClassBase::GetClassObject<Cls>(self);
+            Cls *pCls = ExposedClassBase<Cls>::GetClassObject(self);
             return pCls->Repr().Steal();
         }
 
@@ -230,7 +245,7 @@ protected:
         static PyObject *
         _Str(PyObject *self)
         {
-            Cls *pCls = ExposedClassBase::GetClassObject<Cls>(self);
+            Cls *pCls = ExposedClassBase<Cls>::GetClassObject(self);
             return pCls->Str().Steal();
         }
 
@@ -238,7 +253,7 @@ protected:
         static Py_hash_t
         _Hash(PyObject *self)
         {
-            Cls *pCls = ExposedClassBase::GetClassObject<Cls>(self);
+            Cls *pCls = ExposedClassBase<Cls>::GetClassObject(self);
             return pCls->Hash();
         }
 
@@ -246,7 +261,7 @@ protected:
         static PyObject *
         _Call(PyObject *self, PyObject *args, PyObject *kwArgs)
         {
-            Cls *pCls = ExposedClassBase::GetClassObject<Cls>(self);
+            Cls *pCls = ExposedClassBase<Cls>::GetClassObject(self);
             return ((*pCls)(Object(args, false), Object(kwArgs, false))).Steal();
         }
 
@@ -258,7 +273,7 @@ protected:
                 return nullptr;
             }
             /* Call constructor. */
-            Cls *pCls = ExposedClassBase::GetClassObject<Cls>(self);
+            Cls *pCls = ExposedClassBase<Cls>::GetClassObject(self);
             new (pCls) Cls(Object(args, false), Object(kwArgs, false));
             return self;
         }
@@ -267,7 +282,7 @@ protected:
         _Dealloc(PyObject *ptr)
         {
             /* Call destructor and free memory. */
-            Cls *pCls = ExposedClassBase::GetClassObject<Cls>(ptr);
+            Cls *pCls = ExposedClassBase<Cls>::GetClassObject(ptr);
             pCls->~Cls();
             Py_TYPE(ptr)->tp_free(ptr);
         }
@@ -275,21 +290,21 @@ protected:
         static int
         _Print(PyObject *self, FILE *fp, int flags)
         {
-            Cls *pCls = ExposedClassBase::GetClassObject<Cls>(self);
+            Cls *pCls = ExposedClassBase<Cls>::GetClassObject(self);
             return pCls->Print(fp, flags);
         }
 
         static PyObject *
         _GetAttr(PyObject *self, PyObject *attrName)
         {
-            Cls *pCls = ExposedClassBase::GetClassObject<Cls>(self);
+            Cls *pCls = ExposedClassBase<Cls>::GetClassObject(self);
             return pCls->GetAttr(Object(attrName, false)).Steal();
         }
 
         static int
         _SetAttr(PyObject *self, PyObject *attrName, PyObject *attrValue)
         {
-            Cls *pCls = ExposedClassBase::GetClassObject<Cls>(self);
+            Cls *pCls = ExposedClassBase<Cls>::GetClassObject(self);
             return pCls->SetAttr(Object(attrName, false), Object(attrValue, false));
         }
 
@@ -300,28 +315,28 @@ protected:
             _typeObj.tp_new = _New;
             _typeObj.tp_dealloc = _Dealloc;
             /* Check which built-in methods are defined. */
-            if (&Cls::Init != &ExposedClassBase::Init) {
+            if (&Cls::Init != &ExposedClassBase<Cls>::Init) {
                 _typeObj.tp_init = _Init;
             }
-            if (&Cls::Repr != &ExposedClassBase::Repr) {
+            if (&Cls::Repr != &ExposedClassBase<Cls>::Repr) {
                 _typeObj.tp_repr = _Repr;
             }
-            if (&Cls::Str != &ExposedClassBase::Str) {
+            if (&Cls::Str != &ExposedClassBase<Cls>::Str) {
                 _typeObj.tp_str = _Str;
             }
-            if (&Cls::Hash != &ExposedClassBase::Hash) {
+            if (&Cls::Hash != &ExposedClassBase<Cls>::Hash) {
                 _typeObj.tp_hash = _Hash;
             }
-            if (&Cls::operator() != &ExposedClassBase::operator()) {
+            if (&Cls::operator() != &ExposedClassBase<Cls>::operator()) {
                 _typeObj.tp_call = _Call;
             }
-            if (&Cls::Print != &ExposedClassBase::Print) {
+            if (&Cls::Print != &ExposedClassBase<Cls>::Print) {
                 _typeObj.tp_print = _Print;
             }
-            if (&Cls::GetAttr != &ExposedClassBase::GetAttr) {
+            if (&Cls::GetAttr != &ExposedClassBase<Cls>::GetAttr) {
                 _typeObj.tp_getattro = _GetAttr;
             }
-            if (&Cls::SetAttr != &ExposedClassBase::SetAttr) {
+            if (&Cls::SetAttr != &ExposedClassBase<Cls>::SetAttr) {
                 _typeObj.tp_setattro = _SetAttr;
             }
         }
@@ -336,14 +351,14 @@ protected:
         static PyObject *
         _MethodWrapper(PyObject *self)
         {
-            return (Cls::template GetClassObject<Cls>(self)->*method)().Steal();
+            return (Cls::GetClassObject(self)->*method)().Steal();
         }
 
         template <T_VarArgsMethod method>
         static PyObject *
         _MethodWrapper(PyObject *self, PyObject *args)
         {
-            return (Cls::template GetClassObject<Cls>(self)->*method)
+            return (Cls::GetClassObject(self)->*method)
                 (Object(args, false)).Steal();
         }
 
@@ -351,7 +366,7 @@ protected:
         static PyObject *
         _MethodWrapper(PyObject *self, PyObject *args, PyObject *kwArgs)
         {
-            return (Cls::template GetClassObject<Cls>(self)->*method)
+            return (Cls::GetClassObject(self)->*method)
                 (Object(args, false), Object(kwArgs, false)).Steal();
         }
 
@@ -373,6 +388,7 @@ protected:
             ClassRegistratorBase(modReg, sizeof(Cls), name, doc),
             _methods(1)
         {
+            Cls::pTypeObject = &_typeObj;
             _SetBuiltinMethods();
         }
 

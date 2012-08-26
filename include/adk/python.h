@@ -460,6 +460,29 @@ public:
         return res;
     }
 
+    /** Get name of the object type. */
+    const char *
+    TypeName() const
+    {
+        Object type = Type();
+        PyTypeObject *pType = reinterpret_cast<PyTypeObject *>(type.Get());
+        return pType->tp_name;
+    }
+
+    /** Check if object type name is the specified one. */
+    bool
+    CheckType(std::string typeName) const
+    {
+        return typeName == TypeName();
+    }
+
+    /** Check if object type is the specified one. */
+    bool
+    CheckType(PyTypeObject *typeObj) const
+    {
+        return reinterpret_cast<PyTypeObject *>(Type().Get()) == typeObj;
+    }
+
     /** Check if the object is "None" */
     bool
     IsNone() const

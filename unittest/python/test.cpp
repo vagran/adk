@@ -63,7 +63,7 @@ TestFuncSum(py::Object self, py::Object args)
 }
 
 /* Exposed class test. */
-class TestClass: public py::ExposedClassBase {
+class TestClass: public py::ExposedClassBase<TestClass> {
 private:
 public:
     long base;
