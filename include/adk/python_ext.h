@@ -32,16 +32,30 @@ public:
     /** Associated type object. */
     static PyTypeObject *pTypeObject;
 
-    ExposedClassBase()
-    {
-        ASSERT(pTypeObject);
-        obj.ob_base.ob_refcnt = 1;
-        obj.ob_base.ob_type = pTypeObject;
-    }
-
     virtual
     ~ExposedClassBase()
     {
+    }
+
+    void *
+    operator new(size_t size)
+    {
+        ASSERT(pTypeObject);
+        TDerived *ptr = static_cast<TDerived *>(PyMem_Malloc(size));
+        if (UNLIKELY(!ptr)) {
+            ADK_EXCEPTION(adk::Exception,
+                          "Failed to allocated memory for exposed Python object: " <<
+                          size << " bytes");
+        }
+        ptr->obj.ob_base.ob_refcnt = 1;
+        ptr->obj.ob_base.ob_type = pTypeObject;
+        return ptr;
+    }
+
+    void *
+    operator new(size_t size, void *ptr)
+    {
+        return ptr;
     }
 
     /** Get underlying Python object pointer. */
@@ -122,6 +136,48 @@ public:
 
 template <class TDerived>
 PyTypeObject *adk::py::ExposedClassBase<TDerived>::pTypeObject;
+
+/** Wrapper object pointer class similar to @ref Object class but used for
+ * exposed objects.
+ */
+template <class T>
+class ExpObject: public Object {
+private:
+    ExpObject(PyObject *obj): Object(obj)
+    {}
+
+public:
+    /** Create new instance of the exposed class. */
+    template <typename... Args>
+    static ExpObject
+    Create(Args&&... args)
+    {
+        T *obj = new T(std::forward<Args>(args)...);
+        return ExpObject(obj->GetObject());
+    }
+
+    static ExpObject
+    Create()
+    {
+        T *obj = new T;
+        return ExpObject(obj->GetObject());
+    }
+
+    ExpObject(Object obj): Object(obj.Get(), false)
+    {
+        if (UNLIKELY(!obj.CheckType(T::pTypeObject))) {
+            ADK_EXCEPTION(adk::Exception,
+                          "Expected '" << T::pTypeObject->tp_name <<
+                          "' object, got '" << obj.TypeName() << "'");
+        }
+    }
+
+    T *
+    operator ->() const
+    {
+        return T::GetClassObject(_obj);
+    }
+};
 
 namespace internal {
 
