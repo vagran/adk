@@ -483,6 +483,13 @@ public:
         return reinterpret_cast<PyTypeObject *>(Type().Get()) == typeObj;
     }
 
+    template <class ExpClass>
+    bool
+    CheckType()
+    {
+        return CheckType(ExpClass::pTypeObject);
+    }
+
     /** Check if the object is "None" */
     bool
     IsNone() const
