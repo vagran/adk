@@ -165,7 +165,7 @@ public:
 
     ExpObject(Object obj): Object(obj.Get(), false)
     {
-        if (UNLIKELY(!obj.CheckType(T::pTypeObject))) {
+        if (UNLIKELY(!obj.CheckType<T>())) {
             ADK_EXCEPTION(adk::Exception,
                           "Expected '" << T::pTypeObject->tp_name <<
                           "' object, got '" << obj.TypeName() << "'");
