@@ -32,9 +32,9 @@ packages = [
     'gtk+',
     'libsigc++',
     'glibmm',
+    'cairomm',
     'atkmm',
     'pangomm',
-    'cairomm',
     'gtkmm',
     'valgrind'
 ]
