@@ -83,7 +83,7 @@ ifdef ADK_APP_NAME
         OBJ_FORMAT = elf64-x86-64
         # Binary architecture of object files
         OBJ_ARCH = i386
-        LIB_DIRS += /lib
+        LIB_DIRS += /lib /usr/lib64
         ADK_USE_GUI ?= yes
     else ifeq ($(ADK_PLATFORM),win32)
         ADK_PLATFORM_ID = $(ADK_PLATFORM_ID_WIN32)

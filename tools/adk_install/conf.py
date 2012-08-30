@@ -1,4 +1,11 @@
-# This file describes packages building and installation configuration
+# This file describes packages building and installation configuration. Some
+# packages should be available in the environment. Known dependencies:
+# m4
+# gawk
+# gcc-multilib
+
+# May be required on 64-bits host:
+# sudo ln -s /usr/lib/x86_64-linux-gnu /usr/lib64
 
 # Order corresponds to installation order. Each entry is string in format
 # <package name>[:<target name>]
@@ -15,6 +22,7 @@ packages = [
     'avr-libc',
     'binutils:native',
     'gcc:native',
+    # Tools for cross-compilation targeted to Windows
 #    'binutils:windows'
 #    'w32api',
 #    'mingwrt',
