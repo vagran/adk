@@ -133,7 +133,11 @@ def BuildPackage(pkg, target = 'default'):
     RunCmd(srcDir + '/configure ' + ' '.join(confArgs))
     
     # Build the package
-    RunCmd('make')
+    if opts.jobs is None:
+        cmd = 'make'
+    else:
+        cmd = 'make -j {}'.format(opts.jobs)
+    RunCmd(cmd)
     
     # Install the package
     RunCmd('make install')
@@ -166,6 +170,10 @@ def Main():
     optParser.add_option('-e', '--exclude-pkg', dest = 'excludePkgs', action = 'append',
                          metavar = 'PACKAGE',
                          help = 'Separate packages to exclude (multiple can be specified)')
+    
+    optParser.add_option('-j', '--jobs', dest = 'jobs',
+                         metavar = 'NUM_JOBS', type = 'int',
+                         help = 'Number of jobs to run compilation by (number of CPUs should be the best choice)')
     
     (opts, args) = optParser.parse_args()
     
