@@ -40,3 +40,5 @@ All environment components are built and installed automatically by '''adk_insta
   * gtkmm
 
 They are also automatically built and installed by '''adk_install.py''' script.
+
+XXX libncurses5-dev texinfo

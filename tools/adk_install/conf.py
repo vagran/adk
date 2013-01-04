@@ -44,7 +44,11 @@ packages = [
     'atkmm',
     'pangomm',
     'gtkmm',
-    'valgrind'
+    'valgrind',
+    'gdb:native',
+    'gdb:avr',
+    'avrdude',
+    'avarice'
 ]
 
 # Build/install options for each package. Each entry key is package name, payload
@@ -113,4 +117,14 @@ opts = {
             'no-obj-dir': True
         }
     },
+    'gdb': {
+        'native': {
+            'config-params': '--program-prefix=adk- ' +
+                '--with-gmp=${PREFIX} --with-mpfr=${PREFIX} --with-mpc=${PREFIX}'
+        },
+        'avr': {
+            'config-params': '--program-prefix=avr- --target=avr ' +
+                '--with-gmp=${PREFIX} --with-mpfr=${PREFIX} --with-mpc=${PREFIX}'
+        }
+    }
 }
