@@ -85,7 +85,7 @@ export SIGCPP_VERSION = 2.0
 export ATK_VERSION = 1.0
 export ATKMM_VERSION = 1.6
 
-export PYTHON_VERSION = 3.2m
+export PYTHON_VERSION = 3.3m
 
 export ADK_PLATFORM_ID_AVR = 0
 export ADK_PLATFORM_ID_LINUX32 = 1

@@ -8,7 +8,7 @@
 # Directory with unit test framework source files
 UT_DIR = $(ADK_ROOT)/src/unit_test
 # Tool for automatic stubs generation
-STUBS_GEN = $(UT_DIR)/ut_stubs_gen.pl
+STUBS_GEN = $(UT_DIR)/ut_stubs_gen.py
 
 BINARY_NAME = $(ADK_OBJ_DIR)/$(ADK_TEST_NAME)
 
@@ -20,6 +20,11 @@ DEFS += UNITTEST
 CFLAGS += -ggdb3 -DDEBUG -O0
 
 LIBS += c
+
+# Directories with detached libraries debug symbols
+ifeq ($(ADK_PLATFORM),linux64)
+    DBG_LIB_DIRS += /usr/lib/debug/lib/x86_64-linux-gnu
+endif
 
 include $(ADK_ROOT)/make/desktop_ut_shared.mk
 
@@ -66,8 +71,9 @@ export AUTO_CHUNK
 $(AUTO_SRC): $(ADK_OBJS) $(ADK_TEST_OBJS)
 	$(STUBS_GEN) --nm $(NM) --cppfilt $(CPPFILT) \
 	--result $@ \
-	$(foreach src, $(ADK_TEST_OBJS), --test_src $(src)) \
+	$(foreach src, $(ADK_TEST_OBJS), --test-src $(src)) \
 	$(foreach src, $(ADK_OBJS), --src $(src)) \
+	$(foreach dir, $(DBG_LIB_DIRS), --lib-dir $(dir)) \
 	$(foreach dir, $(LIB_DIRS), --lib-dir $(dir)) \
 	$(foreach lib, $(LIBS), --lib $(lib))
 	echo "$$AUTO_CHUNK" >> $@
