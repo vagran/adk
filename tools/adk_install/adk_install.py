@@ -1,4 +1,12 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# /ADK/tools/adk_install/adk_install.py
+#
+# This file is a part of ADK library.
+# Copyright (c) 2012-2013, Artyom Lebedev <artyom.lebedev@gmail.com>
+# All rights reserved.
+# See COPYING file for copyright details.
+#
 # ADK environment building and installation utility
 
 from optparse import OptionParser
@@ -170,7 +178,6 @@ def Main():
     optParser.add_option('-e', '--exclude-pkg', dest = 'excludePkgs', action = 'append',
                          metavar = 'PACKAGE',
                          help = 'Separate packages to exclude (multiple can be specified)')
-    
     optParser.add_option('-j', '--jobs', dest = 'jobs',
                          metavar = 'NUM_JOBS', type = 'int',
                          help = 'Number of jobs to run compilation by (number of CPUs should be the best choice)')
