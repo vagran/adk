@@ -48,12 +48,12 @@ $(BINARY): $(ADK_OBJS)
 	$(CC) $(LDFLAGS) $(LIB_FLAGS) -o $@ $^ $(LIBS)
 
 $(ADK_OBJ_DIR)/%.o: %.c
-	$(CC) -c $(COMMON_COMP_FLAGS) $(CFLAGS) -o $@ $<
-	$(CC) -c $(COMMON_COMP_FLAGS) $(CFLAGS) -MM -MT '$@' -o $(@:.o=.d) $<
+	$(CC) -c $(COMMON_COMP_FLAGS) $(COMMON_C_FLAGS) $(CFLAGS) -o $@ $<
+	$(CC) -c $(COMMON_COMP_FLAGS) $(COMMON_C_FLAGS) $(CFLAGS) -MM -MT '$@' -o $(@:.o=.d) $<
 
 define ADK_GCH_RECIPE
-	$(CC) -c $(COMMON_COMP_FLAGS) $(CFLAGS) -x c-header -o $@ $<
-	$(CC) -c $(COMMON_COMP_FLAGS) $(CFLAGS) -x c-header -MM -MT '$@' -o $(@:.gch=.d) $<
+	$(CC) -c $(COMMON_COMP_FLAGS) $(COMMON_C_FLAGS) $(CFLAGS) -x c-header -o $@ $<
+	$(CC) -c $(COMMON_COMP_FLAGS) $(COMMON_C_FLAGS) $(CFLAGS) -x c-header -MM -MT '$@' -o $(@:.gch=.d) $<
 endef
 
 #XXX cpp S
@@ -101,3 +101,47 @@ $(AVR_EEPROM_SREC): $(BINARY)
 	
 $(AVR_EEPROM_BIN): $(BINARY)
 	$(OBJCOPY) -j .eeprom --change-section-lma .eeprom=0 -O binary $< $@
+	
+################################################################################
+# Fuse bits programming
+
+# Fuse byte for device with single fuse byte
+ifdef ADK_MCU_FUSE
+FUSE_CMD = $(AVRDUDE) -p $(ADK_MCU) -c $(ADK_PROGRAMMER) -P $(ADK_PROGRAMMER_BUS) -U fuse:w:$(ADK_MCU_FUSE):m
+DEFS += ADK_MCU_FUSE=$(ADK_MCU_FUSE)
+endif
+
+# Fuse low byte
+ifdef ADK_MCU_LFUSE
+LFUSE_CMD = $(AVRDUDE) -p $(ADK_MCU) -c $(ADK_PROGRAMMER) -P $(ADK_PROGRAMMER_BUS) -U lfuse:w:$(ADK_MCU_LFUSE):m
+DEFS += ADK_MCU_LFUSE=$(ADK_MCU_LFUSE)
+endif
+
+# Fuse high byte
+ifdef ADK_MCU_HFUSE
+HFUSE_CMD = $(AVRDUDE) -p $(ADK_MCU) -c $(ADK_PROGRAMMER) -P $(ADK_PROGRAMMER_BUS) -U hfuse:w:$(ADK_MCU_HFUSE):m
+DEFS += ADK_MCU_HFUSE=$(ADK_MCU_HFUSE)
+endif
+
+# Fuse extended byte
+ifdef ADK_MCU_EFUSE
+EFUSE_CMD = $(AVRDUDE) -p $(ADK_MCU) -c $(ADK_PROGRAMMER) -P $(ADK_PROGRAMMER_BUS) -U efuse:w:$(ADK_MCU_EFUSE):m
+DEFS += ADK_MCU_EFUSE=$(ADK_MCU_EFUSE)
+endif
+
+# Program fuse bytes
+fuse:
+	$(FUSE_CMD)
+	$(LFUSE_CMD)
+	$(HFUSE_CMD)
+	$(EFUSE_CMD)
+
+# Upload firmware (program falsh and data EEPROM)
+upload: $(AVR_ROM_HEX) $(AVR_EEPROM_HEX)
+	$(AVRDUDE) -p $(ADK_MCU) -c $(ADK_PROGRAMMER) -P $(ADK_PROGRAMMER_BUS) -U flash:w:$(AVR_ROM_HEX):i
+	$(AVRDUDE) -p $(ADK_MCU) -c $(ADK_PROGRAMMER) -P $(ADK_PROGRAMMER_BUS) -U eeprom:w:$(AVR_EEPROM_HEX):i
+
+# Verify firmware (program falsh and data EEPROM)
+verify: $(AVR_ROM_HEX) $(AVR_EEPROM_HEX)
+	$(AVRDUDE) -p $(ADK_MCU) -c $(ADK_PROGRAMMER) -P $(ADK_PROGRAMMER_BUS) -U flash:v:$(AVR_ROM_HEX):i
+	$(AVRDUDE) -p $(ADK_MCU) -c $(ADK_PROGRAMMER) -P $(ADK_PROGRAMMER_BUS) -U eeprom:v:$(AVR_EEPROM_HEX):i

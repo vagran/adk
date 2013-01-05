@@ -71,16 +71,22 @@ public:
      * @return Exception object.
      */
     static Exception
-    Fetch(const char *file = nullptr, int line = 0)
+    Fetch(
+#ifdef DEBUG
+          const char *file = nullptr, int line = 0
+#endif /* DEBUG */
+          )
     {
         if (PyErr_Occurred()) {
             PyObject *excType, *excValue, *traceback;
             PyErr_Fetch(&excType, &excValue, &traceback);
             PyErr_Clear();
             PyErr_NormalizeException(&excType, &excValue, &traceback);
+#           ifdef DEBUG
             if (file) {
                 return Exception(file, line, excType, excValue, traceback);
             }
+#           endif /* DEBUG */
             return Exception(excType, excValue, traceback);
         }
         return Exception(nullptr, nullptr, nullptr);

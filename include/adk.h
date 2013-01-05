@@ -28,6 +28,8 @@
 #include <avr/io.h>
 #include <avr/sleep.h>
 
+#include <adk/types.h>
+
 #else /* ADK_PLATFORM_AVR */
 /* Desktop applications. */
 

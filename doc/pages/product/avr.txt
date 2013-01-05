@@ -1,0 +1,18 @@
+====== Development for AVR MCUs ======
+
+See [[adk:product:basic_usage|"Basic usage"]] page for AVR target specific variables and AVR-specific make targets.
+
+===== AVRISP programmer =====
+
+AVRISP programmer use FTDI USB<=>Serial bridge chip:
+<code>
+Bus 003 Device 002: ID 0403:6001 Future Technology Devices International, Ltd FT232 USB-Serial (UART) IC
+</code>
+Corresponding driver is present by default in Ubuntu 12.10 so that after the programmer attach, the serial device is created as ''/dev/ttyUSB0''. However the device is in group "dialout" so the required user should added to this group.
+
+==== Uploading firmware ====
+
+Use "avrdude" with the following options:
+<code bash>
+avrdude -P /dev/ttyUSB0 -c avrisp2 -p <your_part_name,e.g. attiny2313>
+</code>

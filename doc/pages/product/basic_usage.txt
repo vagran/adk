@@ -6,52 +6,58 @@ In order to built an application which uses ADK the following conditions must be
   * ''ADK_PREFIX'' environment variable is pointing to a directory where ADK tools are installed.
 
 Create makefile using the following rules:
-  * Define '''ADK_PLATFORM''' variable as a target platform type. Default value is '''linux64'''. The following values allowed:
-    * '''avr''' for AVR micro-controller device.
-    * '''linux32''' for 32-bits Linux OS.
-    * '''linux64''' for 64-bites Linux OS.
-    * '''win32''' for 32-bits Windows OS.
-    * '''win64''' for 64-bites Windows OS.
-  * Define '''ADK_BUILD_TYPE''' variable as target build type. Default value is '''release'''. The following values allowed:
-    * '''debug''' for debug build with additional code for debugging and troubleshooting, turned off optimization and maximal debug information in the resulted binaries.
-    * '''release''' for release build with minimized size and maximized performance of the resulted binaries.
-  * Define '''ADK_APP_TYPE''' variable as target application type. Default value is '''app'''. The following values allowed:
-    * '''app''' for building executable application.
-    * '''lib''' for building dynamic library (it is either shared object for Linux or DLL for Windows).
-    * '''unit_test''' for building unit test.
-    * '''doc''' for documentation directory.
-  * Define '''ADK_APP_NAME''' variable as a name of resulted binary file without suffix and/or prefix.
+  * Define ''ADK_PLATFORM'' variable as a target platform type. Default value is ''linux64''. The following values allowed:
+    * ''avr'' for AVR micro-controller device.
+    * ''linux32'' for 32-bits Linux OS.
+    * ''linux64'' for 64-bites Linux OS.
+    * ''win32'' for 32-bits Windows OS.
+    * ''win64'' for 64-bites Windows OS.
+  * Define ''ADK_BUILD_TYPE'' variable as target build type. Default value is ''release''. The following values allowed:
+    * ''debug'' for debug build with additional code for debugging and troubleshooting, turned off optimization and maximal debug information in the resulted binaries.
+    * ''release'' for release build with minimized size and maximized performance of the resulted binaries.
+  * Define ''ADK_APP_TYPE'' variable as target application type. Default value is ''app''. The following values allowed:
+    * ''app'' for building executable application.
+    * ''lib'' for building dynamic library (it is either shared object for Linux or DLL for Windows).
+    * ''unit_test'' for building unit test.
+    * ''doc'' for documentation directory.
+  * Define ''ADK_APP_NAME'' variable as a name of resulted binary file without suffix and/or prefix.
   * Include "$(ADK_ROOT)/make/make.mk" file.
 
 Platform specific variables:
-  - For '''avr''' platform:
-    * '''ADK_MCU''' -- target MCU device model. Should be one of the values allowed by '-mmcu' parameter of GCC for AVR target.
+  - For ''avr'' platform:
+    * ''ADK_MCU'' -- target MCU device model. Should be one of the values allowed by '-mmcu' parameter of GCC for AVR target.
+    * ''ADK_PROGRAMMER'' -- used programmer type. Should be one of the values accepted for '-c' option of 'avrdude' (e.g. 'avrisp2').
+    * ''ADK_PROGRAMMER_BUS'' -- used programmer connection. The value is provided to '-P' option of 'avrdude' (e.g. '/dev/ttyUSB0').
+    * ''ADK_MCU_FUSE'' -- fuse byte in hexadecimal representation (e.g. 0xff) for devices with one fuse byte.
+    * ''ADK_MCU_LFUSE'' -- fuse low byte in hexadecimal representation (e.g. 0xff).
+    * ''ADK_MCU_HFUSE'' -- fuse high byte in hexadecimal representation (e.g. 0xff).
+    * ''ADK_MCU_EFUSE'' -- fuse extended byte in hexadecimal representation (e.g. 0xff).
 
 Optional variables in the makefile:
-  * '''SUBDIRS''' -- list of subdirectories to execute make. It may be specified without specifying application parameters. In such case nothing will be built in this directory but the specified subdirectories will be traversed.
-  * '''SRC_DIRS''' -- additional directories to search for source files. By default only current directory is inspected.
-  * '''SRCS''' -- additional particular source files to include in the build.
-  * '''INCLUDE_DIRS''' -- additional directories to specify as include paths.
-  * '''CFLAGS''' -- additional compilation flags for C files.
-  * '''CPPFLAGS''' -- additional compilation flags for C++ files.
-  * '''LDFLAGS''' -- additional compilation flags for linker.
-  * '''DEFS''' -- additional defines for '-D' compiler option.
-  * '''DEBUG_OPT_FLAGS''' -- optimization flags for debug build. They overwrite default flags if specified.
-  * '''RELEASE_OPT_FLAGS''' -- optimization flags for release build. They overwrite default flags if specified.
-  * '''LIB_DIRS''' -- additional directories to search for libraries.
-  * '''PCHS''' -- full paths to headers for which pre-compiled headers should be generated.
-  * '''ADK_INSTALL_DIR''' -- directory to install compiled binary to.
-  * '''ADK_INSTALL_MODE''' -- octal number for file mode for installed binary.
-  * '''GLADE_FILES''' -- additional "*.glade" XML files to embed into the executable binary.
-  * '''PY_FILES''' -- additional "*.py" script files to embed into the executable binary.
+  * ''SUBDIRS'' -- list of subdirectories to execute make. It may be specified without specifying application parameters. In such case nothing will be built in this directory but the specified subdirectories will be traversed.
+  * ''SRC_DIRS'' -- additional directories to search for source files. By default only current directory is inspected.
+  * ''SRCS'' -- additional particular source files to include in the build.
+  * ''INCLUDE_DIRS'' -- additional directories to specify as include paths.
+  * ''CFLAGS'' -- additional compilation flags for C files.
+  * ''CPPFLAGS'' -- additional compilation flags for C++ files.
+  * ''LDFLAGS'' -- additional compilation flags for linker.
+  * ''DEFS'' -- additional defines for '-D' compiler option.
+  * ''DEBUG_OPT_FLAGS'' -- optimization flags for debug build. They overwrite default flags if specified.
+  * ''RELEASE_OPT_FLAGS'' -- optimization flags for release build. They overwrite default flags if specified.
+  * ''LIB_DIRS'' -- additional directories to search for libraries.
+  * ''PCHS'' -- full paths to headers for which pre-compiled headers should be generated.
+  * ''ADK_INSTALL_DIR'' -- directory to install compiled binary to.
+  * ''ADK_INSTALL_MODE'' -- octal number for file mode for installed binary.
+  * ''GLADE_FILES'' -- additional "*.glade" XML files to embed into the executable binary.
+  * ''PY_FILES'' -- additional "*.py" script files to embed into the executable binary.
 
 Optional flag variables -- they can have values "yes" or "no" to enable or disable corresponding feature:
-  * '''ADK_USE_GUI''' -- use GUI components (based on Gtk+ library). "yes" by default for desktop targets.
-  * '''ADK_USE_PYTHON''' -- embedded Python support. "no" by default.
+  * ''ADK_USE_GUI'' -- use GUI components (based on Gtk+ library). "yes" by default for desktop targets.
+  * ''ADK_USE_PYTHON'' -- embedded Python support. "no" by default.
 
 //:!: Everywhere a list of values is acceptable in makefile variables, it can be specified as blank separated values.//
 
-After that run '''make''' specifying just created makefile. Current directory (and optionally directories specified by '''SRC_DIRS''' variable) will be searched for source files (matching name patterns for supported source file types) and all found files are compiled. The result will be available in '''build''' directory and subdirectory named by target platform and build type.
+After that run ''make'' specifying just created makefile. Current directory (and optionally directories specified by ''SRC_DIRS'' variable) will be searched for source files (matching name patterns for supported source file types) and all found files are compiled. The result will be available in ''build'' directory and subdirectory named by target platform and build type.
 
 Currently the following source file types are supported:
   * C source files -- pattern '*.c'.
@@ -59,35 +65,38 @@ Currently the following source file types are supported:
   * Assembler source files -- paterm '*.S'. They are firstly filtered through C preprocessor.
 
 The following make targets available:
-  * '''all''' -- build specified application. Default target.
-  * '''clean''' -- remove all files created during the build. If '''build''' directory has several subdirectories then only one corresponding to specified platform and build type is removed. If it is the only subdirectory then '''build''' directory is also removed.
-  * '''clean_all''' -- remove all files created during the build for all targets.
-  * '''install''' -- install build output files to ''$(ADK_PREFIX)''.
-  * '''$(ADK_BUILD_DIR)''' -- create output directories. Can be used as dependency for custom user targets which produce some output. Should not be used as dependency for generated files themselves because they will be rebuilt even if nothing is changed (because directory modification timestamp is updated each time some file is added or removed into the directory).
+  * ''all'' -- build specified application. Default target.
+  * ''clean'' -- remove all files created during the build. If ''build'' directory has several subdirectories then only one corresponding to specified platform and build type is removed. If it is the only subdirectory then ''build'' directory is also removed.
+  * ''clean_all'' -- remove all files created during the build for all targets.
+  * ''install'' -- install build output files to ''$(ADK_PREFIX)''.
+  * ''$(ADK_BUILD_DIR)'' -- create output directories. Can be used as dependency for custom user targets which produce some output. Should not be used as dependency for generated files themselves because they will be rebuilt even if nothing is changed (because directory modification timestamp is updated each time some file is added or removed into the directory).
+  * ''upload'' -- upload firmware (flash and EEPROM) to AVR MCU.
+  * ''fuse'' -- program fuse bytes on AVR MCU.
+  * ''verify'' -- verify firmware (flash and EEPROM) in AVR MCU.
 
 The following variables are available in the ADK makefile scope. They can be used when user is writing some extensions for make process in an application makefile.
-  * '''ADK_OBJ_DIR''' -- output directory where all produced files should be stored.
+  * ''ADK_OBJ_DIR'' -- output directory where all produced files should be stored.
 
 FIXME installation packages.
 
 ====== Unit tests ======
 
-For unit test target the '''ADK_APP_TYPE''' variable should have '''unit_test''' value. These additional variables should also be defined:
-  * '''ADK_TEST_NAME''' -- short symbolic name of the test. The value should not have spaces.
-  * '''ADK_TEST_DESC''' -- free-form description of the test. The value may have spaces.
-  * '''ADK_TEST_SRCS''' -- list of source files of component being tested.
+For unit test target the ''ADK_APP_TYPE'' variable should have ''unit_test'' value. These additional variables should also be defined:
+  * ''ADK_TEST_NAME'' -- short symbolic name of the test. The value should not have spaces.
+  * ''ADK_TEST_DESC'' -- free-form description of the test. The value may have spaces.
+  * ''ADK_TEST_SRCS'' -- list of source files of component being tested.
 
 ====== Documentation ======
 
 Documentation standard for ADK is [[http://www.dokuwiki.org/dokuwiki|Dokuwiki]] documentation format. It is well suitable for storing it in source code repository. Specify 
-'''ADK_APP_TYPE''' as '''doc''' in the makefile. Additional variables are:
-  * '''ADK_DOC_DIR''' -- directory where the Dokuwiki server runs.
-  * '''ADK_DOC_NAMESPACE''' -- namespace prefix if the documentation server is shared between several projects.
-  * '''ADK_DOC_DEPLOY_DIR''' -- additional paths for documentation deployment.
+''ADK_APP_TYPE'' as ''doc'' in the makefile. Additional variables are:
+  * ''ADK_DOC_DIR'' -- directory where the Dokuwiki server runs.
+  * ''ADK_DOC_NAMESPACE'' -- namespace prefix if the documentation server is shared between several projects.
+  * ''ADK_DOC_DEPLOY_DIR'' -- additional paths for documentation deployment.
 
 The following make targets are supported:
-  * '''all''' -- copies documentation files from the server directory to the source files directory.
-  * '''update''' -- update documentation files from deployment directory.
-  * '''deploy''' -- copies documentation files from source files directory to the server directory and all specified additional deployment directories if any.
+  * ''all'' -- copies documentation files from the server directory to the source files directory.
+  * ''update'' -- update documentation files from deployment directory.
+  * ''deploy'' -- copies documentation files from source files directory to the server directory and all specified additional deployment directories if any.
 
 FIXME doxygen

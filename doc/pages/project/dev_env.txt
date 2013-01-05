@@ -2,7 +2,7 @@
 
 Linux host is used as development and build environment for ADK-based applications.
 
-'''adk_env_setup''' script is used to set up ADK environment (see "tools" directory in ADK sources). '''adk_sudo''' script used to raise privileges in ADK environment. 
+''adk_env_setup'' script is used to set up ADK environment (see "tools" directory in ADK sources). ''adk_sudo'' script used to raise privileges in ADK environment. 
 
 ===== Build tools =====
 
@@ -19,7 +19,7 @@ The following packages are used:
   * **mingwrt** from https://sourceforge.net/projects/mingw/files/MinGW/Base/mingw-rt/
   * **avr-libc** from http://download.savannah.gnu.org/releases/avr-libc/
 
-All environment components are built and installed automatically by '''adk_install.py''' script. Directory with the archived packages should be provided to the script.
+All environment components are built and installed automatically by ''adk_install.py'' script. Directory with the archived packages should be provided to the script.
 
 ===== Required libraries =====
 
@@ -39,6 +39,25 @@ All environment components are built and installed automatically by '''adk_insta
   * cairomm
   * gtkmm
 
-They are also automatically built and installed by '''adk_install.py''' script.
+They are also automatically built and installed by ''adk_install.py'' script.
 
-XXX libncurses5-dev texinfo
+===== System packages =====
+
+Should be installed on build machine via package manager:
+  * gcc
+  * g++
+  * texinfo
+  * m4
+  * gawk
+  * gcc-multilib
+  * linux-libc-dev
+  * libc6-dev-i386
+  * libc6-dbg
+  * libfontconfig1-dev
+  * libncurses5-dev
+
+===== Other prerequesties =====
+
+<code bash>
+sudo ln -s /usr/lib/x86_64-linux-gnu /usr/lib64
+</code>

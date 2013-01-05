@@ -67,8 +67,13 @@ export AVR_NM = $(TOOLS_BIN)/$(AVR_TOOLS_PREFIX)nm
 export AVR_OBJCOPY = $(TOOLS_BIN)/$(AVR_TOOLS_PREFIX)objcopy
 export AVR_CPPFILT = $(TOOLS_BIN)/$(AVR_TOOLS_PREFIX)c++filt
 
+export AVRDUDE = $(TOOLS_BIN)/avrdude
+
 export WARN_COMP_FLAGS = -Wall -Werror
-export STD_COMP_FLAGS = -std=c++11
+# C++ standard
+export CPP_STD = c++11
+# C standard
+export C_STD = c99
 
 # Used libraries versions
 export GLIB_VERSION = 2.0

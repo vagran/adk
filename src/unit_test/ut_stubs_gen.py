@@ -186,12 +186,12 @@ def Main():
                          type = 'str')
     optParser.add_option('--src', dest = 'srcs',
                          metavar = 'SRC_FILE',
-                         help = 'Source files being tested',
+                         help = 'Source files of the test',
                          type = 'str',
                          action = 'append')
     optParser.add_option('--test-src', dest = 'test_srcs',
                          metavar = 'TEST_SRC_FILE',
-                         help = 'Source files of the test',
+                         help = 'Source files being tested',
                          type = 'str',
                          action = 'append')
     optParser.add_option('--lib-dir', dest = 'lib_dirs',
@@ -209,9 +209,13 @@ def Main():
     
     if opts.result is None:
         Error('Result file not specified')
-        
-    for file in opts.test_srcs:
-        ParseFile(file, True, False)
+    
+    if opts.srcs is None:
+        Error('Source files of the test not specified')
+    
+    if opts.test_srcs is not None:
+        for file in opts.test_srcs:
+            ParseFile(file, True, False)
     
     for file in opts.srcs:
         ParseFile(file, False, False)

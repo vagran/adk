@@ -73,6 +73,7 @@ public:
 #define __ADK_THROW_EXCEPTION(__exception, __msg, ...) \
     throw __exception(__FILE__, __LINE__, __msg, ## __VA_ARGS__)
 #else /* DEBUG */
+#define __ADK_THROW_EXCEPTION(__exception, __msg, ...) \
     throw __exception(__msg, ## __VA_ARGS__)
 #endif /* DEBUG */
 

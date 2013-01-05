@@ -8,7 +8,17 @@
 ADK_PLATFORM = avr
 ADK_APP_TYPE = app
 ADK_APP_NAME = avr_sample_1
+
+# MCU code name
 ADK_MCU = attiny2313
+
+# Programmer type
+ADK_PROGRAMMER = avrisp2
+# Programmer connection
+ADK_PROGRAMMER_BUS = /dev/ttyUSB0
+
+# 0b1111101 - 4MHz slow start
+ADK_MCU_LFUSE = 0xfd
 
 # Additional directory with source files
 SRC_DIRS = pwm

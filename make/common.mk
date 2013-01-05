@@ -208,7 +208,9 @@ DEFS += ADK_APP_NAME=$(ADK_APP_NAME) ADK_BUILD_TYPE=$(ADK_BUILD_TYPE) \
 
 COMMON_COMP_FLAGS += $(WARN_COMP_FLAGS) $(foreach def, $(DEFS), -D$(def)) $(IFLAGS)
 
-COMMON_CPP_FLAGS += $(STD_COMP_FLAGS)
+COMMON_CPP_FLAGS += -std=$(CPP_STD)
+
+COMMON_C_FLAGS += -std=$(C_STD)
 
 LIB_FLAGS += $(foreach lib, $(LIBS), -l$(lib))
 
