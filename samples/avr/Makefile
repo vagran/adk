@@ -17,8 +17,12 @@ ADK_PROGRAMMER = avrisp2
 # Programmer connection
 ADK_PROGRAMMER_BUS = /dev/ttyUSB0
 
-# 0b1111101 - 4MHz slow start
-ADK_MCU_LFUSE = 0xfd
+# L 0b11011111 H 0b11011111- 20MHz, BOD 2.7V
+ADK_MCU_LFUSE = 0xdf
+ADK_MCU_HFUSE = 0xdb
+
+# Make USB device
+ADK_AVR_USE_USB = yes
 
 # Additional directory with source files
 SRC_DIRS = pwm

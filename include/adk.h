@@ -24,11 +24,7 @@
 
 #ifdef ADK_PLATFORM_AVR
 
-#include <avr/interrupt.h>
-#include <avr/io.h>
-#include <avr/sleep.h>
-
-#include <adk/types.h>
+#include <adk/avr.h>
 
 #else /* ADK_PLATFORM_AVR */
 /* Desktop applications. */

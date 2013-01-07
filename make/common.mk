@@ -55,6 +55,7 @@ ifdef ADK_APP_NAME
         LD = $(AVR_LD)
         OBJCOPY = $(AVR_OBJCOPY)
         OBJDUMP = $(AVR_OBJDUMP)
+        SIZE = $(AVR_SIZE)
     else ifeq ($(ADK_PLATFORM),linux32)
         ADK_PLATFORM_ID = $(ADK_PLATFORM_ID_LINUX32)
         DEFS += ADK_PLATFORM_LINUX32
@@ -64,6 +65,7 @@ ifdef ADK_APP_NAME
         NM = $(LINUX32_NM)
         OBJCOPY = $(LINUX32_OBJCOPY)
         CPPFILT = $(LINUX32_CPPFILT)
+        SIZE = $(LINUX32_SIZE)
         # Format of object files
         OBJ_FORMAT = elf32-i386
         # Binary architecture of object files
@@ -79,6 +81,7 @@ ifdef ADK_APP_NAME
         NM = $(LINUX64_NM)
         OBJCOPY = $(LINUX64_OBJCOPY)
         CPPFILT = $(LINUX64_CPPFILT)
+        SIZE = $(LINUX64_SIZE)
         # Format of object files
         OBJ_FORMAT = elf64-x86-64
         # Binary architecture of object files

@@ -33,6 +33,7 @@ export NAT_LD = $(TOOLS_BIN)/$(NAT_TOOLS_PREFIX)ld
 export NAT_NM = $(TOOLS_BIN)/$(NAT_TOOLS_PREFIX)nm
 export NAT_OBJCOPY = $(TOOLS_BIN)/$(NAT_TOOLS_PREFIX)objcopy
 export NAT_CPPFILT = $(TOOLS_BIN)/$(NAT_TOOLS_PREFIX)c++filt
+export NAT_SIZE = $(TOOLS_BIN)/$(NAT_TOOLS_PREFIX)size
 
 ifeq ($(ADK_NAT_PLATFORM),linux32)
 export LINUX32_CC = $(NAT_CC)
@@ -40,22 +41,26 @@ export LINUX32_LD = $(NAT_LD)
 export LINUX32_NM = $(NAT_NM)
 export LINUX32_OBJCOPY = $(NAT_OBJCOPY)
 export LINUX32_CPPFILT = $(NAT_CPPFILT)
+export LINUX32_SIZE = $(NAT_SIZE)
 export LINUX64_CC = XXX
 export LINUX64_LD = XXX
 export LINUX64_NM = XXX
 export LINUX64_OBJCOPY = XXX
 export LINUX64_CPPFILT = XXX
+export LINUX64_SIZE = XXX
 else ifeq ($(ADK_NAT_PLATFORM),linux64)
 export LINUX32_CC = XXX
 export LINUX32_LD = XXX
 export LINUX32_NM = XXX
 export LINUX32_OBJCOPY = XXX
 export LINUX32_CPPFILT = XXX
+export LINUX32_SIZE = XXX
 export LINUX64_CC = $(NAT_CC)
 export LINUX64_LD = $(NAT_LD)
 export LINUX64_NM = $(NAT_NM)
 export LINUX64_OBJCOPY = $(NAT_OBJCOPY)
 export LINUX64_CPPFILT = $(NAT_CPPFILT)
+export LINUX64_SIZE = $(NAT_SIZE)
 else
 $(error Build platform not supported: $(ADK_NAT_PLATFORM))
 endif
@@ -66,6 +71,7 @@ export AVR_LD = $(TOOLS_BIN)/$(AVR_TOOLS_PREFIX)ld
 export AVR_NM = $(TOOLS_BIN)/$(AVR_TOOLS_PREFIX)nm
 export AVR_OBJCOPY = $(TOOLS_BIN)/$(AVR_TOOLS_PREFIX)objcopy
 export AVR_CPPFILT = $(TOOLS_BIN)/$(AVR_TOOLS_PREFIX)c++filt
+export AVR_SIZE = $(TOOLS_BIN)/$(AVR_TOOLS_PREFIX)size
 
 export AVRDUDE = $(TOOLS_BIN)/avrdude
 

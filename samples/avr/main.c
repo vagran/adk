@@ -12,16 +12,29 @@
 
 #include <adk.h>
 
+EMPTY_INTERRUPT(BADISR_vect)
+
 int
 main(void)
 {
-    DDRD = (1 << PD6);
+    PORTB = 0;
+    DDRB = 0xf;
 
-    sei();
+    AdkUsbSetup();
+
+    //XXX
+    DDRD = 0;
+    //disable pull-ups
+    PORTD = 0;
+    //interrupt by falling edge
+//    AVR_BIT_SET8(MCUCR, ISC11);
+//    AVR_BIT_CLR8(MCUCR, ISC10);
+//    AVR_BIT_SET8(GIMSK, INT1);
+
+    //sei();
 
     while (1) {
-        /* Toggle PORTD.6 bit. */
-        PIND = (1 << PD6);
+        PORTB = (PORTB + 1) & (u8)0xf;
         for (volatile u32 i = 0; i < 100000; i++);
     }
 

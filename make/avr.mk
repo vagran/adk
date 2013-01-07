@@ -20,7 +20,7 @@ LIB_DIRS += $(ADK_PREFIX)/avr/lib
 ifeq ($(ADK_BUILD_TYPE),release)
     ifndef RELEASE_OPT_FLAGS
         # Optimize for size by default
-        COMMON_COMP_FLAGS += -Os
+        COMMON_COMP_FLAGS += -Os -mcall-prologues
     else
         COMMON_COMP_FLAGS += $(RELEASE_OPT_FLAGS)
     endif
@@ -31,11 +31,20 @@ else ifeq ($(ADK_BUILD_TYPE),debug)
     else
         COMMON_COMP_FLAGS += $(DEBUG_OPT_FLAGS)
     endif
+    COMMON_COMP_FLAGS += -ggdb3
 else
     $(error Build type not supported: $(ADK_BUILD_TYPE))
 endif
 
 COMMON_COMP_FLAGS += -mmcu=$(ADK_MCU)
+
+ifeq ($(ADK_AVR_USE_USB),yes)
+
+DEFS += ADK_AVR_USE_USB
+SRC_DIRS += $(ADK_ROOT)/src/libavr/usb
+
+# ADK_AVR_USE_USB
+endif
 
 ################################################################################
 # Executable binary
@@ -46,6 +55,11 @@ all: $(BINARY)
 
 $(BINARY): $(ADK_OBJS)
 	$(CC) $(LDFLAGS) $(LIB_FLAGS) -o $@ $^ $(LIBS)
+	@echo
+	@echo =========================== Image size ===========================
+	@$(SIZE) $@
+	@echo ==================================================================
+	@echo
 
 $(ADK_OBJ_DIR)/%.o: %.c
 	$(CC) -c $(COMMON_COMP_FLAGS) $(COMMON_C_FLAGS) $(CFLAGS) -o $@ $<
