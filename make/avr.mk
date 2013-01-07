@@ -37,6 +37,7 @@ else
 endif
 
 COMMON_COMP_FLAGS += -mmcu=$(ADK_MCU)
+LDFLAGS += -mmcu=$(ADK_MCU)
 
 ifeq ($(ADK_AVR_USE_USB),yes)
 

@@ -12,7 +12,10 @@
 
 #include <adk.h>
 
-EMPTY_INTERRUPT(BADISR_vect)
+ISR(INT0_vect)
+{
+
+}
 
 int
 main(void)
