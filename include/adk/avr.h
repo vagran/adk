@@ -20,11 +20,11 @@
 #include <adk/types.h>
 
 /** Set bit in destination 8-bits operand. */
-#define AVR_BIT_SET8(__dst, __bit) (__dst) = (__dst) | (u8)(1 << (__bit))
+#define AVR_BIT_SET8(__dst, __bit)          (__dst) = (__dst) | (u8)_BV(__bit)
 /** Clear bit in destination 8-bits operand. */
-#define AVR_BIT_CLR8(__dst, __bit) (__dst) = (__dst) & (u8)~(1 << (__bit))
+#define AVR_BIT_CLR8(__dst, __bit)          (__dst) = (__dst) & (u8)~_BV(__bit)
 /** Toggle bit in destination 8-bits operand. */
-#define AVR_BIT_TOGGLE8(__dst, __bit) (__dst) = (__dst) ^ (u8)~(1 << (__bit))
+#define AVR_BIT_TOGGLE8(__dst, __bit)       (__dst) = (__dst) ^ (u8)~_BV(__bit)
 /** Set bit to the specified value (zero/non-zero). */
 #define AVR_BIT_COPY8(__dst, __bit, __value) { \
     if (__value) { \
@@ -34,7 +34,7 @@
     } \
 }
 /** Get specified bit in source 8-bits operand. */
-#define AVR_BIT_GET8(__src, __bit) ((__src) & (u8)(1 << (__bit)))
+#define AVR_BIT_GET8(__src, __bit)          ((__src) & (u8)_BV(__bit))
 
 #ifdef ADK_AVR_USE_USB
 #include <adk/avr/usb.h>

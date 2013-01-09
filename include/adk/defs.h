@@ -36,4 +36,21 @@
 #define noexcept
 #endif /* __CDT_PARSER__ */
 
+#ifndef __CONCAT2
+#define __CONCAT2(x, y)             x##y
+#endif
+/** Macro for concatenating identifiers. */
+#ifdef __CONCAT
+#undef __CONCAT
+#endif
+#define __CONCAT(x, y)              __CONCAT2(x, y)
+
+#ifndef __STR2
+#define __STR2(x)                   # x
+#endif
+/** Macro for stringifying identifiers. */
+#ifndef __STR
+#define __STR(x)                    __STR2(x)
+#endif
+
 #endif /* ADK_DEFS_H_ */

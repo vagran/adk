@@ -14,29 +14,27 @@
 
 ISR(INT0_vect)
 {
-    PORTB = (PORTB + 1) & 0xf;
+    AVR_USB_DBG_SET(1);//XXX
+    AdkUsbInterrupt();
+    //XXX disable further interrupts until the first packet processing is fully debugged
+    AVR_BIT_CLR8(GIMSK, INT0);
 }
 
 int
 main(void)
 {
-    PORTB = 0;
-    DDRB = 0xf;
-
     AdkUsbSetup();
 
-    //XXX
-    DDRD = 0;
-    //disable pull-ups
-    PORTD = 0;
-    //interrupt by falling edge
+    /* Interrupt by falling edge - SYNC pattern start on D- line. */
     AVR_BIT_SET8(MCUCR, ISC01);
     AVR_BIT_CLR8(MCUCR, ISC00);
     AVR_BIT_SET8(GIMSK, INT0);
 
     sei();
 
-    while (1);
+    while (1) {
+        AdkUsbPoll();
+    }
 
     return 0;
 }

@@ -31,8 +31,8 @@ SRCS = misc/misc.c
 # Additional C compilation flags
 CFLAGS = -Davr_sample_1
 # Additional include directories
-INCLUDE_DIRS = misc
+INCLUDE_DIRS = . misc
 # Additional defines
-DEFS = AVR_SAMPLE_1 REV=0x0100
+DEFS = AVR_USB_DEBUG
 
 include $(ADK_ROOT)/make/make.mk

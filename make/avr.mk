@@ -65,10 +65,14 @@ $(BINARY): $(ADK_OBJS)
 $(ADK_OBJ_DIR)/%.o: %.c
 	$(CC) -c $(COMMON_COMP_FLAGS) $(COMMON_C_FLAGS) $(CFLAGS) -o $@ $<
 	$(CC) -c $(COMMON_COMP_FLAGS) $(COMMON_C_FLAGS) $(CFLAGS) -MM -MT '$@' -o $(@:.o=.d) $<
+	
+$(ADK_OBJ_DIR)/%.o: %.S
+	$(CC) -c $(COMMON_COMP_FLAGS) -o $@ $<
+	$(CC) -c $(COMMON_COMP_FLAGS) -MM -MT '$@' -o $(@:.o=.d) $<
 
 define ADK_GCH_RECIPE
-	$(CC) -c $(COMMON_COMP_FLAGS) $(COMMON_C_FLAGS) $(CFLAGS) -x c-header -o $@ $<
-	$(CC) -c $(COMMON_COMP_FLAGS) $(COMMON_C_FLAGS) $(CFLAGS) -x c-header -MM -MT '$@' -o $(@:.gch=.d) $<
+	$(CC) -c $(COMMON_COMP_FLAGS) -x c-header -o $@ $<
+	$(CC) -c $(COMMON_COMP_FLAGS) -x c-header -MM -MT '$@' -o $(@:.gch=.d) $<
 endef
 
 #XXX cpp S
