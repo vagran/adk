@@ -44,8 +44,7 @@ packages = [
     'valgrind',
     'gdb:native',
     'gdb:avr',
-    'avrdude',
-    'avarice'
+    'avrdude'
 ]
 
 # Build/install options for each package. Each entry key is package name, payload

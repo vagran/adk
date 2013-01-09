@@ -14,7 +14,7 @@
 
 ISR(INT0_vect)
 {
-
+    PORTB = (PORTB + 1) & 0xf;
 }
 
 int
@@ -30,16 +30,13 @@ main(void)
     //disable pull-ups
     PORTD = 0;
     //interrupt by falling edge
-//    AVR_BIT_SET8(MCUCR, ISC11);
-//    AVR_BIT_CLR8(MCUCR, ISC10);
-//    AVR_BIT_SET8(GIMSK, INT1);
+    AVR_BIT_SET8(MCUCR, ISC01);
+    AVR_BIT_CLR8(MCUCR, ISC00);
+    AVR_BIT_SET8(GIMSK, INT0);
 
-    //sei();
+    sei();
 
-    while (1) {
-        PORTB = (PORTB + 1) & (u8)0xf;
-        for (volatile u32 i = 0; i < 100000; i++);
-    }
+    while (1);
 
     return 0;
 }
