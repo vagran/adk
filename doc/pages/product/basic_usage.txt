@@ -32,6 +32,7 @@ Platform specific variables:
     * ''ADK_MCU_LFUSE'' -- fuse low byte in hexadecimal representation (e.g. 0xff).
     * ''ADK_MCU_HFUSE'' -- fuse high byte in hexadecimal representation (e.g. 0xff).
     * ''ADK_MCU_EFUSE'' -- fuse extended byte in hexadecimal representation (e.g. 0xff).
+    * ''ADK_MCU_FREQ'' -- MCU clock frequency in Hz.
 
 Optional variables in the makefile:
   * ''SUBDIRS'' -- list of subdirectories to execute make. It may be specified without specifying application parameters. In such case nothing will be built in this directory but the specified subdirectories will be traversed.
@@ -54,6 +55,7 @@ Optional variables in the makefile:
 Optional flag variables -- they can have values "yes" or "no" to enable or disable corresponding feature:
   * ''ADK_USE_GUI'' -- use GUI components (based on Gtk+ library). "yes" by default for desktop targets.
   * ''ADK_USE_PYTHON'' -- embedded Python support. "no" by default.
+  * ''ADK_AVR_USE_USB'' -- use USB interface software implementation. "no" by default.
 
 //:!: Everywhere a list of values is acceptable in makefile variables, it can be specified as blank separated values.//
 

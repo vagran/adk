@@ -29,21 +29,53 @@
 #define DATA_LINES_SE1      (_BV(AVR_USB_DPLUS_PIN) | _BV(AVR_USB_DMINUS_PIN))
 
 /** Wait for one cycle. */
-#define WAIT_1              nop
+.macro WAIT_1
+    nop
+.endm
 /** Wait for two cycles. */
-#define WAIT_2              nop; nop
+.macro WAIT_2
+    nop
+    nop
+.endm
 /** Wait for three cycles. */
-#define WAIT_3              nop; nop; nop
+.macro WAIT_3
+    nop
+    nop
+    nop
+.endm
 /** Wait for four cycles. */
-#define WAIT_4              push r0; pop r0
+.macro WAIT_4
+    push r0
+    pop r0
+.endm
 /** Wait for five cycles. */
-#define WAIT_5              push r0; pop r0; nop
+.macro WAIT_5
+    push r0
+    pop r0
+    nop
+.endm
 /** Wait for six cycles. */
-#define WAIT_6              push r0; pop r0; nop; nop
+.macro WAIT_6
+    push r0
+    pop r0
+    nop
+    nop
+.endm
 /** Wait for seven cycles. */
-#define WAIT_7              push r0; pop r0; nop; nop; nop
+.macro WAIT_7
+    push r0
+    pop r0
+    nop
+    nop
+    nop
+.endm
 /** Wait for eight cycles. */
-#define WAIT_8              push r0; pop r0; push r0; pop r0
+.macro WAIT_8
+    push r0
+    pop r0
+    push r0
+    pop r0
+.endm
 
 /* Receiver loop variables. */
 /* Number of consecutive ones left before unstaff bit. */
@@ -69,6 +101,13 @@
 /* Temporal register 1. */
 #define TMP1                r25
 
+.macro m_AVR_USB_DBG_SET token
+    in TMP0, AVR_USB_DBGPORT_PORT
+    andi TMP0, 0xf0
+    ori TMP0, \token & 0x0f
+    out AVR_USB_DBGPORT_PORT, TMP0
+.endm
+
 /* All the physical communications over USB bus are handled in this function.
  * The code is intented to be used with 20MHz crystal. So the timing is 13.33
  * CPU cycles per bit.
@@ -82,14 +121,18 @@ AdkUsbInterrupt:
      */
     lds TMP0, adkUsbState
     andi TMP0, ADK_USB_STATE_MASK
-    breq powered_state_process
+    brne above_powered_state
+    rjmp powered_state_process
+above_powered_state:
 
     /* Next we should check if interrupt is caused by SE0 or differential signal.
      * SE0 indicates possible reset.
      */
     in TMP0, AVR_USB_DPORT_PIN
     andi TMP0, DATA_LINES_MASK
-    breq check_reset
+    brne no_se0
+    rjmp check_reset
+ no_se0:
 
     /* First thing which must be done is synchronizing with SYNC pattern. For
      * low-speed function it must be KJKJKJKK. It is not known when this
@@ -156,7 +199,7 @@ rx_loop:
     // [5] Bit one received.
     sec // [6]
     ror RX_BYTE // [7]
-    brcs handle_byte // [8]
+    brcs handle_byte_1 // [8]
     dec ONES_CNT // [9]
     breq handle_stuff_bit //[10]
     subi LEAP, LEAP_VALUE // [11]
@@ -165,17 +208,33 @@ rx_loop:
 
     /* Handle received bit zero. */
 handle_0: // [6]
-    //XXX
+    clc // [7]
+    ror RX_BYTE // [8]
+    brcs handle_byte_0 // [9]
+    ldi ONES_CNT, 6 // [10]
+    subi LEAP, LEAP_VALUE // [11]
+    brcc rx_loop // [13] if branch taken, else [12]
+    rjmp rx_loop // [14] (every leap bit)
 
-handle_byte:
+    /* Handle received byte (last bit one). */
+handle_byte_1: // [9]
     //XXX check for stuffing
     //XXX
 
+    /* Handle received byte (last bit zero). */
+handle_byte_0: // [10]
+    //XXX
+    AVR_USB_DBG_SET(3)
+    ret
+
 handle_stuff_bit:
     //XXX
+    AVR_USB_DBG_SET(5)
+    ret
 
 handle_EOP:
     //XXX
+    AVR_USB_DBG_SET(6)
     ret
 
     /* Device is in POWERED state. Skip anything but reset signal. */

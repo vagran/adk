@@ -16,6 +16,8 @@ ADK_MCU = attiny2313
 ADK_PROGRAMMER = avrisp2
 # Programmer connection
 ADK_PROGRAMMER_BUS = /dev/ttyUSB0
+# MCU clock frequency in Hz
+ADK_MCU_FREQ = 20000000
 
 # L 0b11011111 H 0b11011111- 20MHz, BOD 2.7V
 ADK_MCU_LFUSE = 0xdf

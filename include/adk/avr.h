@@ -13,12 +13,16 @@
 #ifndef AVR_H_
 #define AVR_H_
 
+/** MCU clock frequency in Hz, obtained from makefile. */
+#define F_CPU   ADK_MCU_FREQ
+
 #include <avr/io.h>
 
 #ifndef __ASSEMBLER__
 
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
+#include <util/delay.h>
 
 #include <adk/types.h>
 

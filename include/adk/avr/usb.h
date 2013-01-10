@@ -34,10 +34,7 @@
 
 #else /* __ASSEMBLER__ */
 
-#define AVR_USB_DBG_SET(__token) \
-    in r0, AVR_USB_DBGPORT_PORT; \
-    andi r0, 0xf0; \
-    ori r0, ((__token) & 0x0f))
+#define AVR_USB_DBG_SET(__token) m_AVR_USB_DBG_SET (__token)
 
 #endif /* __ASSEMBLER__ */
 

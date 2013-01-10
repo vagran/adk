@@ -41,7 +41,7 @@ LDFLAGS += -mmcu=$(ADK_MCU)
 
 ifeq ($(ADK_AVR_USE_USB),yes)
 
-DEFS += ADK_AVR_USE_USB
+DEFS += ADK_AVR_USE_USB ADK_MCU_FREQ=$(ADK_MCU_FREQ)
 SRC_DIRS += $(ADK_ROOT)/src/libavr/usb
 
 # ADK_AVR_USE_USB
