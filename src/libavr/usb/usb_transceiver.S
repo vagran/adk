@@ -65,7 +65,7 @@ AdkUsbInterrupt:
      */
     in r18, AVR_USB_DPORT_PIN
     andi r18, DATA_LINES_MASK
-    breq se0_process
+    breq check_reset
 
     /* First thing which must be done is synchronizing with SYNC pattern. For
      * low-speed function it must be KJKJKJKK. It is not known when this
@@ -119,7 +119,7 @@ sync_skip_first_bit:
 powered_state_process:
     in r18, AVR_USB_DPORT_PIN
     andi r18, DATA_LINES_MASK
-    breq se0_process
+    breq check_reset
     /* Not a reset signal, skip the packet. */
 
     /* Skip the remaining packet data, i.e. wait until EOP token (SE0 longer
@@ -129,8 +129,47 @@ skip_packet:
     in r18, AVR_USB_DPORT_PIN
     andi r18, DATA_LINES_MASK
     brne skip_packet // [3]
-    //XXX
+    /* SE0 detected. */
+    ldi r19, 2 // [4]
+skip_EOP:
+    in r18, AVR_USB_DPORT_PIN // [5]
+    andi r18, DATA_LINES_MASK // [6]
+    brne skip_packet // [7]
+    dec r19 // [8]
+    brne skip_EOP // [10]
+    /* SE0 longer than one bit. Now wait for J state but not longer than two
+     * bits (26 cycles). Longer signal may be a possible reset.
+     */
+    ldi r18, 4 // [6]
+wait_J:
+    dec r18 // [7]
+    breq check_reset // [8] Timeout exceeded, possible reset.
+    sbis AVR_USB_DPORT_PIN, AVR_USB_DMINUS_PIN // [9]
+    rjmp wait_J // [11]
+    /* J state detected, assume line is idle now. */
+    ret
 
+    /* Check if reset signal is asserted. SE0 should be active longer than 10 ms
+     * (200000 cycles).
+     */
+check_reset:
+    ldi r18, AVR_LO8(20000)
+    ldi r19, AVR_HI8(20000)
+check_reset_loop:
+    in r20, AVR_USB_DPORT_PIN // [1]
+    andi r20, DATA_LINES_MASK // [2]
+    brne reset_interrupted //[3]
+    WAIT_1 // [4]
+    subi r18, 1 // [5]
+    sbci r19, 0 // [6]
+    mov r0, r18 // [7]
+    or r0, r19 // [8]
+    brne check_reset_loop // [10]
 
-se0_process:
-    //XXX
+    /* Reset confirmed, invoke the handler. */
+    rcall _AdkUsbOnReset
+
+    /* SE0 is asserted less that required for reset. */
+reset_interrupted:
+    /* Nothing to do here. */
+    ret

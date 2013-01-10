@@ -18,7 +18,6 @@ ISR(INT0_vect)
     AdkUsbInterrupt();
     //XXX disable further interrupts until the first packet processing is fully debugged
     AVR_BIT_CLR8(GIMSK, INT0);
-    AVR_USB_DBG_SET(2);//XXX
 }
 
 int

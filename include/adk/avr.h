@@ -24,6 +24,11 @@
 
 #endif /* __ASSEMBLER__ */
 
+/** Get low-ordered byte of 16-bits integer. */
+#define AVR_LO8(__value)                    ((__value) & 0xff)
+/** Get high-ordered byte of 16-bits integer. */
+#define AVR_HI8(__value)                    ((__value) >> 8)
+
 /** Set bit in destination 8-bits operand. */
 #define AVR_BIT_SET8(__dst, __bit)          (__dst) = (__dst) | (u8)_BV(__bit)
 /** Clear bit in destination 8-bits operand. */

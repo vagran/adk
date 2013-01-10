@@ -36,3 +36,13 @@ AdkUsbPoll()
 {
     //XXX
 }
+
+/** This function is called from assembler interrupt handler when reset is
+ * detected on the line.
+ */
+void
+_AdkUsbOnReset()
+{
+    adkUsbState = (adkUsbState & ~ADK_USB_STATE_MASK) | ADK_USB_STATE_DEFAULT;
+    AVR_USB_DBG_SET(2);//XXX
+}
