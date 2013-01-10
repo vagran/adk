@@ -24,17 +24,42 @@
 
 #ifdef AVR_USB_DEBUG
 
+#ifndef __ASSEMBLER__
+
 /** Set debug token. The token is 4-bits integer which is output to the
  * configured debug port.
  */
 #define AVR_USB_DBG_SET(__token) \
     (AVR_USB_DBGPORT_PORT = (AVR_USB_DBGPORT_PORT & 0xf0) | ((__token) & 0x0f))
 
+#else /* __ASSEMBLER__ */
+
+#define AVR_USB_DBG_SET(__token) \
+    in r0, AVR_USB_DBGPORT_PORT; \
+    andi r0, 0xf0; \
+    ori r0, ((__token) & 0x0f))
+
+#endif /* __ASSEMBLER__ */
+
 #else /* AVR_USB_DEBUG */
 
 #define AVR_USB_DBG_SET(__token)
 
 #endif /* AVR_USB_DEBUG */
+
+/* USB device states as per fig. 9.1 of the specification. */
+#define ADK_USB_STATE_POWERED       0
+#define ADK_USB_STATE_DEFAULT       1
+#define ADK_USB_STATE_ADDRESS       2
+#define ADK_USB_STATE_CONFIGURED    3
+#define ADK_USB_STATE_SUSPENDED     4
+/** Mask to get state from @ref adkUsbState. */
+#define ADK_USB_STATE_MASK          0x7
+
+#ifndef __ASSEMBLER__
+
+/* Current USB device state. */
+extern u8 adkUsbState;
 
 /** Prepare USB interface. */
 void
@@ -60,5 +85,7 @@ AdkUsbInterrupt();
  */
 void
 AdkUsbPoll();
+
+#endif /* __ASSEMBLER__ */
 
 #endif /* USB_H_ */

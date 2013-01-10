@@ -18,6 +18,7 @@ ISR(INT0_vect)
     AdkUsbInterrupt();
     //XXX disable further interrupts until the first packet processing is fully debugged
     AVR_BIT_CLR8(GIMSK, INT0);
+    AVR_USB_DBG_SET(2);//XXX
 }
 
 int
@@ -30,10 +31,13 @@ main(void)
     AVR_BIT_CLR8(MCUCR, ISC00);
     AVR_BIT_SET8(GIMSK, INT0);
 
-    sei();
+    //sei();
 
     while (1) {
-        AdkUsbPoll();
+        u8 b = AVR_BIT_GET8(AVR_USB_DPORT_PIN, AVR_USB_DMINUS_PIN) ? 1 : 0;
+        b |= AVR_BIT_GET8(AVR_USB_DPORT_PIN, AVR_USB_DPLUS_PIN) ? 2 : 0;
+        AVR_USB_DBG_SET(b);
+        //AdkUsbPoll();
     }
 
     return 0;

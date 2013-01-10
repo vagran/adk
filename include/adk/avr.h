@@ -13,11 +13,16 @@
 #ifndef AVR_H_
 #define AVR_H_
 
-#include <avr/interrupt.h>
 #include <avr/io.h>
+
+#ifndef __ASSEMBLER__
+
+#include <avr/interrupt.h>
 #include <avr/sleep.h>
 
 #include <adk/types.h>
+
+#endif /* __ASSEMBLER__ */
 
 /** Set bit in destination 8-bits operand. */
 #define AVR_BIT_SET8(__dst, __bit)          (__dst) = (__dst) | (u8)_BV(__bit)

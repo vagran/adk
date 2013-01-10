@@ -12,6 +12,8 @@
 
 #include <adk.h>
 
+u8 adkUsbState;
+
 void
 AdkUsbSetup()
 {
