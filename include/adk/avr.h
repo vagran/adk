@@ -24,10 +24,15 @@
 
 #endif /* __ASSEMBLER__ */
 
+#ifndef __ASSEMBLER__
 /** Get low-ordered byte of 16-bits integer. */
 #define AVR_LO8(__value)                    ((__value) & 0xff)
 /** Get high-ordered byte of 16-bits integer. */
 #define AVR_HI8(__value)                    ((__value) >> 8)
+#else /* __ASSEMBLER__ */
+#define AVR_LO8(__value)                    lo8(__value)
+#define AVR_HI8(__value)                    hi8(__value)
+#endif /* __ASSEMBLER__ */
 
 /** Set bit in destination 8-bits operand. */
 #define AVR_BIT_SET8(__dst, __bit)          (__dst) = (__dst) | (u8)_BV(__bit)

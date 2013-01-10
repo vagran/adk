@@ -29,21 +29,45 @@
 #define DATA_LINES_SE1      (_BV(AVR_USB_DPLUS_PIN) | _BV(AVR_USB_DMINUS_PIN))
 
 /** Wait for one cycle. */
-#define WAIT_1                nop
+#define WAIT_1              nop
 /** Wait for two cycles. */
-#define WAIT_2                nop; nop
+#define WAIT_2              nop; nop
 /** Wait for three cycles. */
-#define WAIT_3                nop; nop; nop
+#define WAIT_3              nop; nop; nop
 /** Wait for four cycles. */
-#define WAIT_4                push r0; pop r0
+#define WAIT_4              push r0; pop r0
 /** Wait for five cycles. */
-#define WAIT_5                push r0; pop r0; nop
+#define WAIT_5              push r0; pop r0; nop
 /** Wait for six cycles. */
-#define WAIT_6                push r0; pop r0; nop; nop
+#define WAIT_6              push r0; pop r0; nop; nop
 /** Wait for seven cycles. */
-#define WAIT_7                push r0; pop r0; nop; nop; nop
+#define WAIT_7              push r0; pop r0; nop; nop; nop
 /** Wait for eight cycles. */
-#define WAIT_8                push r0; pop r0; push r0; pop r0
+#define WAIT_8              push r0; pop r0; push r0; pop r0
+
+/* Receiver loop variables. */
+/* Number of consecutive ones left before unstaff bit. */
+#define ONES_CNT            r18
+/* Pointer to receiving      buffer. */
+#define RX_BUF              X
+#define RX_BUF_LO           r26
+#define RX_BUF_HI           r27
+/* Number of bytes left in the receiving buffer. */
+#define RX_BUF_SIZE         r19
+/* Byte which is currently being received is accumulated in this register. */
+#define RX_BYTE             r20
+/* Previous state of the line. */
+#define LAST_STATE          r21
+/* Every leap bit has additional cycle. */
+#define LEAP                r22
+
+/** Value to substract from leap counter. */
+#define LEAP_VALUE          (0x101 / 3)
+
+/* Temporal register 0. */
+#define TMP0                r24
+/* Temporal register 1. */
+#define TMP1                r25
 
 /* All the physical communications over USB bus are handled in this function.
  * The code is intented to be used with 20MHz crystal. So the timing is 13.33
@@ -56,15 +80,15 @@ AdkUsbInterrupt:
      * reset (if it is in POWERED state). If yes, we should not process anything
      * but reset signal (SE0 >= 10ms).
      */
-    lds r18, adkUsbState
-    andi r18, ADK_USB_STATE_MASK
+    lds TMP0, adkUsbState
+    andi TMP0, ADK_USB_STATE_MASK
     breq powered_state_process
 
     /* Next we should check if interrupt is caused by SE0 or differential signal.
      * SE0 indicates possible reset.
      */
-    in r18, AVR_USB_DPORT_PIN
-    andi r18, DATA_LINES_MASK
+    in TMP0, AVR_USB_DPORT_PIN
+    andi TMP0, DATA_LINES_MASK
     breq check_reset
 
     /* First thing which must be done is synchronizing with SYNC pattern. For
@@ -87,24 +111,35 @@ sync_skip_J:
      * brackets indicate number of cycles skipped from the previous bit after
      * the instruction executed.
      */
-    ret
 
-    ldi r18, 4 // [3] 4 cycles per iteration below times 4 is 15 (minus one
-               // cycle for the last non-fired jump) cycles
-sync_skip_K:
-    dec r18 // [4]
-    WAIT_1 // [5]
-    brne sync_skip_K // [7]
-    // [18]
-    WAIT_2 // [20]
+    /* Set up receiver loop variables while skipping K token. */
+    ldi ONES_CNT, 5 // [3] one bit already in the end of SYNC pattern.
+    ldi RX_BUF_SIZE, ADK_USB_RX_BUF_SIZE // [4]
+    ldi RX_BYTE, 0x80 // [5] When highest bit is shifted in the C flag, the whole byte is received
+    /* Initialize to proper receive buffer. */
+    ldi RX_BUF_LO, AVR_LO8(adkUsbRxBuf) // [6]
+    ldi RX_BUF_HI, AVR_HI8(adkUsbRxBuf) // [7]
+    lds LAST_STATE, adkUsbState // [9]
+    andi LAST_STATE, ADK_USB_F_CUR_RX_BUF // [10]
+    brne use_rx_buf1 // [11]
+    /* Use RX buffer 0. */
+    WAIT_1 // [12]
+    rjmp rx_buf_initialized // [14]
+use_rx_buf1: // [12]
+    adiw RX_BUF_LO, ADK_USB_RX_BUF_SIZE // [14]
+rx_buf_initialized:
+    ldi LAST_STATE, DATA_LINES_K // [15]
+    ldi LEAP, LEAP_VALUE // [16]
+    WAIT_4 // [20]
+
     /* Check if we still have K token. */
     sbis AVR_USB_DPORT_PIN, AVR_USB_DPLUS_PIN // [1]
     rjmp sync_skip_J // [2] It was KJ, continue SYNC pattern skipping
 
     /* Skip 13 cycles up to the middle of the first data bit. */
-    ldi r18, 3 // [3]
+    ldi TMP0, 3 // [3]
 sync_skip_first_bit:
-    dec r18 // [4]
+    dec TMP0 // [4]
     brne sync_skip_first_bit // [6]
     // [11]
     WAIT_2 // [13]
@@ -112,6 +147,34 @@ sync_skip_first_bit:
     /** Here KK token is skipped and we are precisely in the middle of the first
      * data bit.
      */
+rx_loop:
+    in TMP0, AVR_USB_DPORT_PIN // [1]
+    andi TMP0, DATA_LINES_MASK // [2]
+    breq handle_EOP // [3]
+    cpse TMP0, LAST_STATE // [4]
+    rjmp handle_0 // [6] Line state differs - bit zero received
+    // [5] Bit one received.
+    sec // [6]
+    ror RX_BYTE // [7]
+    brcs handle_byte // [8]
+    dec ONES_CNT // [9]
+    breq handle_stuff_bit //[10]
+    subi LEAP, LEAP_VALUE // [11]
+    brcc rx_loop // [13] if branch taken, else [12]
+    rjmp rx_loop // [14] (every leap bit)
+
+    /* Handle received bit zero. */
+handle_0: // [6]
+    //XXX
+
+handle_byte:
+    //XXX check for stuffing
+    //XXX
+
+handle_stuff_bit:
+    //XXX
+
+handle_EOP:
     //XXX
     ret
 
@@ -166,7 +229,10 @@ check_reset_loop:
     or r0, r19 // [8]
     brne check_reset_loop // [10]
 
-    /* Reset confirmed, invoke the handler. */
+    /* Reset confirmed, wait for bus idle and invoke the handler. */
+wait_reset_finish:
+    sbis AVR_USB_DPORT_PIN, AVR_USB_DMINUS_PIN
+    rjmp wait_reset_finish
     rcall _AdkUsbOnReset
 
     /* SE0 is asserted less that required for reset. */

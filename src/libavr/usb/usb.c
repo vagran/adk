@@ -14,6 +14,8 @@
 
 u8 adkUsbState;
 
+u8 adkUsbRxBuf[2 * ADK_USB_RX_BUF_SIZE];
+
 void
 AdkUsbSetup()
 {

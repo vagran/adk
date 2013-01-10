@@ -55,11 +55,18 @@
 #define ADK_USB_STATE_SUSPENDED     4
 /** Mask to get state from @ref adkUsbState. */
 #define ADK_USB_STATE_MASK          0x7
+/** Indicates which receiving buffer is active (in @ref adkUsbState). */
+#define ADK_USB_F_CUR_RX_BUF        0x8
+
+/** Receiving buffer size. */
+#define ADK_USB_RX_BUF_SIZE         11 //XXX
 
 #ifndef __ASSEMBLER__
 
-/* Current USB device state. */
+/** Current USB device state and flags. */
 extern u8 adkUsbState;
+/** Two receiving buffers which are swapped after each received packet. */
+extern u8 adkUsbRxBuf[];
 
 /** Prepare USB interface. */
 void
