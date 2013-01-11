@@ -45,6 +45,8 @@ AdkUsbPoll()
 void
 _AdkUsbOnReset()
 {
+    if ((adkUsbState & ADK_USB_STATE_MASK) == 0) {
+        AVR_USB_DBG_SET(2);//XXX
+    }
     adkUsbState = (adkUsbState & ~ADK_USB_STATE_MASK) | ADK_USB_STATE_DEFAULT;
-    AVR_USB_DBG_SET(2);//XXX
 }

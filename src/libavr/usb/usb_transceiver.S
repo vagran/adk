@@ -130,9 +130,9 @@ above_powered_state:
      */
     in TMP0, AVR_USB_DPORT_PIN
     andi TMP0, DATA_LINES_MASK
-    brne no_se0
+    brne not_se0
     rjmp check_reset
- no_se0:
+ not_se0:
 
     /* First thing which must be done is synchronizing with SYNC pattern. For
      * low-speed function it must be KJKJKJKK. It is not known when this
@@ -143,10 +143,38 @@ above_powered_state:
      * signal is applied.
      */
 
-    /* Firstly skip J token. */
+    /* Wait for J token. */
+sync_wait_J:
+    sbic AVR_USB_DPORT_PIN, AVR_USB_DPLUS_PIN
+    rjmp sync_wait_J
+    /* Skip J token. */
 sync_skip_J:
-    sbis AVR_USB_DPORT_PIN, AVR_USB_DPLUS_PIN
-    rjmp sync_skip_J
+    /* Two cycles per sample in the code below - the maximally achievable
+     * resolution value.
+     */
+    sbic AVR_USB_DPORT_PIN, AVR_USB_DPLUS_PIN
+    rjmp found_K
+    sbic AVR_USB_DPORT_PIN, AVR_USB_DPLUS_PIN
+    rjmp found_K
+    sbic AVR_USB_DPORT_PIN, AVR_USB_DPLUS_PIN
+    rjmp found_K
+    sbic AVR_USB_DPORT_PIN, AVR_USB_DPLUS_PIN
+    rjmp found_K
+    sbic AVR_USB_DPORT_PIN, AVR_USB_DPLUS_PIN
+    rjmp found_K
+    sbic AVR_USB_DPORT_PIN, AVR_USB_DPLUS_PIN
+    rjmp found_K
+    sbic AVR_USB_DPORT_PIN, AVR_USB_DPLUS_PIN
+    rjmp found_K
+    sbic AVR_USB_DPORT_PIN, AVR_USB_DPLUS_PIN
+    rjmp found_K
+    sbic AVR_USB_DPORT_PIN, AVR_USB_DPLUS_PIN
+    rjmp found_K
+    /* J token is too long, skip the packet. */
+    AVR_USB_DBG_SET(3)//XXX
+    rjmp skip_packet
+
+found_K: // [3]
     /* K token detected. It is either K or KK which ends the SYNC pattern. Skip
      * 1.5 bits (20 cycles) up to the middle of the second K token. If it is
      * still K, skip one more bit (13 cycles) up to the middle of the first data
@@ -156,24 +184,24 @@ sync_skip_J:
      */
 
     /* Set up receiver loop variables while skipping K token. */
-    ldi ONES_CNT, 5 // [3] one bit already in the end of SYNC pattern.
-    ldi RX_BUF_SIZE, ADK_USB_RX_BUF_SIZE // [4]
-    ldi RX_BYTE, 0x80 // [5] When highest bit is shifted in the C flag, the whole byte is received
+    ldi ONES_CNT, 5 // [4] one bit already in the end of SYNC pattern.
+    ldi RX_BUF_SIZE, ADK_USB_RX_BUF_SIZE // [5]
+    ldi RX_BYTE, 0x80 // [6] When highest bit is shifted in the C flag, the whole byte is received
     /* Initialize to proper receive buffer. */
-    ldi RX_BUF_LO, AVR_LO8(adkUsbRxBuf) // [6]
-    ldi RX_BUF_HI, AVR_HI8(adkUsbRxBuf) // [7]
-    lds LAST_STATE, adkUsbState // [9]
-    andi LAST_STATE, ADK_USB_F_CUR_RX_BUF // [10]
-    brne use_rx_buf1 // [11]
+    ldi RX_BUF_LO, AVR_LO8(adkUsbRxBuf) // [7]
+    ldi RX_BUF_HI, AVR_HI8(adkUsbRxBuf) // [8]
+    lds LAST_STATE, adkUsbState // [10]
+    andi LAST_STATE, ADK_USB_F_CUR_RX_BUF // [11]
+    brne use_rx_buf1 // [12]
     /* Use RX buffer 0. */
-    WAIT_1 // [12]
-    rjmp rx_buf_initialized // [14]
-use_rx_buf1: // [12]
-    adiw RX_BUF_LO, ADK_USB_RX_BUF_SIZE // [14]
+    WAIT_1 // [13]
+    rjmp rx_buf_initialized // [15]
+use_rx_buf1: // [13]
+    adiw RX_BUF_LO, ADK_USB_RX_BUF_SIZE // [15]
 rx_buf_initialized:
-    ldi LAST_STATE, DATA_LINES_K // [15]
-    ldi LEAP, LEAP_VALUE // [16]
-    WAIT_4 // [20]
+    ldi LAST_STATE, DATA_LINES_K // [16]
+    ldi LEAP, LEAP_VALUE // [17]
+    WAIT_3 // [20]
 
     /* Check if we still have K token. */
     sbis AVR_USB_DPORT_PIN, AVR_USB_DPLUS_PIN // [1]
@@ -224,17 +252,17 @@ handle_byte_1: // [9]
     /* Handle received byte (last bit zero). */
 handle_byte_0: // [10]
     //XXX
-    AVR_USB_DBG_SET(3)
+    //AVR_USB_DBG_SET(3)
     ret
 
 handle_stuff_bit:
     //XXX
-    AVR_USB_DBG_SET(5)
+    //AVR_USB_DBG_SET(5)
     ret
 
 handle_EOP:
     //XXX
-    AVR_USB_DBG_SET(6)
+    //AVR_USB_DBG_SET(6)
     ret
 
     /* Device is in POWERED state. Skip anything but reset signal. */
