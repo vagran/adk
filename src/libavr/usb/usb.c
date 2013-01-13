@@ -47,6 +47,8 @@ _AdkUsbOnReset()
 {
     if ((adkUsbState & ADK_USB_STATE_MASK) == 0) {
         AVR_USB_DBG_SET(2);//XXX
+    } else {
+        AVR_USB_DBG_SET(4);//XXX
     }
     adkUsbState = (adkUsbState & ~ADK_USB_STATE_MASK) | ADK_USB_STATE_DEFAULT;
 }

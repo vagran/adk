@@ -48,44 +48,20 @@
 
 /* Internal definitions. */
 
-#ifndef __ASSEMBLER__
-
 /** PORTx register for data port. */
-#define AVR_USB_DPORT_PORT  __CONCAT(PORT, AVR_USB_DATA_PORT)
+#define AVR_USB_DPORT_PORT      __CONCAT(PORT, AVR_USB_DATA_PORT)
 /** DDRx register for data port. */
-#define AVR_USB_DPORT_DDR   __CONCAT(DDR, AVR_USB_DATA_PORT)
+#define AVR_USB_DPORT_DDR       __CONCAT(DDR, AVR_USB_DATA_PORT)
 /** PINx register for data port. */
-#define AVR_USB_DPORT_PIN   __CONCAT(PIN, AVR_USB_DATA_PORT)
+#define AVR_USB_DPORT_PIN       __CONCAT(PIN, AVR_USB_DATA_PORT)
 
 #ifdef AVR_USB_DEBUG
 
 /** PORTx register for debug port. */
-#define AVR_USB_DBGPORT_PORT  __CONCAT(PORT, AVR_USB_DEBUG_PORT)
+#define AVR_USB_DBGPORT_PORT    __CONCAT(PORT, AVR_USB_DEBUG_PORT)
 /** DDRx register for debug port. */
-#define AVR_USB_DBGPORT_DDR   __CONCAT(DDR, AVR_USB_DEBUG_PORT)
+#define AVR_USB_DBGPORT_DDR     __CONCAT(DDR, AVR_USB_DEBUG_PORT)
 
 #endif /* AVR_USB_DEBUG */
-
-#else /* __ASSEMBLER__ */
-
-/* I/O space is shifted by 32 when using in assembler. */
-
-/** PORTx register for data port. */
-#define AVR_USB_DPORT_PORT  (__CONCAT(PORT, AVR_USB_DATA_PORT) - __SFR_OFFSET)
-/** DDRx register for data port. */
-#define AVR_USB_DPORT_DDR   (__CONCAT(DDR, AVR_USB_DATA_PORT) - __SFR_OFFSET)
-/** PINx register for data port. */
-#define AVR_USB_DPORT_PIN   (__CONCAT(PIN, AVR_USB_DATA_PORT) - __SFR_OFFSET)
-
-#ifdef AVR_USB_DEBUG
-
-/** PORTx register for debug port. */
-#define AVR_USB_DBGPORT_PORT  (__CONCAT(PORT, AVR_USB_DEBUG_PORT) - __SFR_OFFSET)
-/** DDRx register for debug port. */
-#define AVR_USB_DBGPORT_DDR   (__CONCAT(DDR, AVR_USB_DEBUG_PORT) - __SFR_OFFSET)
-
-#endif /* AVR_USB_DEBUG */
-
-#endif /* __ASSEMBLER__ */
 
 #endif /* USB_CONFIG_INT_H_ */

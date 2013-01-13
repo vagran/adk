@@ -12,15 +12,22 @@
 
 #include <adk.h>
 
-u8 intr_cnt;
 ISR(INT0_vect)
 {
-    AVR_USB_DBG_SET((intr_cnt + 1) * 4);//XXX
     AdkUsbInterrupt();
-    intr_cnt++;
-    //XXX disable further interrupts until the first packet processing is fully debugged
-    if (intr_cnt == 2) {
-        AVR_BIT_CLR8(GIMSK, INT0);
+    /* Reset pending interrupt flag. */
+    AVR_BIT_SET8(EIFR, INTF0);
+
+    //XXX
+    if (!AVR_BIT_GET8(GIMSK, INT0)) {
+        _delay_ms(1000.0);
+        AVR_USB_DBG_SET(0xf);
+        _delay_ms(1000.0);
+        AVR_USB_DBG_SET(adkUsbRxBuf[0] & 0xf);
+        _delay_ms(1000.0);
+        AVR_USB_DBG_SET(0xf);
+        _delay_ms(1000.0);
+        AVR_USB_DBG_SET(adkUsbRxBuf[0] >> 4);
     }
 }
 
@@ -29,8 +36,8 @@ main(void)
 {
     AdkUsbSetup();
 
-    /* Interrupt by falling edge - SYNC pattern start on D- line. */
-    AVR_BIT_SET8(MCUCR, ISC01);
+    /* Interrupt by low level - bus activity on D- line. */
+    AVR_BIT_CLR8(MCUCR, ISC01);
     AVR_BIT_CLR8(MCUCR, ISC00);
     AVR_BIT_SET8(GIMSK, INT0);
 

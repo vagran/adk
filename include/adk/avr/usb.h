@@ -55,8 +55,11 @@
 /** Indicates which receiving buffer is active (in @ref adkUsbState). */
 #define ADK_USB_F_CUR_RX_BUF        0x8
 
-/** Receiving buffer size. */
-#define ADK_USB_RX_BUF_SIZE         11 //XXX
+/** Maximal allowed data payload for low-speed devices is 8 bytes. */
+#define ADK_USB_MAX_DATA_SIZE       8
+
+/** Receiving buffer size. PID + data payload + CRC16. */
+#define ADK_USB_RX_BUF_SIZE         (3 + ADK_USB_MAX_DATA_SIZE)
 
 #ifndef __ASSEMBLER__
 
@@ -80,6 +83,8 @@ AdkUsbSetup();
  * function with interrupts globally disabled. This can consume a lot of CPU
  * time when large USB traffic is processed (even when destination is another
  * USB function).
+ * It is up to user defined fuction to reset pending interrupt flag if required
+ * in order to not produce false interrupt.
  */
 void
 AdkUsbInterrupt();
