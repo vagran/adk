@@ -28,6 +28,8 @@
 /** Masked value for SE1 (single-ended one) state. */
 #define DATA_LINES_SE1      (_BV(AVR_USB_DPLUS_PIN) | _BV(AVR_USB_DMINUS_PIN))
 
+#define TRIGGER sbi _SFR_IO_ADDR(PORTB), 0 //XXX
+
 /** Wait for one cycle. */
 .macro WAIT_1
     nop
@@ -177,6 +179,7 @@ sync_skip_J:
     rjmp check_idle
 
 found_K: // [3]
+    TRIGGER
     /* K token detected. It is either K or KK which ends the SYNC pattern. Skip
      * 1.5 bits (20 cycles) up to the middle of the second K token. If it is
      * still K, skip one more bit (13 cycles) up to the middle of the first data
@@ -305,7 +308,6 @@ sync_skip_first_bit:
     brne sync_skip_first_bit // [6]
     // [11]
     WAIT_2 // [13]
-
     /** Here KK token is skipped and we are precisely in the middle of the first
      * data bit.
      */
@@ -341,6 +343,8 @@ handle_byte_0: // [10]
     /* Check line state a bit earlier than center of bit. It should not affect
      * the result because we are still very close to the bit center.
      */
+    WAIT_1 //XXX
+    TRIGGER//XXX
     in TMP0, _SFR_IO_ADDR(AVR_USB_DPORT_PIN) // [13]
     andi TMP0, DATA_LINES_MASK // [1]
     breq handle_EOP // [2]
@@ -407,6 +411,8 @@ handle_invalid_EOP:
 
    /* EOP seen when the byte is received. */
 handle_EOP:
+    ldi TMP0, 7 // [4] XXX
+    out PORTB, TMP0 // [5] XXX
     dec RX_BUF_SIZE
     /* Here we have an assumption that EOP was seen and not reset. If it was a
      * token the next packet (if any) will follow shortly (typically 3-4 bits

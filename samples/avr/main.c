@@ -16,7 +16,7 @@ ISR(INT0_vect)
 {
     AdkUsbInterrupt();
     /* Reset pending interrupt flag. */
-    AVR_BIT_SET8(EIFR, INTF0);
+    EIFR = _BV(INTF0);
 
     //XXX
     if (!AVR_BIT_GET8(GIMSK, INT0)) {
