@@ -22,6 +22,10 @@
 #error "<adk/avr/usb_config.h> should be included by user usb_config.h file!"
 #endif
 
+#if ADK_MCU_FREQ != 20000000
+#error "USB interface is supported only with 20MHz crystal!"
+#endif /* ADK_MCU_FREQ != 20000000 */
+
 #ifdef AVR_USB_DEBUG
 
 #ifndef __ASSEMBLER__
@@ -65,8 +69,13 @@
 
 /** Current USB device state and flags. */
 extern u8 adkUsbState;
-/** Two receiving buffers which are swapped after each received packet. */
+/** Two receiving buffers which are swapped after each received packet with
+ * payload (i.e. which must be processed by user code). Token packets,
+ * handshakes and packets to other functions are processed immediately.
+ */
 extern u8 adkUsbRxBuf[];
+/** Number of bytes in current shadow RX buffer available to read by user code. */
+extern u8 adkUsbRxSize;
 
 /** Prepare USB interface. */
 void

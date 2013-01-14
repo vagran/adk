@@ -23,11 +23,32 @@ ISR(INT0_vect)
         _delay_ms(1000.0);
         AVR_USB_DBG_SET(0xf);
         _delay_ms(1000.0);
+        AVR_USB_DBG_SET(adkUsbRxSize);
+        _delay_ms(1000.0);
+
         AVR_USB_DBG_SET(adkUsbRxBuf[0] & 0xf);
-        _delay_ms(1000.0);
+        _delay_ms(4000.0);
         AVR_USB_DBG_SET(0xf);
-        _delay_ms(1000.0);
+        _delay_ms(4000.0);
         AVR_USB_DBG_SET(adkUsbRxBuf[0] >> 4);
+        _delay_ms(4000.0);
+        AVR_USB_DBG_SET(0xf);
+        _delay_ms(4000.0);
+
+        AVR_USB_DBG_SET(adkUsbRxBuf[1] & 0xf);
+        _delay_ms(4000.0);
+        AVR_USB_DBG_SET(0xf);
+        _delay_ms(4000.0);
+        AVR_USB_DBG_SET(adkUsbRxBuf[1] >> 4);
+        _delay_ms(4000.0);
+        AVR_USB_DBG_SET(0xf);
+        _delay_ms(4000.0);
+
+        AVR_USB_DBG_SET(adkUsbRxBuf[2] & 0xf);
+        _delay_ms(4000.0);
+        AVR_USB_DBG_SET(0xf);
+        _delay_ms(4000.0);
+        AVR_USB_DBG_SET(adkUsbRxBuf[2] >> 4);
     }
 }
 

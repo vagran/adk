@@ -198,6 +198,95 @@ found_K: // [3]
     /* Use RX buffer 0. */
     WAIT_1 // [13]
     rjmp rx_buf_initialized // [15]
+
+    /* Next part part of code inserted  here to overcome limitations of brXX
+     * instructions - jump distance is limited to +/- 64 words.
+     */
+
+    /* EOP seen. */
+hb1_handle_EOP:
+    rjmp handle_EOP
+
+hb1_rx_buffer_overflow:
+    rjmp rx_buffer_overflow
+
+hb1_handle_invalid_EOP:
+    rjmp handle_invalid_EOP
+
+hb1_stuff_error:
+    rjmp stuff_error
+
+hb1_handle_1: // [6]
+    ldi RX_BYTE, 0xc0 // [7] Both flag bit and received bit at once
+    dec RX_BUF_SIZE // [8]
+    breq hb1_rx_buffer_overflow // [9]
+    dec ONES_CNT // [10]
+    breq hb1_handle_stuff_bit_1 // [11]
+    /* Unfortunately here we do not have cycles to properly compensate leap. */
+    subi LEAP, 2 * LEAP_VALUE // [12]
+    rjmp rx_loop // [14]
+
+    /* Handle stuff bit after the first bit of the next byte. */
+hb1_handle_stuff_bit_1: // [12]
+    /* Check line state a bit earlier. */
+    in TMP0, _SFR_IO_ADDR(AVR_USB_DPORT_PIN) // [13]
+    andi TMP0, DATA_LINES_MASK // [1]
+    breq hb1_handle_invalid_EOP // [2]
+    cp TMP0, LAST_STATE // [3]
+    breq hb1_stuff_error // [4] Bit is not zero, stuffing error.
+    mov LAST_STATE, TMP0 // [5]
+    ldi ONES_CNT, 6 // [6]
+    WAIT_6 // [12]
+    /* Leap does not need some logic here because we processed 3 bits so leap
+     * safely can be applied here unconditionaly and leap counter left
+     * unmodified.
+     */
+    rjmp rx_loop // [14]
+
+    /* Handle received byte (last bit one). */
+handle_byte_1: // [9]
+    st RX_BUF+, RX_BYTE // [11]
+    dec ONES_CNT // [12]
+    breq hb1_handle_stuff_bit // [13]
+    in TMP0, _SFR_IO_ADDR(AVR_USB_DPORT_PIN) // [1]
+    andi TMP0, DATA_LINES_MASK // [2]
+    breq hb1_handle_EOP // [3]
+    cp TMP0, LAST_STATE // [4]
+    breq hb1_handle_1 // [6] Line state the same - bit one received
+    // [5] Bit zero received.
+    mov LAST_STATE, TMP0 // [6]
+    ldi RX_BYTE, 0x40 // [7] Both flag bit and received bit at once
+    ldi ONES_CNT, 6 // [8]
+    dec RX_BUF_SIZE // [9]
+    breq hb1_rx_buffer_overflow // [10]
+    /* Leap cannot occur more than once in two bits so it is safe to compensate
+     * here both bits.
+     */
+    subi LEAP, LEAP_VALUE * 2 // [11]
+    brcc rx_loop // [13] if branch taken, else [12]
+    rjmp rx_loop // [14] (every leap bit)
+
+hb1_handle_stuff_bit: // [1]
+    in TMP0, _SFR_IO_ADDR(AVR_USB_DPORT_PIN) // [2]
+    andi TMP0, DATA_LINES_MASK // [3]
+    breq hb1_handle_invalid_EOP // [4]
+    /* Unfortunately we do not have enough spare cycles to check for stuffing
+     * error...
+     * So here we assume that zero bit is received.
+     */
+    mov LAST_STATE, TMP0 // [5]
+    ldi RX_BYTE, 0x80 // [6]
+    ldi ONES_CNT, 6 // [7]
+    dec RX_BUF_SIZE // [8]
+    breq hb1_rx_buffer_overflow // [9]
+    WAIT_1 // [10]
+    /* Leap cannot occur more than once in two bits so it is safe to compensate
+     * here both bits.
+     */
+    subi LEAP, LEAP_VALUE * 2 // [11]
+    brcc rx_loop // [13] if branch taken, else [12]
+    rjmp rx_loop // [14] (every leap bit)
+
 use_rx_buf1: // [13]
     adiw RX_BUF_LO, ADK_USB_RX_BUF_SIZE // [15]
 rx_buf_initialized:
@@ -223,7 +312,7 @@ sync_skip_first_bit:
 rx_loop:
     in TMP0, _SFR_IO_ADDR(AVR_USB_DPORT_PIN) // [1]
     andi TMP0, DATA_LINES_MASK // [2]
-    breq handle_EOP // [3]
+    breq handle_invalid_EOP // [3]
     cpse TMP0, LAST_STATE // [4]
     rjmp handle_0 // [6] Line state differs - bit zero received
     // [5] Bit one received.
@@ -246,41 +335,92 @@ handle_0: // [6]
     brcc rx_loop // [13] if branch taken, else [12]
     rjmp rx_loop // [14] (every leap bit)
 
-    /* Handle received byte (last bit one). */
-handle_byte_1: // [9]
-    //XXX check for stuffing
-    //XXX
-    AVR_USB_DBG_SET(9)
-    in      TMP0, _SFR_IO_ADDR(GIMSK) //XXX
-    andi    TMP0, ~_BV(INT0) //XXX
-    out     _SFR_IO_ADDR(GIMSK), TMP0 //XXX
-    st RX_BUF+, RX_BYTE
-    ret
-
     /* Handle received byte (last bit zero). */
 handle_byte_0: // [10]
-    //XXX
+    st RX_BUF+, RX_BYTE // [12]
+    /* Check line state a bit earlier than center of bit. It should not affect
+     * the result because we are still very close to the bit center.
+     */
+    in TMP0, _SFR_IO_ADDR(AVR_USB_DPORT_PIN) // [13]
+    andi TMP0, DATA_LINES_MASK // [1]
+    breq handle_EOP // [2]
+    cpse TMP0, LAST_STATE // [3]
+    rjmp hb0_handle_0 // [4]
+    /* Bit one received. */
+    ldi RX_BYTE, 0xc0 // [5] Both flag bit and received bit at once
+    ldi ONES_CNT, 5 // [6] Before that bit we received zero, so 5 ones still allowed
+    dec RX_BUF_SIZE // [7]
+    breq rx_buffer_overflow // [8]
+    WAIT_2 // [10]
+    /* Leap cannot occur more than once in two bits so it is safe to compensate
+     * here both bits.
+     */
+    subi LEAP, LEAP_VALUE * 2 // [11]
+    brcc rx_loop // [13] if branch taken, else [12]
+    rjmp rx_loop // [14] (every leap bit)
+
+hb0_handle_0: // [5]
+    mov LAST_STATE, TMP0 // [6]
+    ldi RX_BYTE, 0x40 // [7] Both flag bit and received bit at once
+    ldi ONES_CNT, 6 // [8]
+    dec RX_BUF_SIZE // [9]
+    breq rx_buffer_overflow // [10]
+    /* Leap cannot occur more than once in two bits so it is safe to compensate
+     * here both bits.
+     */
+    subi LEAP, LEAP_VALUE * 2 // [11]
+    brcc rx_loop // [13] if branch taken, else [12]
+    rjmp rx_loop // [14] (every leap bit)
+
+    /* Handle stuff bit which should be zero. */
+handle_stuff_bit: // 11
+    ldi ONES_CNT, 6 // [12]
+    in TMP0, _SFR_IO_ADDR(AVR_USB_DPORT_PIN) // [13]
+    andi TMP0, DATA_LINES_MASK // [1]
+    breq handle_invalid_EOP // [2]
+    cp TMP0, LAST_STATE // [3]
+    breq stuff_error // [4] Bit is not zero, stuffing error.
+    mov LAST_STATE, TMP0 // [5]
+    WAIT_5 // [10]
+    subi LEAP, LEAP_VALUE // [11]
+    brcc rx_loop // [13] if branch taken, else [12]
+    rjmp rx_loop // [14] (every leap bit)
+
+    /* One is read on stuff bit position. */
+stuff_error:
+
+    /* Receiving buffer has been overflowed. */
+rx_buffer_overflow:
     AVR_USB_DBG_SET(3)
     in      TMP0, _SFR_IO_ADDR(GIMSK) //XXX
     andi    TMP0, ~_BV(INT0) //XXX
     out     _SFR_IO_ADDR(GIMSK), TMP0 //XXX
-    st RX_BUF+, RX_BYTE // [12]
-    ret
+    rjmp skip_packet
 
-handle_stuff_bit:
-    //XXX
+    /* EOP received in the middle of byte. */
+handle_invalid_EOP:
     AVR_USB_DBG_SET(5)
     in      TMP0, _SFR_IO_ADDR(GIMSK) //XXX
     andi    TMP0, ~_BV(INT0) //XXX
     out     _SFR_IO_ADDR(GIMSK), TMP0 //XXX
-    ret
+    rjmp skip_EOP
 
+   /* EOP seen when the byte is received. */
 handle_EOP:
+    dec RX_BUF_SIZE
+    /* Here we have an assumption that EOP was seen and not reset. If it was a
+     * token the next packet (if any) will follow shortly (typically 3-4 bits
+     * interval). So we must quickly check the received packet and take
+     * approriate actions.
+     */
     //XXX
     AVR_USB_DBG_SET(7)
     in      TMP0, _SFR_IO_ADDR(GIMSK) //XXX
     andi    TMP0, ~_BV(INT0) //XXX
     out     _SFR_IO_ADDR(GIMSK), TMP0 //XXX
+    ldi TMP0, ADK_USB_RX_BUF_SIZE
+    sub TMP0, RX_BUF_SIZE
+    sts adkUsbRxSize, TMP0
     //XXX check token, address, wait for data packet if applicable
     ret
 

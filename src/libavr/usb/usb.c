@@ -16,6 +16,8 @@ u8 adkUsbState;
 
 u8 adkUsbRxBuf[2 * ADK_USB_RX_BUF_SIZE];
 
+u8 adkUsbRxSize;
+
 void
 AdkUsbSetup()
 {
@@ -45,10 +47,5 @@ AdkUsbPoll()
 void
 _AdkUsbOnReset()
 {
-    if ((adkUsbState & ADK_USB_STATE_MASK) == 0) {
-        AVR_USB_DBG_SET(2);//XXX
-    } else {
-        AVR_USB_DBG_SET(4);//XXX
-    }
     adkUsbState = (adkUsbState & ~ADK_USB_STATE_MASK) | ADK_USB_STATE_DEFAULT;
 }
