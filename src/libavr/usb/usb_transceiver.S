@@ -407,9 +407,9 @@ handle_invalid_EOP:
     in      TMP0, _SFR_IO_ADDR(GIMSK) //XXX
     andi    TMP0, ~_BV(INT0) //XXX
     out     _SFR_IO_ADDR(GIMSK), TMP0 //XXX
-    rjmp skip_EOP
+    rjmp skip_packet
 
-   /* EOP seen when the byte is received. */
+    /* EOP seen when the byte is received. */
 handle_EOP:
     ldi TMP0, 7 // [4] XXX
     out PORTB, TMP0 // [5] XXX
