@@ -117,7 +117,6 @@
 .global AdkUsbInterrupt
 .type   AdkUsbInterrupt, @function
 AdkUsbInterrupt:
-
     /* Before starting packet processing we must check if the device requires
      * reset (if it is in POWERED state). If yes, we should not process anything
      * but reset signal (SE0 >= 10ms).
@@ -127,7 +126,6 @@ AdkUsbInterrupt:
     brne above_powered_state
     rjmp powered_state_process
 above_powered_state:
-
     /* Next we should check if interrupt is caused by SE0 or differential signal.
      * SE0 indicates possible reset.
      */
@@ -179,7 +177,6 @@ sync_skip_J:
     rjmp check_idle
 
 found_K: // [3]
-    TRIGGER
     /* K token detected. It is either K or KK which ends the SYNC pattern. Skip
      * 1.5 bits (20 cycles) up to the middle of the second K token. If it is
      * still K, skip one more bit (13 cycles) up to the middle of the first data
@@ -308,6 +305,7 @@ sync_skip_first_bit:
     brne sync_skip_first_bit // [6]
     // [11]
     WAIT_2 // [13]
+    TRIGGER//XXX
     /** Here KK token is skipped and we are precisely in the middle of the first
      * data bit.
      */
@@ -440,29 +438,31 @@ powered_state_process:
     /* Skip the remaining packet data, i.e. wait until EOP token (SE0 longer
      * than one bit 13 cycles followed by J state).
      */
+    //XXX long loop after keep alive in powered state
 skip_packet:
-    in r18, _SFR_IO_ADDR(AVR_USB_DPORT_PIN)
-    andi r18, DATA_LINES_MASK
+    in TMP0, _SFR_IO_ADDR(AVR_USB_DPORT_PIN) // [1]
+    andi TMP0, DATA_LINES_MASK // [2]
     brne skip_packet // [3]
     /* SE0 detected. */
-    ldi r19, 2 // [4]
+    ldi TMP1, 2 // [4]
 skip_EOP:
-    in r18, _SFR_IO_ADDR(AVR_USB_DPORT_PIN) // [5]
-    andi r18, DATA_LINES_MASK // [6]
-    brne skip_packet // [7]
-    dec r19 // [8]
+    in TMP0, _SFR_IO_ADDR(AVR_USB_DPORT_PIN) // [5]
+    andi TMP0, DATA_LINES_MASK // [6]
+    brne check_idle // [7]
+    dec TMP1 // [8]
     brne skip_EOP // [10]
     /* SE0 longer than one bit. Now wait for J state but not longer than two
      * bits (26 cycles). Longer signal may be a possible reset.
      */
-    ldi r18, 4 // [6]
-wait_J:
-    dec r18 // [7]
-    breq check_reset // [8] Timeout exceeded, possible reset.
-    sbis _SFR_IO_ADDR(AVR_USB_DPORT_PIN), AVR_USB_DMINUS_PIN // [9]
-    rjmp wait_J // [11]
-    /* J state detected, assume line is idle now. */
-    ret
+    ldi TMP0, 4 // [9]
+wait_non_SE0:
+    dec TMP0 // [10]
+    breq check_reset // [11] Timeout exceeded, possible reset.
+    in TMP1, _SFR_IO_ADDR(AVR_USB_DPORT_PIN) // [12]
+    andi TMP1, DATA_LINES_MASK // [13]
+    breq wait_non_SE0 // [15]
+    /* Non-SE0 state detected, check if the line is idle now. */
+    rjmp check_idle
 
     /* Check if reset signal is asserted. SE0 should be active longer than 2.5us
      * (50 cycles).
