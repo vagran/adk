@@ -111,7 +111,7 @@
 .endm
 
 /* All the physical communications over USB bus are handled in this function.
- * The code is intented to be used with 20MHz crystal. So the timing is 13.33
+ * The code is intented to be used with 20MHz crystal. So the timing is 13.333
  * CPU cycles per bit.
  */
 .global AdkUsbInterrupt
@@ -133,7 +133,7 @@ above_powered_state:
     andi TMP0, DATA_LINES_MASK
     brne not_se0
     rjmp check_reset
- not_se0:
+not_se0:
 
     /* First thing which must be done is synchronizing with SYNC pattern. For
      * low-speed function it must be KJKJKJKK. It is not known when this
@@ -292,7 +292,9 @@ use_rx_buf1: // [13]
 rx_buf_initialized:
     ldi LAST_STATE, DATA_LINES_K // [16]
     ldi LEAP, LEAP_VALUE // [17]
-    WAIT_2 // [19] Actually we skip less by one cycles to compensate some latency
+    /* Skip less by three cycles because oscillograms show that in vast majority
+     * of cases K token is detected with a delay.
+     */
 
     /* Check if we still have K token. */
     sbis _SFR_IO_ADDR(AVR_USB_DPORT_PIN), AVR_USB_DPLUS_PIN // [1]
@@ -436,23 +438,30 @@ powered_state_process:
     /* Not a reset signal, skip the packet. */
 
     /* Skip the remaining packet data, i.e. wait until EOP token (SE0 longer
-     * than one bit 13 cycles followed by J state).
+     * than one bit 13 cycles followed by J state). Also do not allow line to
+     * be in idle state more than 6+ bits (100 cycles)
      */
-    //XXX long loop after keep alive in powered state
+    ldi TMP1, 10
 skip_packet:
     in TMP0, _SFR_IO_ADDR(AVR_USB_DPORT_PIN) // [1]
     andi TMP0, DATA_LINES_MASK // [2]
-    brne skip_packet // [3]
-    /* SE0 detected. */
-    ldi TMP1, 2 // [4]
-skip_EOP:
-    in TMP0, _SFR_IO_ADDR(AVR_USB_DPORT_PIN) // [5]
-    andi TMP0, DATA_LINES_MASK // [6]
-    brne check_idle // [7]
-    dec TMP1 // [8]
-    brne skip_EOP // [10]
-    /* SE0 longer than one bit. Now wait for J state but not longer than two
-     * bits (26 cycles). Longer signal may be a possible reset.
+    breq skip_packet_se0 // [3]
+    cpi TMP0, DATA_LINES_IDLE // [4]
+    breq skip_packet_idle // [5]
+    /* Line active, reset timeout. */
+    ldi TMP1, 10 // [6]
+    WAIT_2 // [8]
+    rjmp skip_packet // [10]
+skip_packet_idle:  // [6]
+    /* Line idle. */
+    dec TMP1 // [7]
+    breq check_idle // [8]
+    rjmp skip_packet // [10]
+skip_packet_se0:
+
+    /* SE0 detected.
+     * Now wait for J state but not longer than two bits (26 cycles). Longer
+     * signal may be a possible reset.
      */
     ldi TMP0, 4 // [9]
 wait_non_SE0:
@@ -488,7 +497,8 @@ wait_reset_finish:
 
     /* Ensure the line is idle for some time before exiting from interrupt
      * handler. Otherwise we could miss packet SYNC pattern if the is exited and
-     * reentered. Wait for a packet for 10 bits (133 cycles).
+     * reentered. Wait for a packet for 10 bits (133 cycles). The loop time
+     * should be less than bit length.
      */
 check_idle:
     ldi TMP0, 19
