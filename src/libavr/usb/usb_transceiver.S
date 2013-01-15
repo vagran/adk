@@ -306,8 +306,7 @@ sync_skip_first_bit:
     dec TMP0 // [4]
     brne sync_skip_first_bit // [6]
     // [11]
-    WAIT_2 // [13]
-    TRIGGER//XXX
+    //WAIT_2 // [13]
     /** Here KK token is skipped and we are precisely in the middle of the first
      * data bit.
      */
@@ -343,8 +342,6 @@ handle_byte_0: // [10]
     /* Check line state a bit earlier than center of bit. It should not affect
      * the result because we are still very close to the bit center.
      */
-    WAIT_1 //XXX
-    TRIGGER//XXX
     in TMP0, _SFR_IO_ADDR(AVR_USB_DPORT_PIN) // [13]
     andi TMP0, DATA_LINES_MASK // [1]
     breq handle_EOP // [2]
@@ -432,8 +429,8 @@ handle_EOP:
 
     /* Device is in POWERED state. Skip anything but reset signal. */
 powered_state_process:
-    in r18, _SFR_IO_ADDR(AVR_USB_DPORT_PIN)
-    andi r18, DATA_LINES_MASK
+    in TMP0, _SFR_IO_ADDR(AVR_USB_DPORT_PIN)
+    andi TMP0, DATA_LINES_MASK
     breq check_reset
     /* Not a reset signal, skip the packet. */
 
@@ -501,13 +498,15 @@ wait_reset_finish:
      * should be less than bit length.
      */
 check_idle:
-    ldi TMP0, 19
+    ldi TMP0, 16
 check_idle_loop:
     in TMP1, _SFR_IO_ADDR(AVR_USB_DPORT_PIN) // [1]
     andi TMP1, DATA_LINES_MASK // [2]
-    cpse TMP1, DATA_LINES_IDLE // [3]
-    rjmp AdkUsbInterrupt // [4] Line active, handle it.
-    dec TMP0 // [5]
-    brne check_idle_loop // [7]
+    cpi TMP1, DATA_LINES_IDLE // [3]
+    breq check_idle_se0 // [5]
+    rjmp AdkUsbInterrupt // Line active, handle it.
+check_idle_se0:
+    dec TMP0 // [6]
+    brne check_idle_loop // [8]
     /* Timeout exceeded while the line is still idle. Can return now. */
     ret

@@ -12,43 +12,38 @@
 
 #include <adk.h>
 
+static void
+DumpData(u8 *data, u8 size)
+{
+    for (u8 idx = 0; idx < size * 2; idx++) {
+        u8 v = 0;
+        for (u8 i = 0; i < 4; i++) {
+            v = (v << 1) + 1;
+            AVR_USB_DBG_SET(v);
+            _delay_ms(500);
+        }
+        v = data[idx / 2];
+        if (idx & 1) {
+            AVR_USB_DBG_SET(v >> 4);
+        } else {
+            AVR_USB_DBG_SET(v & 0xf);
+        }
+        _delay_ms(2000);
+    }
+}
+
 ISR(INT0_vect)
 {
+    static u8 count;
     AdkUsbInterrupt();
     /* Reset pending interrupt flag. */
     EIFR = _BV(INTF0);
-
+    count++;
     //XXX
     if (!AVR_BIT_GET8(GIMSK, INT0)) {
-        _delay_ms(1000.0);
-        AVR_USB_DBG_SET(0xf);
-        _delay_ms(1000.0);
-        AVR_USB_DBG_SET(adkUsbRxSize);
-        _delay_ms(1000.0);
-
-        AVR_USB_DBG_SET(adkUsbRxBuf[0] & 0xf);
-        _delay_ms(4000.0);
-        AVR_USB_DBG_SET(0xf);
-        _delay_ms(4000.0);
-        AVR_USB_DBG_SET(adkUsbRxBuf[0] >> 4);
-        _delay_ms(4000.0);
-        AVR_USB_DBG_SET(0xf);
-        _delay_ms(4000.0);
-
-        AVR_USB_DBG_SET(adkUsbRxBuf[1] & 0xf);
-        _delay_ms(4000.0);
-        AVR_USB_DBG_SET(0xf);
-        _delay_ms(4000.0);
-        AVR_USB_DBG_SET(adkUsbRxBuf[1] >> 4);
-        _delay_ms(4000.0);
-        AVR_USB_DBG_SET(0xf);
-        _delay_ms(4000.0);
-
-        AVR_USB_DBG_SET(adkUsbRxBuf[2] & 0xf);
-        _delay_ms(4000.0);
-        AVR_USB_DBG_SET(0xf);
-        _delay_ms(4000.0);
-        AVR_USB_DBG_SET(adkUsbRxBuf[2] >> 4);
+        DumpData(&count, 1);
+        DumpData(&adkUsbRxSize, 1);
+        DumpData(adkUsbRxBuf, 3);
     }
 }
 
