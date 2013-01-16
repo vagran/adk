@@ -104,7 +104,7 @@ def HexDump(data):
         if (idx & 0x7) == 4:
             line += ' '
         if idx >= len(data):
-            line += '.. '
+            line += '   '
         else:
             line += '%02x ' % data[idx]
         
@@ -341,6 +341,7 @@ class Packet:
     def Finalize(self):
         if self.bitCount != 0:
             Warning('Packet byte truncated', self.events[-1])
+            self.isInvalid = True
         if not self.isInvalid and not self.isKeepAlive:
             self.pid = self.bytes[0] & 0xf
             if self.pid ^ (self.bytes[0] >> 4) != 0xf:

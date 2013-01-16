@@ -408,16 +408,13 @@ handle_invalid_EOP:
 
     /* EOP seen when the byte is received. */
 handle_EOP:
-    ldi TMP0, 7 // [4] XXX
-    out PORTB, TMP0 // [5] XXX
+    TRIGGER//XXX
     dec RX_BUF_SIZE
     /* Here we have an assumption that EOP was seen and not reset. If it was a
      * token the next packet (if any) will follow shortly (typically 3-4 bits
      * interval). So we must quickly check the received packet and take
      * approriate actions.
      */
-    //XXX
-    AVR_USB_DBG_SET(7)
     in      TMP0, _SFR_IO_ADDR(GIMSK) //XXX
     andi    TMP0, ~_BV(INT0) //XXX
     out     _SFR_IO_ADDR(GIMSK), TMP0 //XXX
@@ -425,7 +422,7 @@ handle_EOP:
     sub TMP0, RX_BUF_SIZE
     sts adkUsbRxSize, TMP0
     //XXX check token, address, wait for data packet if applicable
-    ret
+    rjmp check_idle
 
     /* Device is in POWERED state. Skip anything but reset signal. */
 powered_state_process:
