@@ -576,7 +576,9 @@ check_idle_se0:
     ret
 
 /* Transmit the provided packet. The provided data should include SYNC pattern.
- * This function is not supposed to be used from C.
+ * This function is not supposed to be used from C. It does not correct the leap
+ * cycle because 13 cycles per bit is still in the acceptable rate range (per
+ * the specification), host receiver synchronizes with edges anyway.
  */
 /* Arguments. */
 #define TRANS_DATA          X
@@ -591,7 +593,7 @@ check_idle_se0:
 .global AdkUsbTrasmit
 .type   AdkUsbTrasmit, @function
 AdkUsbTrasmit:
-    /* Drive the lines. */
+    /* Drive the data lines. */
     in TMP0, _SFR_IO_ADDR(AVR_USB_DPORT_PORT)
     ori TMP0, DATA_LINES_IDLE // Assuming port bits are zero (should be when receiving)
     out _SFR_IO_ADDR(AVR_USB_DPORT_PORT), TMP0
@@ -602,7 +604,9 @@ AdkUsbTrasmit:
     ldi TRANS_STUFF_CNT, 6
     ldi TRANS_BIT_CNT, 8
     ld TRANS_BYTE, TRANS_DATA+
-    //XXX
+
+    lsr TRANS_BYTE
+    //brcc
 
     /* Switch lines back to receiving. */
     in TMP0, _SFR_IO_ADDR(AVR_USB_DPORT_DDR)
