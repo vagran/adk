@@ -541,6 +541,7 @@ def Main():
     optParser.add_option('--dminus', dest = 'dMinus',
                          help = 'Specify which channel (1 or 2) contains capture ' +
                                 'data for D- line.',
+                         type = 'int',
                          default = 1)
     optParser.add_option('--plot', dest = 'doPlot',
                          action = 'store_true',
