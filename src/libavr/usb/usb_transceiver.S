@@ -593,26 +593,72 @@ check_idle_se0:
 .global AdkUsbTrasmit
 .type   AdkUsbTrasmit, @function
 AdkUsbTrasmit:
-    /* Drive the data lines. */
-    in TMP0, _SFR_IO_ADDR(AVR_USB_DPORT_PORT)
-    ori TMP0, DATA_LINES_IDLE // Assuming port bits are zero (should be when receiving)
-    out _SFR_IO_ADDR(AVR_USB_DPORT_PORT), TMP0
-    in TMP0, _SFR_IO_ADDR(AVR_USB_DPORT_DDR)
-    ori TMP0, DATA_LINES_MASK
-    out _SFR_IO_ADDR(AVR_USB_DPORT_DDR), TMP0
-
     ldi TRANS_STUFF_CNT, 6
-    ldi TRANS_BIT_CNT, 8
+    ldi TRANS_BIT_CNT, 255 // Carry each eight iterations.
     ld TRANS_BYTE, TRANS_DATA+
+    ldi TMP0, DATA_LINES_MASK
 
-    lsr TRANS_BYTE
-    //brcc
+    /* Drive the data lines. */
+    sbi _SFR_IO_ADDR(AVR_USB_DPORT_PORT), AVR_USB_DMINUS_PIN
+    sbi _SFR_IO_ADDR(AVR_USB_DPORT_DDR), AVR_USB_DPLUS_PIN
+    sbi _SFR_IO_ADDR(AVR_USB_DPORT_PORT), AVR_USB_DMINUS_PIN
 
+    /* Numbers in square brackets are number of cycles since last bit front edge. */
+
+trans_loop: // [10]
+    lsr TRANS_BYTE // [11]
+    brcs trans_1 // [12]
+    /* Transmit bit zero. */
+    ldi TRANS_STUFF_CNT, 6 // [13] Reset stuffing counter.
+    out _SFR_IO_ADDR(AVR_USB_DPORT_PIN), TMP0 // [1] Toggle data lines.
+    WAIT_1 // [2]
+    subi TRANS_BIT_CNT, 0x20 // [3] Carry each eight iterations.
+    brcc trans_same_byte // [4]
+    dec TRANS_LEN // [5]
+    breq trans_EOP // [6]
+    ld TRANS_BYTE, TRANS_DATA+ // [8]
+    rjmp trans_loop // [10]
+trans_1: // [13]
+    /* Transmit bit one. */
+    dec TRANS_STUFF_CNT // [1]
+    breq trans_stuff // [2]
+trans_check_byte:
+    subi TRANS_BIT_CNT, 0x20 // [3] Carry each eight iterations.
+    brcc trans_same_byte // [4]
+trans_next_byte:
+    dec TRANS_LEN // [5]
+    breq trans_EOP // [6] All bytes transmitted.
+    ld TRANS_BYTE, TRANS_DATA+ // [8]
+    rjmp trans_loop // [10]
+trans_same_byte: // [5]
+    WAIT_3 // [8]
+    rjmp trans_loop // [10]
+trans_stuff: // [3]
+    ldi TRANS_STUFF_CNT, 6 // [4] Reset stuffing counter.
+    WAIT_8 // [12]
+    subi TRANS_BIT_CNT, 0x20 // [13] Carry each eight iterations.
+    /* Transmit stuff bit. */
+    out _SFR_IO_ADDR(AVR_USB_DPORT_PIN), TMP0 // [1] Toggle data lines.
+    WAIT_1 // [2]
+    brcc trans_next_byte // [3]
+    rjmp trans_same_byte // [5]
+
+trans_EOP: // [7]
+    /* Low level for both lines. */
+    in TMP0, _SFR_IO_ADDR(AVR_USB_DPORT_PORT) // [8]
+    andi TMP0, ~DATA_LINES_MASK // [9]
+    WAIT_4 // [13]
+    out _SFR_IO_ADDR(AVR_USB_DPORT_PORT), TMP0 // [1]
+    /* Wait for approximately two bits (26 cycles). */
+    ldi TMP0, 8 // [2]
+trans_EOP_loop:
+    dec TMP0 // [3]
+    brne trans_EOP_loop // [5]
+
+    /* Drive to J state. */
+    sbi _SFR_IO_ADDR(AVR_USB_DPORT_PORT), AVR_USB_DMINUS_PIN
     /* Switch lines back to receiving. */
-    in TMP0, _SFR_IO_ADDR(AVR_USB_DPORT_DDR)
-    andi TMP0, ~DATA_LINES_MASK
-    out _SFR_IO_ADDR(AVR_USB_DPORT_DDR), TMP0
-    in TMP0, _SFR_IO_ADDR(AVR_USB_DPORT_PORT)
-    andi TMP0, DATA_LINES_MASK
-    out _SFR_IO_ADDR(AVR_USB_DPORT_PORT), TMP0
+    cbi _SFR_IO_ADDR(AVR_USB_DPORT_DDR), AVR_USB_DMINUS_PIN
+    cbi _SFR_IO_ADDR(AVR_USB_DPORT_DDR), AVR_USB_DPLUS_PIN
+    cbi _SFR_IO_ADDR(AVR_USB_DPORT_PORT), AVR_USB_DMINUS_PIN
     ret
