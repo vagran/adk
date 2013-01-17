@@ -110,6 +110,73 @@
     out _SFR_IO_ADDR(AVR_USB_DBGPORT_PORT), TMP0
 .endm
 
+/* Arguments for AdkUsbCrc16() function. Per GCC calling convention. */
+#define CRC_DATA_ARG_LO     r24
+#define CRC_DATA_ARG_HI     r25
+#define CRC_LEN_ARG         r22
+#define CRC_RESULT_LO       r24
+#define CRC_RESULT_HI       r25
+/* Variables for AdkUsbCrc16() function. */
+#define CRC_DATA            X
+#define CRC_DATA_LO         r26
+#define CRC_DATA_HI         r27
+#define CRC_X               r23
+#define CRC_Y_LO            r20
+#define CRC_Y_HI            r21
+
+.global AdkUsbCrc16
+.type   AdkUsbCrc16, @function
+AdkUsbCrc16:
+    /* See Crc16() function in usb_capture_analyzer.py for the algorithm
+     * reference.
+     */
+    movw CRC_DATA_LO, CRC_DATA_ARG_LO
+    ldi CRC_RESULT_LO, 0xff
+    ldi CRC_RESULT_HI, 0xff
+crc_loop:
+    ld CRC_X, CRC_DATA+
+    eor CRC_X, CRC_RESULT_LO
+
+    clr CRC_Y_LO
+    mov CRC_Y_HI, CRC_X // Y = X << 8
+    lsr CRC_Y_HI
+    ror CRC_Y_LO // Y = X << 7
+    mov CRC_RESULT_LO, CRC_Y_HI // Use CRC_RESULT_LO as temporal register
+    lsr CRC_RESULT_LO
+    eor CRC_Y_HI, CRC_RESULT_LO
+    mov CRC_RESULT_LO, CRC_Y_LO
+    ror CRC_RESULT_LO
+    eor CRC_RESULT_LO, CRC_Y_LO // Y = (X << 7) ^ (X << 6) // Ylo is RESULTlo
+    eor CRC_RESULT_LO, CRC_RESULT_HI
+    mov CRC_RESULT_HI, CRC_Y_HI // RESULT = (X << 7) ^ (X << 6) ^ (resid >> 8)
+
+    /* Get parity of X. */
+    mov CRC_Y_LO, CRC_X
+    swap CRC_Y_LO
+    eor CRC_X, CRC_Y_LO
+    mov CRC_Y_LO, CRC_X
+    lsr CRC_Y_LO
+    lsr CRC_Y_LO
+    eor CRC_X, CRC_Y_LO
+    /* Parity now is in least signinficant two bits of X. Now do the trick -
+     * increment X and check resulted parity in bit 1. It is equivalent to do
+     * XOR on these two bits.
+     */
+    inc CRC_X
+    andi CRC_X, 2
+    breq crc_next
+    /* Parity set, apply XOR 0xc001 to result. */
+    ldi CRC_X, 0x01
+    eor CRC_RESULT_LO, CRC_X
+    ldi CRC_X, 0xc0
+    eor CRC_RESULT_HI, CRC_X
+crc_next:
+    dec CRC_LEN_ARG
+    brne crc_loop
+    com CRC_RESULT_LO
+    com CRC_RESULT_HI
+    ret
+
 /* All the physical communications over USB bus are handled in this function.
  * The code is intented to be used with 20MHz crystal. So the timing is 13.333
  * CPU cycles per bit.

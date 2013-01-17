@@ -142,11 +142,11 @@ def Crc16(data):
         parity = parity ^ (parity >> 2)
         parity = (parity ^ (parity >> 1)) & 0x1
         
-        x = (x << 6) ^ (x << 7)
+        y = (x << 6) ^ (x << 7)
         if parity != 0:
-            x = x ^ 0xc001
+            y = y ^ 0xc001
         
-        resid = x ^ (resid >> 8)
+        resid = y ^ (resid >> 8)
     
     # Convert to network byte order
     return socket.htons((~resid) & 0xffff);

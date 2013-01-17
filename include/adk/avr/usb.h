@@ -104,6 +104,15 @@ AdkUsbInterrupt();
 void
 AdkUsbPoll();
 
+/** Calculate CRC-16-ANSI checksum for the specified data.
+ *
+ * @param data Pointer to the buffer with data.
+ * @param len Length in bytes of the data provided.
+ * @return CRC-16 value.
+ */
+u16
+AdkUsbCrc16(u8 *data, u8 len);
+
 #endif /* __ASSEMBLER__ */
 
 #endif /* USB_H_ */
