@@ -24,6 +24,7 @@ import matplotlib
 import numpy as np
 import pylab
 import math
+import socket
 
 def Error(msg, exception = None):
     print('ERROR: ' + msg);
@@ -104,7 +105,7 @@ def HexDump(data):
         if (idx & 0x7) == 4:
             line += ' '
         if idx >= len(data):
-            line += '   '
+            line += '.. '
         else:
             line += '%02x ' % data[idx]
         
@@ -123,6 +124,32 @@ def HexDump(data):
     
     if line is not None:
         print(line)
+
+def Crc16(data):
+    '''
+    Calculation of USB CRC16 checksum for the specified data. This function
+    uses exactly the same algorithm which is used in MCU in order to verify it
+    and provide implementation reference.
+    Used polynomial is CRC16-ANSI - X^16 + X^15+ X^2 + 1
+    '''
+    resid = 0xffff
+    
+    for byte in data:
+        x = (byte ^ resid) & 0xff
+        
+        # Get parity of x
+        parity = x ^ (x >> 4)
+        parity = parity ^ (parity >> 2)
+        parity = (parity ^ (parity >> 1)) & 0x1
+        
+        x = (x << 6) ^ (x << 7)
+        if parity != 0:
+            x = x ^ 0xc001
+        
+        resid = x ^ (resid >> 8)
+    
+    # Convert to network byte order
+    return socket.htons((~resid) & 0xffff);
 
 def PlotData():
     'Plot current capture data'
@@ -227,6 +254,9 @@ class Packet:
         self.bytes = list()
         self.bitCount = 0
         self.curByte = 0
+        self.crcOk = None
+        self.crc = None
+        self.crcPkt = None
         
     def __len__(self):
         return len(self.bytes)
@@ -346,6 +376,17 @@ class Packet:
             self.pid = self.bytes[0] & 0xf
             if self.pid ^ (self.bytes[0] >> 4) != 0xf:
                 Warning('PID verification failed, 0x%x' % (self.bytes[0]), self.events[0])
+                self.isInvalid = True
+            else:
+                # Check CRC for data packets
+                pid = self.GetPidStr(self.pid)
+                if pid == 'DATA0' or pid == 'DATA1' or pid == 'DATA2' or pid == 'MDATA':
+                    self.crc = Crc16(self.bytes[1 : -2])
+                    self.crcPkt = (self.bytes[-2] << 8) | self.bytes[-1]
+                    self.crcOk = self.crcPkt == self.crc
+                    if not self.crcOk:
+                        Warning('Wrong CRC, have %04x, should be %04x' % (self.crcPkt, self.crc), self.events[0])
+                        self.isInvalid = True
     
     def GetPidStr(self, pid):
         if pid == 0b0001:
@@ -386,10 +427,20 @@ class Packet:
             pid = 'KEEP-ALIVE'
         else:
             pid = self.GetPidStr(self.bytes[0] & 0xf)
-        print('\n[%s%g %s %d bytes]' % ('INVALID ' if self.isInvalid else '',
+        
+        if self.crcOk is not None:
+            if self.crcOk:
+                crcStr = ' CRC OK'
+            else:
+                crcStr = ' CRC ERR %04x/%04x' % (self.crcPkt, self.crc)
+        else:
+            crcStr = ''
+        
+        print('\n[%s%g %s %d bytes%s]' % ('INVALID ' if self.isInvalid else '',
                                       self.events[0].startTime,
                                       pid,
-                                      len(self.bytes)))
+                                      len(self.bytes),
+                                      crcStr))
         HexDump(self.bytes)
         
         if opts.dbgLeds:
