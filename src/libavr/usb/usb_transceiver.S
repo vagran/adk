@@ -574,3 +574,41 @@ check_idle_se0:
     brne check_idle_loop // [8]
     /* Timeout exceeded while the line is still idle. Can return now. */
     ret
+
+/* Transmit the provided packet. The provided data should include SYNC pattern.
+ * This function is not supposed to be used from C.
+ */
+/* Arguments. */
+#define TRANS_DATA          X
+#define TRANS_DATA_LO       r26
+#define TRANS_DATA_HI       r27
+#define TRANS_LEN           r18
+/* Variables. */
+#define TRANS_STUFF_CNT     r19
+#define TRANS_BYTE          r20
+#define TRANS_BIT_CNT       r21
+
+.global AdkUsbTrasmit
+.type   AdkUsbTrasmit, @function
+AdkUsbTrasmit:
+    /* Drive the lines. */
+    in TMP0, _SFR_IO_ADDR(AVR_USB_DPORT_PORT)
+    ori TMP0, DATA_LINES_IDLE // Assuming port bits are zero (should be when receiving)
+    out _SFR_IO_ADDR(AVR_USB_DPORT_PORT), TMP0
+    in TMP0, _SFR_IO_ADDR(AVR_USB_DPORT_DDR)
+    ori TMP0, DATA_LINES_MASK
+    out _SFR_IO_ADDR(AVR_USB_DPORT_DDR), TMP0
+
+    ldi TRANS_STUFF_CNT, 6
+    ldi TRANS_BIT_CNT, 8
+    ld TRANS_BYTE, TRANS_DATA+
+    //XXX
+
+    /* Switch lines back to receiving. */
+    in TMP0, _SFR_IO_ADDR(AVR_USB_DPORT_DDR)
+    andi TMP0, ~DATA_LINES_MASK
+    out _SFR_IO_ADDR(AVR_USB_DPORT_DDR), TMP0
+    in TMP0, _SFR_IO_ADDR(AVR_USB_DPORT_PORT)
+    andi TMP0, DATA_LINES_MASK
+    out _SFR_IO_ADDR(AVR_USB_DPORT_PORT), TMP0
+    ret
