@@ -16,7 +16,11 @@ u8 adkUsbState;
 
 u8 adkUsbRxBuf[2 * ADK_USB_RX_BUF_SIZE];
 
-u8 adkUsbRxSize;
+u8 adkUsbRxState;
+
+u8 adkUsbDeviceAddress;
+
+
 
 void
 AdkUsbSetup()
@@ -33,12 +37,18 @@ AdkUsbSetup()
     AVR_BIT_CLR8(AVR_USB_DPORT_PORT, AVR_USB_DPLUS_PIN);
     AVR_BIT_CLR8(AVR_USB_DPORT_PORT, AVR_USB_DMINUS_PIN);
 
+    adkUsbState = 0;
+    adkUsbDeviceAddress = 0;
+    adkUsbRxState = 0;
+
+    //XXX fill SYNC in transmission buffer
 }
 
 void
 AdkUsbPoll()
 {
     //XXX
+    //check system requests
 }
 
 /** This function is called from assembler interrupt handler when reset is
@@ -47,5 +57,7 @@ AdkUsbPoll()
 void
 _AdkUsbOnReset()
 {
-    adkUsbState = (adkUsbState & ~ADK_USB_STATE_MASK) | ADK_USB_STATE_DEFAULT;
+    adkUsbState = (adkUsbState & ~ADK_USB_STATE_MASK) | ADK_USB_STATE_LISTEN;
+    adkUsbDeviceAddress = 0;
+    adkUsbRxState = 0;
 }

@@ -43,8 +43,8 @@ ISR(INT0_vect)
     if (!AVR_BIT_GET8(GIMSK, INT0)) {
         _delay_ms(5000);
         DumpData(&count, 1);
-        DumpData(&adkUsbRxSize, 1);
-        DumpData(adkUsbRxBuf, adkUsbRxSize);
+//        DumpData(&adkUsbRxSize, 1);
+//        DumpData(adkUsbRxBuf, adkUsbRxSize);
     }
 }
 

@@ -48,22 +48,57 @@
 
 #endif /* AVR_USB_DEBUG */
 
-/* USB device states as per fig. 9.1 of the specification. */
+/* PID values with inverted check fields, as read from packet first byte. */
+#define ADK_USB_PID_OUT             0xe1
+#define ADK_USB_PID_IN              0x69
+#define ADK_USB_PID_SETUP           0x2d
+#define ADK_USB_PID_DATA0           0xc3
+#define ADK_USB_PID_DATA1           0x4b
+#define ADK_USB_PID_ACK             0xd2
+#define ADK_USB_PID_NAK             0x5a
+#define ADK_USB_PID_STALL           0x1e
+
+/* USB device states as per diagram in doc/pages/product/avr/usb.txt. */
 #define ADK_USB_STATE_POWERED       0
-#define ADK_USB_STATE_DEFAULT       1
-#define ADK_USB_STATE_ADDRESS       2
-#define ADK_USB_STATE_CONFIGURED    3
-#define ADK_USB_STATE_SUSPENDED     4
+#define ADK_USB_STATE_LISTEN        1
+#define ADK_USB_STATE_SETUP         2
+#define ADK_USB_STATE_WRITE_DATA    3
+#define ADK_USB_STATE_WRITE_STATUS  4
+#define ADK_USB_STATE_READ_DATA     5
+#define ADK_USB_STATE_READ_STATUS   6
 /** Mask to get state from @ref adkUsbState. */
 #define ADK_USB_STATE_MASK          0x7
-/** Indicates which receiving buffer is active (in @ref adkUsbState). */
-#define ADK_USB_F_CUR_RX_BUF        0x8
+
+/** Mask for size field in @ref adkUsbRxState. Non-zero field value indicates
+ * number of bytes received in data stage and pending for processing in
+ * non-active receiving buffer. The number does not include PID and CRC bytes
+ * however they are also always present in the buffer. Zero value indicates that
+ * there are no data pending.
+ */
+#define ADK_USB_RX_SIZE_MASK        0x7
+#define ADK_USB_RX_CUR_BUF_BIT      3
+/** Indicates which receiving buffer is active (in @ref adkUsbRxState). */
+#define ADK_USB_RX_CUR_BUF          _BV(ADK_USB_RX_CUR_BUF_BIT)
+#define ADK_USB_RX_MINE_BIT         4
+/** Indicates that current transactions packets addressed to this device (set
+ * after token decoding and address checking, reset after transaction completion).
+ */
+#define ADK_USB_RX_MINE             _BV(ADK_USB_RX_MINE_BIT)
+/** Set when setup request is received, not data. */
+#define ADK_USB_RX_SETUP            0x20
 
 /** Maximal allowed data payload for low-speed devices is 8 bytes. */
 #define ADK_USB_MAX_DATA_SIZE       8
 
 /** Receiving buffer size. PID + data payload + CRC16. */
 #define ADK_USB_RX_BUF_SIZE         (3 + ADK_USB_MAX_DATA_SIZE)
+/** Transmission buffer size for data packets. SYNC + PID + data + CRC16. */
+#define ADK_USB_TX_BUF_SIZE         (4 + ADK_USB_MAX_DATA_SIZE)
+/** Transmission buffer size for handshake packets. Used to generate instant
+ * responses (e.g. ACK) in transceiver module. Also should be able to hold
+ * empty data packets in status stage. SYNC + PID + CRC16.
+ */
+#define ADK_USB_TX_AUX_BUF_SIZE     4
 
 #ifndef __ASSEMBLER__
 
@@ -71,11 +106,21 @@
 extern u8 adkUsbState;
 /** Two receiving buffers which are swapped after each received packet with
  * payload (i.e. which must be processed by user code). Token packets,
- * handshakes and packets to other functions are processed immediately.
+ * handshakes and packets to other functions are processed immediately. However
+ * they need buffer space to be received. So if we have one buffer occupied by
+ * received DATA packet the second one can be used only for processing tokens
+ * and handshakes. If the second data packet is received before the first is
+ * completely processed by the application, NAK is issued.
  */
 extern u8 adkUsbRxBuf[];
-/** Number of bytes in current shadow RX buffer available to read by user code. */
-extern u8 adkUsbRxSize;
+/** Actually is a bit-field variable reflecting receiver state. */
+extern u8 adkUsbRxState;
+/** Currently assigned device address. Zero if the device is below ADDRESS state. */
+extern u8 adkUsbDeviceAddress;
+/** Transmission buffer for data packets. */
+extern u8 adkUsbTxDataBuf[];
+/** Transmission buffer for handshake packets. */
+extern u8 adkUsbTxAuxBuf[];
 
 /** Prepare USB interface. */
 void

@@ -1,0 +1,81 @@
+====== USB software implementation ======
+
+AVR support library in ADK has software implementation for USB interface. For simplicity only 20MHz crystal configuration is supported. Also tight timings allow only low-speed function implementation with some limitations. The library provides one two-directional pipe between host software and embedded application. It is working on top of control endpoint 0, using custom control requests. Endpoint maximal packet size is set to 8 bytes. For simplicity other endpoints and transfer types are not supported. One configuration is provided. The application is abstracted from the USB endpoints, transfer types and configurations concept. It sees only two-direction communication pipe (like socket) and can implement any application level protocol on top of it.
+
+===== USB driver state machine =====
+
+This state machine is used in the library.
+
+<uml>
+
+[*] --> POWERED: [Power on]
+
+POWERED: Skip all packets.
+
+POWERED --> LISTEN: [RESET]\nCall reset handler
+ANY_STATE --> LISTEN: [RESET]\nCall reset handler
+ANY_STATE --> LISTEN: [Unknown PID]\nReset RX_MINE
+ANY_STATE --> ANY_STATE: [Other address in token]\nReset RX_MINE
+
+LISTEN: Skip all except tokens.
+LISTEN: When token is seen, check address.
+LISTEN: If address is mine and one of state-exiting tokens, set RX_MINE.
+
+LISTEN --> SETUP: [SETUP]
+
+SETUP --> SETUP: [DATA0, RX_SETUP not set]\nReceive in buffer,\nsend ACK,\nset RX_SETUP
+
+SETUP --> SETUP: [IN]\nSend NAK
+
+SETUP --> SETUP: [OUT]\nSet RX_MINE
+
+SETUP --> SETUP: [DATA0/DATA1, RX_SETUP set]\nSend NAK
+
+SETUP --> WRITE_DATA: [H2D request processed]\nFree buffer,\nreset RX_SETUP
+
+WRITE_DATA --> WRITE_DATA: [OUT]\nSet RX_MINE
+
+WRITE_DATA --> WRITE_DATA: [DATA0/DATA1]\nReceive in buffer if data toggled,\ndo not occupy buffer if not.\nReset RX_MINE.\nSend ACK or NAK.
+
+WRITE_DATA --> WRITE_STATUS: [IN]\nSet RX_MINE,\nsend status
+
+WRITE_DATA --> LISTEN: [IN, request error]\nReset RX_MINE,\nsend STALL
+
+WRITE_STATUS --> WRITE_STATUS: [IN]\nSet RX_MINE,\nsend status
+
+WRITE_STATUS --> LISTEN: [IN, request error]\nReset RX_MINE,\nsend STALL
+
+WRITE_STATUS --> LISTEN: [ACK]\nReset RX_MINE
+
+SETUP --> READ_DATA: [D2H request processed]\nFree buffer,\nreset RX_SETUP
+
+READ_DATA --> READ_DATA: [IN, no data ready]\nSend NAK
+
+READ_DATA --> READ_DATA: [IN, data ready]\nSet RX_MINE,\nsend DATA1/DATA0
+
+READ_DATA --> READ_DATA: [ACK, have more data]\nReset RX_MINE,\ntoggle data ID,\nfree transmission buffer
+
+READ_DATA --> READ_DATA: [ACK, no more data, last size 8]\nReset RX_MINE,\ntoggle data ID,\nfree transmission buffer,\nsend empty data
+
+READ_DATA --> READ_STATUS: [ACK, no more data]\nFree transmission buffer
+
+READ_STATUS --> READ_STATUS: [OUT]\nSet RX_MINE
+
+READ_STATUS --> LISTEN: [DATA1]\nReset RX_MINE,\nsend ACK
+
+READ_STATUS --> READ_STATUS: [NAK]\nReset RX_MINE
+
+READ_STATUS --> LISTEN: [STALL]\nReset RX_MINE
+
+</uml>
+
+When "Send status" action is mentioned it means the following:
+  * Send empty DATA1 packet if the request successfully processed.
+  * Send NAK if the request was not yet processed.
+  * Send STALL if the request failed or invalid.
+
+Data ID toggling is not verified in write requests.
+
+Abbreviations:
+  * H2D -- host-to-device direction ''bmRequestType'' field of setup data.
+  * D2H -- device-to-host direction ''bmRequestType'' field of setup data.

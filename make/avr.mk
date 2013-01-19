@@ -39,9 +39,16 @@ endif
 COMMON_COMP_FLAGS += -mmcu=$(ADK_MCU)
 LDFLAGS += -mmcu=$(ADK_MCU)
 
+ifndef ADK_MCU_FREQ
+$(error ADK_MCU_FREQ variable should be defined)
+# ADK_MCU_FREQ
+endif
+
+DEFS += ADK_MCU_FREQ=$(ADK_MCU_FREQ)
+
 ifeq ($(ADK_AVR_USE_USB),yes)
 
-DEFS += ADK_AVR_USE_USB ADK_MCU_FREQ=$(ADK_MCU_FREQ)
+DEFS += ADK_AVR_USE_USB
 SRC_DIRS += $(ADK_ROOT)/src/libavr/usb
 
 # ADK_AVR_USE_USB

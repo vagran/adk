@@ -94,6 +94,13 @@
 #define LAST_STATE          r21
 /* Every leap bit has additional cycle. */
 #define LEAP                r22
+/* adkUsbRxState variable copy. */
+#define RX_STATE            r23
+
+/* Variables below used after the packet is received. */
+
+/* PID of the received packet. */
+#define RX_PID              ONES_CNT
 
 /** Value to substract from leap counter. */
 #define LEAP_VALUE          (0x101 / 3)
@@ -259,9 +266,9 @@ found_K: // [3]
     /* Initialize to proper receive buffer. */
     ldi RX_BUF_LO, AVR_LO8(adkUsbRxBuf) // [7]
     ldi RX_BUF_HI, AVR_HI8(adkUsbRxBuf) // [8]
-    lds TMP0, adkUsbState // [10]
-    andi TMP0, ADK_USB_F_CUR_RX_BUF // [11]
-    brne use_rx_buf1 // [12]
+    lds RX_STATE, adkUsbRxState // [10]
+    sbrc RX_STATE, ADK_USB_RX_CUR_BUF_BIT // [11]
+    rjmp use_rx_buf1 // [12]
     /* Use RX buffer 0. */
     WAIT_1 // [13]
     rjmp rx_buf_initialized // [15]
@@ -373,7 +380,7 @@ sync_skip_first_bit:
     dec TMP0 // [4]
     brne sync_skip_first_bit // [6]
     // [11]
-    //WAIT_2 // [13]
+    WAIT_2 // [13]
     /** Here KK token is skipped and we are precisely in the middle of the first
      * data bit.
      */
@@ -456,39 +463,88 @@ handle_stuff_bit: // 11
 
     /* One is read on stuff bit position. */
 stuff_error:
-
     /* Receiving buffer has been overflowed. */
 rx_buffer_overflow:
-    AVR_USB_DBG_SET(3)
-    in      TMP0, _SFR_IO_ADDR(GIMSK) //XXX
-    andi    TMP0, ~_BV(INT0) //XXX
-    out     _SFR_IO_ADDR(GIMSK), TMP0 //XXX
-    rjmp skip_packet
-
     /* EOP received in the middle of byte. */
 handle_invalid_EOP:
-    AVR_USB_DBG_SET(5)
-    in      TMP0, _SFR_IO_ADDR(GIMSK) //XXX
-    andi    TMP0, ~_BV(INT0) //XXX
-    out     _SFR_IO_ADDR(GIMSK), TMP0 //XXX
     rjmp skip_packet
 
     /* EOP seen when the byte is received. */
 handle_EOP:
-    TRIGGER//XXX
     dec RX_BUF_SIZE
+    subi RX_BUF_SIZE, ADK_USB_RX_BUF_SIZE
+    neg RX_BUF_SIZE
+    sub RX_BUF_LO, RX_BUF_SIZE
+    sbci RX_BUF_HI, 0
+    ld RX_PID, RX_BUF+
     /* Here we have an assumption that EOP was seen and not reset. If it was a
      * token the next packet (if any) will follow shortly (typically 3-4 bits
      * interval). So we must quickly check the received packet and take
-     * approriate actions.
+     * approriate actions. Response should be sent in 6.5 bits time (about 100
+     * cycles accounting also current EOP which should not yet end). If there
+     * is next packet which should be sent by a host, then it will typically
+     * sent in 60 cycles.
+     *
+     * First thing to do is check RX_MINE flag. If it is not set then process
+     * only tokens which match our address.
      */
-    in      TMP0, _SFR_IO_ADDR(GIMSK) //XXX
-    andi    TMP0, ~_BV(INT0) //XXX
-    out     _SFR_IO_ADDR(GIMSK), TMP0 //XXX
-    ldi TMP0, ADK_USB_RX_BUF_SIZE
-    sub TMP0, RX_BUF_SIZE
-    sts adkUsbRxSize, TMP0
-    //XXX check token, address, wait for data packet if applicable
+    sbrc RX_STATE, ADK_USB_RX_MINE_BIT
+    rjmp state_machine_enter
+    /* Currently not waiting for a packet. Check if it is token to us. */
+    cpi RX_PID, ADK_USB_PID_SETUP
+    breq token_found
+    cpi RX_PID, ADK_USB_PID_IN
+    breq token_found
+    cpi RX_PID, ADK_USB_PID_OUT
+    breq token_found
+    /* Not a token for us. */
+    rjmp check_idle
+token_found:
+    /* Check destination address. */
+    ld TMP0, RX_BUF
+    andi TMP0, 0x7f
+    lds TMP1, adkUsbDeviceAddress
+    cpse TMP0, TMP1
+    rjmp check_idle
+    /* Have a packet for us, set RX_MINE and process through the state machine. */
+    sbr RX_STATE, ADK_USB_RX_MINE_BIT
+state_machine_enter:
+    lds TMP0, adkUsbState
+    andi TMP0, ADK_USB_STATE_MASK
+    /* Get address for vector of this state. Assuming POWERED state cannot
+     * reach this point.
+     */
+    ldi ZL, AVR_LO8(sm_jump_table)
+    ldi ZH, AVR_HI8(sm_jump_table)
+    dec TMP0 // Not accounting POWERED state.
+    lsr ZH
+    ror ZL
+    add ZL, TMP0
+    adc ZH, ZERO
+    ijmp
+    /* Jump table for state handlers. Vectors for each state. Keep in sync with
+     * ADK_USB_STATE_XXX constants.
+     */
+sm_jump_table:
+    rjmp sm_listen
+    rjmp sm_setup
+    rjmp sm_write_data
+    rjmp sm_write_status
+    rjmp sm_read_data
+    rjmp sm_read_status
+
+/* State handlers. */
+
+sm_listen:
+    TRIGGER//XXX
+
+
+sm_setup:
+sm_write_data:
+sm_write_status:
+sm_read_data:
+sm_read_status:
+    sts adkUsbRxState, RX_STATE
     rjmp check_idle
 
     /* Device is in POWERED state. Skip anything but reset signal. */
