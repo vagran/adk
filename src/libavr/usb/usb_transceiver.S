@@ -465,9 +465,10 @@ handle_stuff_bit: // 11
 stuff_error:
     /* Receiving buffer has been overflowed. */
 rx_buffer_overflow:
+    rjmp skip_packet
     /* EOP received in the middle of byte. */
 handle_invalid_EOP:
-    rjmp skip_packet
+    rjmp skip_packet_se0
 
     /* EOP seen when the byte is received. */
 handle_EOP:
@@ -507,7 +508,7 @@ token_found:
     cpse TMP0, TMP1
     rjmp check_idle
     /* Have a packet for us, set RX_MINE and process through the state machine. */
-    sbr RX_STATE, ADK_USB_RX_MINE_BIT
+    ori RX_STATE, ADK_USB_RX_MINE
 state_machine_enter:
     lds TMP0, adkUsbState
     andi TMP0, ADK_USB_STATE_MASK
@@ -535,15 +536,83 @@ sm_jump_table:
 
 /* State handlers. */
 
-sm_listen:
-    TRIGGER//XXX
+/************************* LISTEN *********************************************/
 
+sm_listen:
+    /* Accept only SETUP tokens in this state. */
+    ldi TMP0, ADK_USB_PID_SETUP
+    cpse RX_PID, TMP0
+    rjmp send_stall
+    ldi TMP0, ADK_USB_STATE_SETUP
+    rcall SetState
+    rjmp sm_exit
+
+/************************* SETUP **********************************************/
 
 sm_setup:
+    cpi RX_PID, ADK_USB_PID_DATA0
+    brne sm_s_not_data0
+    sbrc RX_STATE, ADK_USB_RX_SETUP_BIT
+    rjmp send_nak
+    /* DATA0, RX_SETUP not set. Hold data in the receiving buffer for further
+     * processing.
+     */
+    ori RX_STATE, ADK_USB_RX_SETUP
+    subi RX_BUF_SIZE, 3 // Not account PID and CRC in length
+    /* Assume buffer is currently free so the size field is already zero. */
+    or RX_STATE, RX_BUF_SIZE
+    ldi TMP0, ADK_USB_RX_CUR_BUF
+    eor RX_STATE, TMP0 // Toggle current active buffer.
+    rjmp send_ack
+sm_s_not_data0:
+    /* Tokens other than DATA0. Accept only OUT token, NAK for the rest ones. */
+    ldi TMP0, ADK_USB_PID_OUT
+    cpse RX_PID, TMP0
+    rjmp send_nak
+    rjmp sm_exit
+
+/************************* WRITE_DATA *****************************************/
+
 sm_write_data:
 sm_write_status:
 sm_read_data:
 sm_read_status:
+
+sm_exit:
+    /* Save RX state. */
+    sts adkUsbRxState, RX_STATE
+    rjmp check_idle
+
+/* Set new current state. State value in TMP0. */
+SetState:
+    lds TMP1, adkUsbState
+    andi TMP1, ~ADK_USB_STATE_MASK
+    or TMP1, TMP0
+    sts adkUsbState, TMP1
+    ret
+
+/* Send ACK and exit. */
+send_ack:
+    ldi TMP0, ADK_USB_PID_ACK
+    rjmp send_handshake
+/* Send NAK and exit. */
+send_nak:
+    ldi TMP0, ADK_USB_PID_NAK
+    rjmp send_handshake
+/* Send STALL and exit. */
+send_stall:
+    ldi TMP0, ADK_USB_PID_STALL
+    /* Current transaction complete, send handshake (PID in TMP0), reset RX_MINE
+     * and check for next packet.
+     */
+send_handshake:
+    sts adkUsbTxAuxBuf + 1, TMP0
+    ldi r18, 2
+    ldi r26, AVR_LO8(adkUsbTxAuxBuf)
+    ldi r27, AVR_HI8(adkUsbTxAuxBuf)
+    rcall AdkUsbTrasmit
+    /* Reset RX_MINE. */
+    andi RX_STATE, ~ADK_USB_RX_MINE
     sts adkUsbRxState, RX_STATE
     rjmp check_idle
 
@@ -623,9 +692,9 @@ check_idle_loop:
     in TMP1, _SFR_IO_ADDR(AVR_USB_DPORT_PIN) // [1]
     andi TMP1, DATA_LINES_MASK // [2]
     cpi TMP1, DATA_LINES_IDLE // [3]
-    breq check_idle_se0 // [5]
+    breq check_idle_inactive // [5]
     rjmp AdkUsbInterrupt // Line active, handle it.
-check_idle_se0:
+check_idle_inactive:
     dec TMP0 // [6]
     brne check_idle_loop // [8]
     /* Timeout exceeded while the line is still idle. Can return now. */
@@ -657,7 +726,7 @@ AdkUsbTrasmit:
     /* Drive the data lines. */
     sbi _SFR_IO_ADDR(AVR_USB_DPORT_PORT), AVR_USB_DMINUS_PIN
     sbi _SFR_IO_ADDR(AVR_USB_DPORT_DDR), AVR_USB_DPLUS_PIN
-    sbi _SFR_IO_ADDR(AVR_USB_DPORT_PORT), AVR_USB_DMINUS_PIN
+    sbi _SFR_IO_ADDR(AVR_USB_DPORT_DDR), AVR_USB_DMINUS_PIN
 
     /* Numbers in square brackets are number of cycles since last bit front edge. */
 

@@ -20,7 +20,9 @@ u8 adkUsbRxState;
 
 u8 adkUsbDeviceAddress;
 
+u8 adkUsbTxDataBuf[ADK_USB_TX_BUF_SIZE];
 
+u8 adkUsbTxAuxBuf[ADK_USB_TX_AUX_BUF_SIZE];
 
 void
 AdkUsbSetup()
@@ -41,7 +43,7 @@ AdkUsbSetup()
     adkUsbDeviceAddress = 0;
     adkUsbRxState = 0;
 
-    //XXX fill SYNC in transmission buffer
+    adkUsbTxAuxBuf[0] = ADK_USB_SYNC_PAT;
 }
 
 void

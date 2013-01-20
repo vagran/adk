@@ -240,7 +240,132 @@ class Event(object):
             return True
         # Next event detected
         return False
+
+class Parser(object):
     
+    class Param(object):
+        def __init__(self, name, desc, value, valueName = None):
+            self.value = value
+            self.name = name
+            self.desc = desc
+            self.valueName = valueName
+        
+        def _GetValueStr(self):
+            return '[0x%x (%d)]' % (self.value, self.value)
+        
+        def __str__(self):
+            return '[%s] %s: %s%s' % (self.name, self.desc, 
+                                      self.valueName + ' ' if self.valueName is not None else '', 
+                                      self._GetValueStr())
+    
+    def _GetFieldPos(self, posStr):
+        'Return (start_pos, len) tuple.'
+        if '-' in posStr:
+            endPos, startPos = posStr.split('-')
+            if endPos < startPos:
+                Error('MSB bit index greater than LSB bit index: %d/%d' % 
+                      (endPos, startPos))
+            return (int(startPos), int(endPos) - int(startPos) + 1)
+        return (int(posStr), 1)
+    
+    def _GetFieldValue(self, pos, raw):
+        'Get field value by raw word and position.'
+        mask = (1 << pos[1]) - 1
+        return (raw >> pos[0]) & mask
+    
+    def _GetValueStr(self, value):
+        return '[0x%x (%d)]' % (value, value)
+    
+    def ParseBitfields8(self, byte, fields):
+        params = dict()
+        for fieldPos in fields:
+            pos = self._GetFieldPos(fieldPos)
+            value = self._GetFieldValue(pos, byte)
+            valueStr = self._GetValueStr(value)
+            fieldDesc = fields[fieldPos]
+            if value in fieldDesc:
+                valueName = fieldDesc[value]
+            else:
+                valueName = 'UNKNOWN'
+            params[fieldDesc['name']] = Parser.Param(fieldDesc['name'], 
+                                                     fieldDesc['desc'], 
+                                                     value, valueName)
+        
+        return params
+    
+    def ParseEnum(self, byte, enum):
+        if byte in enum:
+            valueName = enum[byte]
+        else:
+            valueName = 'UNKNOWN'
+        return {enum['name']: Parser.Param(enum['name'], enum['desc'],
+                                           byte, valueName)}
+    
+    def ParseNum8(self, byte, num):
+        return {num['name']: Parser.Param(num['name'], num['desc'], byte)}
+    
+    def ParseNum16(self, bytes, num):
+        value = bytes[0] + (bytes[1] << 8)
+        return {num['name']: Parser.Param(num['name'], num['desc'], value)}
+
+class SetupDataParser(Parser):
+    
+    def Parse(self, data):
+        params = dict()
+        params.update(self.ParseBitfields8(data[0], 
+                             {'7': 
+                                {'name': 'bmRequestType_dir',
+                                 'desc': 'Transfer direction',
+                                 0: 'Host-to-device',
+                                 1: 'Device-to-host'},
+                              '6-5':
+                                {'name': 'bmRequestType_type',
+                                 'desc': 'Type',
+                                 0: 'Standard',
+                                 1: 'Class',
+                                 2: 'Vendor'},
+                              '4-0':
+                                {'name': 'bmRequestType_rcp',
+                                 'desc': 'Recipient',
+                                 0: 'Device',
+                                 1: 'Interface',
+                                 2: 'Endpoint'}}))
+        
+        if params['bmRequestType_type'].value == 0:
+            params.update(self.ParseEnum(data[1],
+                           {'name': 'bRequest',
+                            'desc': 'Specific request',
+                            0x00: 'GET_STATUS',
+                            0x01: 'CLEAR_FEATURE',
+                            0x03: 'SET_FEATURE',
+                            0x05: 'SET_ADDRESS',
+                            0x06: 'GET_DESCRIPTOR',
+                            0x07: 'SET_DESCRIPTOR',
+                            0x08: 'GET_CONFIGURATION',
+                            0x09: 'SET_CONFIGURATION',
+                            0x0a: 'GET_INTERFACE',
+                            0x0b: 'SET_INTERFACE',
+                            0x0c: 'SYNC_FRAME'
+                            }))
+        else:
+            params.update(self.ParseNum8(data[1],
+                                         {'name': 'bRequest',
+                                          'desc': 'Specific request'}))
+        params.update(self.ParseNum16(data[2:4],
+                                     {'name': 'wValue',
+                                      'desc': 'Word parameter'}))
+        params.update(self.ParseNum16(data[4:6],
+                                     {'name': 'wIndex',
+                                      'desc': 'Word index'}))
+        params.update(self.ParseNum16(data[6:8],
+                                     {'name': 'wLength',
+                                      'desc': 'Number of bytes to transfer'}))
+        
+        print('SETUP data:')
+        for param in params:
+            print(str(params[param]))
+        
+
 class Packet:
     
     def __init__(self, isKeepAlive = False):
@@ -256,7 +381,9 @@ class Packet:
         self.curByte = 0
         self.crcOk = None
         self.crc = None
+        self.pid = None
         self.crcPkt = None
+        self.parser = None
         
     def __len__(self):
         return len(self.bytes)
@@ -379,7 +506,7 @@ class Packet:
                 self.isInvalid = True
             else:
                 # Check CRC for data packets
-                pid = self.GetPidStr(self.pid)
+                pid = Packet.GetPidStr(self.pid)
                 if pid == 'DATA0' or pid == 'DATA1' or pid == 'DATA2' or pid == 'MDATA':
                     self.crc = Crc16(self.bytes[1 : -2])
                     self.crcPkt = (self.bytes[-2] << 8) | self.bytes[-1]
@@ -388,7 +515,8 @@ class Packet:
                         Warning('Wrong CRC, have %04x, should be %04x' % (self.crcPkt, self.crc), self.events[0])
                         self.isInvalid = True
     
-    def GetPidStr(self, pid):
+    @staticmethod
+    def GetPidStr(pid):
         if pid == 0b0001:
             return 'OUT'
         if pid == 0b1001:
@@ -408,7 +536,7 @@ class Packet:
         if pid == 0b0010:
             return 'ACK'
         if pid == 0b1010:
-            return 'NACK'
+            return 'NAK'
         if pid == 0b1110:
             return 'STALL'
         if pid == 0b0110:
@@ -419,14 +547,17 @@ class Packet:
             return 'SPLIT'
         if pid == 0b0100:
             return 'PING'
+        return 'NONE'
     
     def Dump(self):
         global opts
         
         if self.isKeepAlive:
             pid = 'KEEP-ALIVE'
+        elif len(self.bytes) > 0:
+            pid = Packet.GetPidStr(self.bytes[0] & 0xf)
         else:
-            pid = self.GetPidStr(self.bytes[0] & 0xf)
+            pid = ''
         
         if self.crcOk is not None:
             if self.crcOk:
@@ -436,12 +567,18 @@ class Packet:
         else:
             crcStr = ''
         
-        print('\n[%s%g %s %d bytes%s]' % ('INVALID ' if self.isInvalid else '',
-                                      self.events[0].startTime,
-                                      pid,
-                                      len(self.bytes),
-                                      crcStr))
+        print('\n#%d [%s%g %s %d bytes%s]' % (
+                  self.idx,
+                  'INVALID ' if self.isInvalid else '',
+                  self.events[0].startTime,
+                  pid,
+                  len(self.bytes),
+                  crcStr))
         HexDump(self.bytes)
+        
+        if (not self.isInvalid and (pid == 'DATA0' or pid == 'DATA1') and
+            self.parser is not None):
+            self.parser.Parse(self.bytes[1:-2])
         
         if opts.dbgLeds:
             def GetLed(x):
@@ -496,7 +633,7 @@ def DigitizeData():
                     
                 curPacket = Packet(True)
                 curPacket.AddEvent(event)
-                opts.events.append(curPacket)
+                opts.packets.append(curPacket)
                 curPacket = None
                 continue
             
@@ -518,9 +655,17 @@ def DigitizeData():
         opts.packets.append(curPacket)
     
     opts.numInvalidPackets = 0
+    idx = 0
     for pkt in opts.packets:
+        pkt.idx = idx
         if pkt.isInvalid:
             opts.numInvalidPackets += 1
+        elif (Packet.GetPidStr(pkt.pid) == 'DATA0' and idx > 0 and 
+              not opts.packets[idx - 1].isInvalid and 
+              Packet.GetPidStr(opts.packets[idx - 1].pid) == 'SETUP'):
+            pkt.parser = SetupDataParser()
+            
+        idx += 1
     print('%d packets found' % len(opts.packets))
     if opts.numInvalidPackets > 0:
         Warning('%d invalid packets' % opts.numInvalidPackets)

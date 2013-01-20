@@ -58,6 +58,9 @@
 #define ADK_USB_PID_NAK             0x5a
 #define ADK_USB_PID_STALL           0x1e
 
+/** SYNC pattern as it is transferred. */
+#define ADK_USB_SYNC_PAT            0x80
+
 /* USB device states as per diagram in doc/pages/product/avr/usb.txt. */
 #define ADK_USB_STATE_POWERED       0
 #define ADK_USB_STATE_LISTEN        1
@@ -84,8 +87,9 @@
  * after token decoding and address checking, reset after transaction completion).
  */
 #define ADK_USB_RX_MINE             _BV(ADK_USB_RX_MINE_BIT)
+#define ADK_USB_RX_SETUP_BIT        5
 /** Set when setup request is received, not data. */
-#define ADK_USB_RX_SETUP            0x20
+#define ADK_USB_RX_SETUP            _BV(ADK_USB_RX_SETUP_BIT)
 
 /** Maximal allowed data payload for low-speed devices is 8 bytes. */
 #define ADK_USB_MAX_DATA_SIZE       8
@@ -101,6 +105,160 @@
 #define ADK_USB_TX_AUX_BUF_SIZE     4
 
 #ifndef __ASSEMBLER__
+
+/** Setup transaction data payload format (Table 9-2 of the specification). */
+typedef struct {
+    /** Characteristics of the request (direction, type, recipient). */
+    u8 bmRequestType;
+    /** Specific request. */
+    u8 bRequest;
+    /** Word-sized field that varies according to request. */
+    u16 wValue;
+    /** Word-sized field that varies according to request; typically used to
+     * pass an index or offset.
+     */
+    u16 wIndex;
+    /** Number of bytes to transfer if there is a Data stage. */
+    u16 wLength;
+} AdkUsbSetupData;
+
+/* Bits in bmRequestType field of AdkUsbSetupData. */
+
+/** Data transfer direction. */
+#define ADK_USB_REQ_TYPE_DIR_MASK       0x80
+/** Host-to-device. */
+#define ADK_USB_REQ_TYPE_DIR_H2D        0x00
+/** Device-to-host. */
+#define ADK_USB_REQ_TYPE_DIR_D2H        0x80
+/** Type. */
+#define ADK_USB_REQ_TYPE_TYPE_MASK      0x60
+#define ADK_USB_REQ_TYPE_TYPE_STANDARD  0x00
+#define ADK_USB_REQ_TYPE_TYPE_CLASS     0x20
+#define ADK_USB_REQ_TYPE_TYPE_VENDOR    0x40
+/** Recipient. */
+#define ADK_USB_REQ_TYPE_RCP_MASK       0x1f
+/** Device. */
+#define ADK_USB_REQ_TYPE_RCP_DEV        0x00
+/** Interface. */
+#define ADK_USB_REQ_TYPE_RCP_IF         0x01
+/** Endpoint. */
+#define ADK_USB_REQ_TYPE_RCP_EP         0x02
+
+/* Values for bRequest field of AdkUsbSetupData (Table 9-4). */
+#define ADK_USB_REQ_GET_STATUS          0x00
+#define ADK_USB_REQ_CLEAR_FEATURE       0x01
+#define ADK_USB_REQ_SET_FEATURE         0x03
+#define ADK_USB_REQ_SET_ADDRESS         0x05
+#define ADK_USB_REQ_GET_DESCRIPTOR      0x06
+#define ADK_USB_REQ_SET_DESCRIPTOR      0x07
+#define ADK_USB_REQ_GET_CONFIGURATION   0x08
+#define ADK_USB_REQ_SET_CONFIGURATION   0x09
+#define ADK_USB_REQ_GET_INTERFACE       0x0a
+#define ADK_USB_REQ_SET_INTERFACE       0x0b
+#define ADK_USB_REQ_SYNC_FRAME          0x0c
+
+/* Descriptor types used in GET/SET_DESCRIPTOR requests (Table 9-5). */
+#define ADK_USB_DESC_TYPE_DEVICE        0x01
+#define ADK_USB_DESC_TYPE_CONFIGURATION 0x02
+#define ADK_USB_DESC_TYPE_STRING        0x03
+#define ADK_USB_DESC_TYPE_INTERFACE     0x04
+#define ADK_USB_DESC_TYPE_ENDPOINT      0x05
+
+/** Standard device descriptor (Table 9-8). */
+typedef struct {
+    /** Size of this descriptor in bytes. */
+    u8 bLength;
+    /** Device descriptor type. */
+    u8 bDescriptorType;
+    /** USB Specification Release Number in Binary-Coded Decimal (i.e., 2.10 is
+     * 210H). This field identifies the release of the USB Specification with
+     * which the device and its descriptors are compliant.
+     */
+    u16 bcdUSB;
+    /** Class code (assigned by the USB-IF). If this field is reset to zero,
+     * each interface within a configuration specifies its own class information
+     * and the various interfaces operate independently. If this field is set to
+     * a value between 1 and FEH, the device supports different class
+     * specifications on different interfaces and the interfaces may not operate
+     * independently. This value identifies the class definition used for the
+     * aggregate interfaces. If this field is set to FFH, the device class is
+     * vendor-specific.
+     */
+    u8 bDeviceClass;
+    /** Subclass code (assigned by the USB-IF). These codes are qualified by the
+     * value of the bDeviceClass field. If the bDeviceClass field is reset to
+     * zero, this field must also be reset to zero. If the bDeviceClass field is
+     * not set to FFH, all values are reserved for assignment by the USB-IF.
+     */
+    u8 bDeviceSubClass;
+    /** Protocol code (assigned by the USB-IF). These codes are qualified by the
+     * value of the bDeviceClass and the bDeviceSubClass fields. If a device
+     * supports class-specific protocols on a device basis as opposed to an
+     * interface basis, this code identifies the protocols that the device uses
+     * as defined by the specification of the device class. If this field is
+     * reset to zero, the device does not use class-specific protocols on a
+     * device basis. However, it may use class-specific protocols on an
+     * interface basis. If this field is set to FFH, the device uses a vendor-
+     * specific protocol on a device basis.
+     */
+    u8 bDeviceProtocol;
+    /** Maximum packet size for endpoint zero (only 8, 16, 32, or 64 are valid). */
+    u8 bMaxPacketSize0;
+    /** Vendor ID (assigned by the USB-IF). */
+    u16 idVendor;
+    /** Product ID (assigned by the manufacturer). */
+    u16 idProduct;
+    /** Device release number in binary-coded decimal. */
+    u16 bcdDevice;
+    /** Index of string descriptor describing manufacturer. */
+    u8 iManufacturer;
+    /** Index of string descriptor describing product. */
+    u8 iProduct;
+    /** Index of string descriptor describing the device’s serial number. */
+    u8 iSerialNumber;
+    /** Number of possible configurations. */
+    u8 bNumConfigurations;
+} AdkUsbDeviceDesc;
+
+/** Standard configuration descriptor (Table 9-10). */
+typedef struct {
+    /** Size of this descriptor in bytes. */
+    u8 bLength;
+    /** Configuration descriptor type. */
+    u8 bDescriptorType;
+    /** Total length of data returned for this configuration. Includes the
+     * combined length of all descriptors (configuration, interface, endpoint,
+     * and class- or vendor-specific) returned for this configuration.
+     */
+    u16 wTotalLength;
+    /** Number of interfaces supported by this configuration. */
+    u8 bNumInterfaces;
+    /** Value to use as an argument to the SetConfiguration() request to select
+     * this configuration.
+     */
+    u8 bConfigurationValue;
+    /** Index of string descriptor describing this configuration. */
+    u8 iConfiguration;
+    /** Configuration characteristics. */
+    u8 bmAttributes;
+    /** Maximum power consumption of the USB device from the bus in this
+     * specific configuration when the device is fully operational. Expressed in
+     * 2 mA units (i.e., 50 = 100 mA).
+    */
+    u8 bMaxPower;
+} AdkUsbConfigDesc;
+
+/* Values for bmAttributes field of AdkUsbConfigDesc. */
+/** D7 is reserved and must be set to one for historical reasons. */
+#define ADK_USB_CONF_ATTR_ONE           0x80
+/** A device configuration that uses power from the bus and a local source
+ * reports a non-zero value in bMaxPower to indicate the amount of bus power
+ * required and sets D6. The actual power source at runtime may be determined
+ * using the GetStatus(DEVICE) request (see Section 9.4.5).
+ */
+#define ADK_UBS_CONF_ATTR_SELF_POWERED  0x40
+/** Set if a device configuration supports remote wake-up. */
+#define ADK_UBS_CONF_ATTR_REMOTE_WAKEUP 0x20
 
 /** Current USB device state and flags. */
 extern u8 adkUsbState;
@@ -137,7 +295,7 @@ AdkUsbSetup();
  * function with interrupts globally disabled. This can consume a lot of CPU
  * time when large USB traffic is processed (even when destination is another
  * USB function).
- * It is up to user defined fuction to reset pending interrupt flag if required
+ * It is up to user defined function to reset pending interrupt flag if required
  * in order to not produce false interrupt.
  */
 void
