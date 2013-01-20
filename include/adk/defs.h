@@ -53,4 +53,12 @@
 #define __STR(x)                    __STR2(x)
 #endif
 
+#ifndef TRUE
+#define TRUE    1
+#endif
+
+#ifndef FALSE
+#define FALSE   0
+#endif
+
 #endif /* ADK_DEFS_H_ */

@@ -19,6 +19,7 @@ u8 adkUsbRxBuf[2 * ADK_USB_RX_BUF_SIZE];
 u8 adkUsbRxState;
 
 u8 adkUsbDeviceAddress;
+u8 adkUsbNewDeviceAddress;
 
 u8 adkUsbTxDataBuf[ADK_USB_TX_BUF_SIZE];
 
@@ -44,13 +45,68 @@ AdkUsbSetup()
     adkUsbRxState = 0;
 
     adkUsbTxAuxBuf[0] = ADK_USB_SYNC_PAT;
+    /* CRC-16 for empty data packets. */
+    adkUsbTxAuxBuf[2] = 0;
+    adkUsbTxAuxBuf[3] = 0;
 }
 
 void
 AdkUsbPoll()
 {
-    //XXX
-    //check system requests
+    if (adkUsbRxState & ADK_USB_RX_SIZE_MASK) {
+        AVR_USB_DBG_SET(5);//XXX
+        /* Have incoming data. */
+        if (adkUsbRxState & ADK_USB_RX_SETUP) {
+            /* SETUP data received, process the request. */
+
+            AdkUsbSetupData *req = (AdkUsbSetupData *)AdkUsbGetRxData();
+            bool_t hasFailed = FALSE;
+
+            if ((req->bmRequestType & ADK_USB_REQ_TYPE_TYPE_MASK) ==
+                ADK_USB_REQ_TYPE_TYPE_STANDARD) {
+                /* Standard request received. */
+
+                if (req->bRequest == ADK_USB_REQ_SET_ADDRESS) {
+                    /* Device address designated by a host. Assuming it is
+                     * correct (1-127), no resources to check.
+                     */
+                    adkUsbNewDeviceAddress = req->wValue;
+                    AVR_USB_DBG_SET(3);//XXX
+                } else if (0) {
+                    //XXX
+                } else {
+                    hasFailed = TRUE;
+                }
+            } else if ((req->bmRequestType & ADK_USB_REQ_TYPE_TYPE_MASK) ==
+                       ADK_USB_REQ_TYPE_TYPE_VENDOR) {
+                /* Vendor-specific request, most probably ADK I/O. */
+                //XXX
+            } else {
+                hasFailed = TRUE;
+            }
+
+            /* State should be modified atomically. */
+            u8 nextState;
+            if ((req->bmRequestType & ADK_USB_REQ_TYPE_DIR_MASK) ==
+                ADK_USB_REQ_TYPE_DIR_H2D) {
+
+                /* Write request. */
+                if (req->wLength) {
+                    nextState = ADK_USB_STATE_WRITE_DATA;
+                } else {
+                    nextState = ADK_USB_STATE_WRITE_STATUS;
+                }
+            } else {
+                /* Read request. */
+                nextState = ADK_USB_STATE_READ_DATA;
+            }
+            cli();
+            adkUsbRxState &= ~(ADK_USB_RX_SETUP | ADK_USB_RX_SIZE_MASK);
+            adkUsbState = (adkUsbState & ADK_USB_STATE_MASK) | nextState |
+                (hasFailed ? ADK_USB_STATE_TRANS_FAILED : 0);
+            sei();
+        }
+    }
 }
 
 /** This function is called from assembler interrupt handler when reset is

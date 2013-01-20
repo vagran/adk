@@ -574,7 +574,14 @@ sm_s_not_data0:
 /************************* WRITE_DATA *****************************************/
 
 sm_write_data:
+    //XXX
+    rjmp sm_exit
+
+/************************* WRITE_STATUS *****************************************/
 sm_write_status:
+    //TRIGGER//XXX
+    rjmp sm_exit
+
 sm_read_data:
 sm_read_status:
 
@@ -683,21 +690,27 @@ wait_reset_finish:
 
     /* Ensure the line is idle for some time before exiting from interrupt
      * handler. Otherwise we could miss packet SYNC pattern if the is exited and
-     * reentered. Wait for a packet for 10 bits (133 cycles). The loop time
+     * reentered. Wait for a packet for 8 bits (107 cycles). The loop time
      * should be less than bit length.
      */
 check_idle:
-    ldi TMP0, 16
+    ldi TMP0, 11
 check_idle_loop:
     in TMP1, _SFR_IO_ADDR(AVR_USB_DPORT_PIN) // [1]
     andi TMP1, DATA_LINES_MASK // [2]
     cpi TMP1, DATA_LINES_IDLE // [3]
     breq check_idle_inactive // [5]
-    rjmp AdkUsbInterrupt // Line active, handle it.
+    rjmp AdkUsbInterrupt // [6] Line active, handle it.
 check_idle_inactive:
-    dec TMP0 // [6]
-    brne check_idle_loop // [8]
+    dec TMP0 // [7]
+    brne check_idle_loop // [9]
     /* Timeout exceeded while the line is still idle. Can return now. */
+    //XXX
+    lds TMP0, adkUsbRxState
+    andi TMP0, ADK_USB_RX_SIZE_MASK
+    breq tmp_lbl
+    TRIGGER//XXX not reached!!!
+tmp_lbl:
     ret
 
 /* Transmit the provided packet. The provided data should include SYNC pattern.

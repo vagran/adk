@@ -94,6 +94,7 @@ def ImportData():
     opts.dPlusData = np.array(dPlusData)
     
     print('%d samples imported' % len(timeData))
+    print('Total capture duration: %gs' % (opts.timeData[-1] - opts.timeData[0]))
 
 def HexDump(data):
     line = None
@@ -174,6 +175,8 @@ class Event(object):
         self.startTime = None
         self.endTime = None
         self.type = None
+        self.numSe0Samples = 0
+        self.numSe1Samples = 0
     
     @staticmethod
     def GetTypeStr(type):
@@ -201,9 +204,15 @@ class Event(object):
     
     def _GetType(self, dminus, dplus):
         if dminus < Vil and dplus < Vil:
-            return Event.TYPE_SE0
+            if self.numSe0Samples > 0:
+                return Event.TYPE_SE0
+            self.numSe0Samples += 1
+            return None
         elif dminus > Vih and dplus > Vih:
-            return Event.TYPE_SE1
+            if self.numSe1Samples > 0:
+                return Event.TYPE_SE1
+            self.numSe1Samples += 1
+            return None
         elif dplus - dminus > Vdi:
             return Event.TYPE_K
         elif dminus - dplus > Vdi:
@@ -244,11 +253,15 @@ class Event(object):
 class Parser(object):
     
     class Param(object):
+        curIdx = 0
+        
         def __init__(self, name, desc, value, valueName = None):
             self.value = value
             self.name = name
             self.desc = desc
             self.valueName = valueName
+            self.idx = Parser.Param.curIdx
+            Parser.Param.curIdx += 1
         
         def _GetValueStr(self):
             return '[0x%x (%d)]' % (self.value, self.value)
@@ -262,10 +275,12 @@ class Parser(object):
         'Return (start_pos, len) tuple.'
         if '-' in posStr:
             endPos, startPos = posStr.split('-')
+            startPos = int(startPos)
+            endPos = int(endPos)
             if endPos < startPos:
                 Error('MSB bit index greater than LSB bit index: %d/%d' % 
                       (endPos, startPos))
-            return (int(startPos), int(endPos) - int(startPos) + 1)
+            return (startPos, endPos - startPos + 1)
         return (int(posStr), 1)
     
     def _GetFieldValue(self, pos, raw):
@@ -276,28 +291,34 @@ class Parser(object):
     def _GetValueStr(self, value):
         return '[0x%x (%d)]' % (value, value)
     
-    def ParseBitfields8(self, byte, fields):
+    def _ParseBitfield(self, raw, fields):
         params = dict()
         for fieldPos in fields:
             pos = self._GetFieldPos(fieldPos)
-            value = self._GetFieldValue(pos, byte)
+            value = self._GetFieldValue(pos, raw)
             valueStr = self._GetValueStr(value)
             fieldDesc = fields[fieldPos]
             if value in fieldDesc:
                 valueName = fieldDesc[value]
             else:
-                valueName = 'UNKNOWN'
+                valueName = None
             params[fieldDesc['name']] = Parser.Param(fieldDesc['name'], 
                                                      fieldDesc['desc'], 
                                                      value, valueName)
-        
         return params
+    
+    def ParseBitfields8(self, byte, fields):
+        return self._ParseBitfield(byte, fields)
+    
+    def ParseBitfields16(self, bytes, fields):
+        raw = bytes[0] + (bytes[1] << 8)
+        return self._ParseBitfield(raw, fields)
     
     def ParseEnum(self, byte, enum):
         if byte in enum:
             valueName = enum[byte]
         else:
-            valueName = 'UNKNOWN'
+            valueName = None
         return {enum['name']: Parser.Param(enum['name'], enum['desc'],
                                            byte, valueName)}
     
@@ -312,26 +333,26 @@ class SetupDataParser(Parser):
     
     def Parse(self, data):
         params = dict()
-        params.update(self.ParseBitfields8(data[0], 
+        params.update(self.ParseBitfields8(data[0],
                              {'7': 
-                                {'name': 'bmRequestType_dir',
+                                {'name': 'bmRequestType:dir',
                                  'desc': 'Transfer direction',
                                  0: 'Host-to-device',
                                  1: 'Device-to-host'},
                               '6-5':
-                                {'name': 'bmRequestType_type',
+                                {'name': 'bmRequestType:type',
                                  'desc': 'Type',
                                  0: 'Standard',
                                  1: 'Class',
                                  2: 'Vendor'},
                               '4-0':
-                                {'name': 'bmRequestType_rcp',
+                                {'name': 'bmRequestType:rcp',
                                  'desc': 'Recipient',
                                  0: 'Device',
                                  1: 'Interface',
                                  2: 'Endpoint'}}))
         
-        if params['bmRequestType_type'].value == 0:
+        if params['bmRequestType:type'].value == 0:
             params.update(self.ParseEnum(data[1],
                            {'name': 'bRequest',
                             'desc': 'Specific request',
@@ -362,11 +383,42 @@ class SetupDataParser(Parser):
                                       'desc': 'Number of bytes to transfer'}))
         
         print('SETUP data:')
-        for param in params:
+        for param in (sorted(params, key = lambda name: params[name].idx)):
             print(str(params[param]))
+
+class TokenParser(Parser):
+    
+    def Parse(self, data):
+        params = dict()
         
+        params.update(self.ParseBitfields16(data[0:2],
+                         {'10-7': 
+                            {'name': 'ENDP',
+                             'desc': 'Endpoint'},
+                          '6-0':
+                            {'name': 'ADDR',
+                             'desc': 'Address'}}))
+        
+        print('Token data:')
+        for param in (sorted(params, key = lambda name: params[name].idx)):
+            print(str(params[param]))
 
 class Packet:
+    PID_OUT = 0b0001
+    PID_IN = 0b1001
+    PID_SOF = 0b0101
+    PID_SETUP = 0b1101
+    PID_DATA0 = 0b0011
+    PID_DATA1 = 0b1011
+    PID_DATA2 = 0b0111
+    PID_MDATA = 0b1111
+    PID_ACK = 0b0010
+    PID_NAK = 0b1010
+    PID_STALL =  0b1110
+    PID_NYET = 0b0110
+    PID_PRE = 0b1100
+    PID_SPLIT = 0b1000
+    PID_PING = 0b0100
     
     def __init__(self, isKeepAlive = False):
         self.isKeepAlive = isKeepAlive
@@ -384,6 +436,7 @@ class Packet:
         self.pid = None
         self.crcPkt = None
         self.parser = None
+        self.isFinalized = False
         
     def __len__(self):
         return len(self.bytes)
@@ -416,7 +469,7 @@ class Packet:
         
     def _AddBits(self, event, numBits):
         if event.type != Event.TYPE_J and event.type != Event.TYPE_K:
-            Error('Wrong event type supplied')
+            Error('Wrong event type supplied: %d' % event.type)
         state = 1 if event.type == Event.TYPE_K else 0
         if state == self.lastState:
             for i in range(0, numBits):
@@ -492,10 +545,19 @@ class Packet:
             self.Finalize()
             return
         
+        if event.type == Event.TYPE_SE1:
+            Warning('Unexpected SE1', event)
+            self.isInvalid = True
+            self.Finalize()
+            return
+        
         n = self._GetNumBits(event)
         self._AddBits(event, n)
     
     def Finalize(self):
+        if self.isFinalized:
+            return
+        self.isFinalized = True
         if self.bitCount != 0:
             Warning('Packet byte truncated', self.events[-1])
             self.isInvalid = True
@@ -514,40 +576,49 @@ class Packet:
                     if not self.crcOk:
                         Warning('Wrong CRC, have %04x, should be %04x' % (self.crcPkt, self.crc), self.events[0])
                         self.isInvalid = True
+        
+        self.startTime = self.events[0].startTime
+        self.endTime = self.events[-1].endTime
+        self.duration = self.endTime - self.startTime
     
     @staticmethod
     def GetPidStr(pid):
-        if pid == 0b0001:
+        if pid == Packet.PID_OUT:
             return 'OUT'
-        if pid == 0b1001:
+        if pid == Packet.PID_IN:
             return 'IN'
-        if pid == 0b0101:
+        if pid == Packet.PID_SOF:
             return 'SOF'
-        if pid == 0b1101:
+        if pid == Packet.PID_SETUP:
             return 'SETUP'
-        if pid == 0b0011:
+        if pid == Packet.PID_DATA0:
             return 'DATA0'
-        if pid == 0b1011:
+        if pid == Packet.PID_DATA1:
             return 'DATA1'
-        if pid == 0b0111:
+        if pid == Packet.PID_DATA2:
             return 'DATA2'
-        if pid == 0b1111:
+        if pid == Packet.PID_MDATA:
             return 'MDATA'
-        if pid == 0b0010:
+        if pid == Packet.PID_ACK:
             return 'ACK'
-        if pid == 0b1010:
+        if pid == Packet.PID_NAK:
             return 'NAK'
-        if pid == 0b1110:
+        if pid == Packet.PID_STALL:
             return 'STALL'
-        if pid == 0b0110:
+        if pid == Packet.PID_NYET:
             return 'NYET'
-        if pid == 0b1100:
+        if pid == Packet.PID_PRE:
             return 'PRE'
-        if pid == 0b1000:
+        if pid == Packet.PID_SPLIT:
             return 'SPLIT'
-        if pid == 0b0100:
+        if pid == Packet.PID_PING:
             return 'PING'
         return 'NONE'
+    
+    def IsToken(self):
+        return (self.pid == Packet.PID_SETUP or
+                self.pid == Packet.PID_IN or
+                self.pid == Packet.PID_OUT)
     
     def Dump(self):
         global opts
@@ -576,9 +647,8 @@ class Packet:
                   crcStr))
         HexDump(self.bytes)
         
-        if (not self.isInvalid and (pid == 'DATA0' or pid == 'DATA1') and
-            self.parser is not None):
-            self.parser.Parse(self.bytes[1:-2])
+        if not self.isInvalid and self.parser is not None:
+            self.parser.Parse(self.bytes[1:])
         
         if opts.dbgLeds:
             def GetLed(x):
@@ -633,6 +703,7 @@ def DigitizeData():
                     
                 curPacket = Packet(True)
                 curPacket.AddEvent(event)
+                curPacket.Finalize()
                 opts.packets.append(curPacket)
                 curPacket = None
                 continue
@@ -647,6 +718,7 @@ def DigitizeData():
         curPacket.AddEvent(event)
         if event.type == Event.TYPE_SE0:
             # Consider it is EOP
+            curPacket.Finalize()
             opts.packets.append(curPacket)
             curPacket = None
         
@@ -660,10 +732,12 @@ def DigitizeData():
         pkt.idx = idx
         if pkt.isInvalid:
             opts.numInvalidPackets += 1
-        elif (Packet.GetPidStr(pkt.pid) == 'DATA0' and idx > 0 and 
+        elif (pkt.pid == Packet.PID_DATA0 and idx > 0 and 
               not opts.packets[idx - 1].isInvalid and 
-              Packet.GetPidStr(opts.packets[idx - 1].pid) == 'SETUP'):
+              opts.packets[idx - 1].pid == Packet.PID_SETUP):
             pkt.parser = SetupDataParser()
+        elif pkt.IsToken():
+            pkt.parser = TokenParser()
             
         idx += 1
     print('%d packets found' % len(opts.packets))
@@ -674,6 +748,9 @@ def DumpPackets():
     global opts
     
     for pkt in opts.packets:
+        if pkt.idx > 0:
+            gap = pkt.startTime - opts.packets[pkt.idx - 1].endTime
+            print('\nGAP %gs' % gap)
         pkt.Dump()
 
 ################################################################################

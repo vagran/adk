@@ -62,15 +62,21 @@
 #define ADK_USB_SYNC_PAT            0x80
 
 /* USB device states as per diagram in doc/pages/product/avr/usb.txt. */
-#define ADK_USB_STATE_POWERED       0
-#define ADK_USB_STATE_LISTEN        1
-#define ADK_USB_STATE_SETUP         2
-#define ADK_USB_STATE_WRITE_DATA    3
-#define ADK_USB_STATE_WRITE_STATUS  4
-#define ADK_USB_STATE_READ_DATA     5
-#define ADK_USB_STATE_READ_STATUS   6
+#define ADK_USB_STATE_POWERED           0
+#define ADK_USB_STATE_LISTEN            1
+#define ADK_USB_STATE_SETUP             2
+#define ADK_USB_STATE_WRITE_DATA        3
+#define ADK_USB_STATE_WRITE_STATUS      4
+#define ADK_USB_STATE_READ_DATA         5
+#define ADK_USB_STATE_READ_STATUS       6
 /** Mask to get state from @ref adkUsbState. */
-#define ADK_USB_STATE_MASK          0x7
+#define ADK_USB_STATE_MASK              0x7
+#define ADK_USB_STATE_TRANS_ACTIVE_BIT  3
+/** Transaction still is not complete. */
+#define ADK_USB_STATE_TRANS_ACTIVE      _BV(ADK_USB_STATE_TRANS_ACTIVE_BIT)
+#define ADK_USB_STATE_TRANS_FAILED_BIT  4
+/** Error occurred in the last transaction. */
+#define ADK_USB_STATE_TRANS_FAILED      _BV(ADK_USB_STATE_TRANS_FAILED_BIT)
 
 /** Mask for size field in @ref adkUsbRxState. Non-zero field value indicates
  * number of bytes received in data stage and pending for processing in
@@ -156,6 +162,10 @@ typedef struct {
 #define ADK_USB_REQ_GET_INTERFACE       0x0a
 #define ADK_USB_REQ_SET_INTERFACE       0x0b
 #define ADK_USB_REQ_SYNC_FRAME          0x0c
+/** Custom request for transferring data from host to device. */
+#define ADK_USB_REQ_ADK_WRITE           0xf0
+/** Custom request for transferring data from device to host. */
+#define ADK_USB_REQ_ADK_READ            0xf1
 
 /* Descriptor types used in GET/SET_DESCRIPTOR requests (Table 9-5). */
 #define ADK_USB_DESC_TYPE_DEVICE        0x01
@@ -275,10 +285,23 @@ extern u8 adkUsbRxBuf[];
 extern u8 adkUsbRxState;
 /** Currently assigned device address. Zero if the device is below ADDRESS state. */
 extern u8 adkUsbDeviceAddress;
+/** Currently pending device address if non-zero. Should be applied only when
+ * the SET_ADDRESS request transaction completes (final ACK sent).
+ */
+extern u8 adkUsbNewDeviceAddress;
 /** Transmission buffer for data packets. */
 extern u8 adkUsbTxDataBuf[];
 /** Transmission buffer for handshake packets. */
 extern u8 adkUsbTxAuxBuf[];
+
+/** Get data in active receiving buffer (after PID). */
+static inline u8 *
+AdkUsbGetRxData()
+{
+    return adkUsbRxState & ADK_USB_RX_CUR_BUF ?
+                adkUsbRxBuf + ADK_USB_RX_BUF_SIZE + 1:
+                adkUsbRxBuf + 1;
+}
 
 /** Prepare USB interface. */
 void

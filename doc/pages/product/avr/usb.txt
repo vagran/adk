@@ -41,11 +41,13 @@ WRITE_DATA --> WRITE_STATUS: [IN]\nSet RX_MINE,\nsend status
 
 WRITE_DATA --> LISTEN: [IN, request error]\nReset RX_MINE,\nsend STALL
 
+SETUP --> WRITE_STATUS: [H2D request processed, wLength == 0]\nFree buffer,\nreset RX_SETUP
+
 WRITE_STATUS --> WRITE_STATUS: [IN]\nSet RX_MINE,\nsend status
 
 WRITE_STATUS --> LISTEN: [IN, request error]\nReset RX_MINE,\nsend STALL
 
-WRITE_STATUS --> LISTEN: [ACK]\nReset RX_MINE
+WRITE_STATUS --> LISTEN: [ACK]\nReset RX_MINE,\nset address if new one received
 
 SETUP --> READ_DATA: [D2H request processed]\nFree buffer,\nreset RX_SETUP
 
@@ -56,6 +58,8 @@ READ_DATA --> READ_DATA: [IN, data ready]\nSet RX_MINE,\nsend DATA1/DATA0
 READ_DATA --> READ_DATA: [ACK, have more data]\nReset RX_MINE,\ntoggle data ID,\nfree transmission buffer
 
 READ_DATA --> READ_DATA: [ACK, no more data, last size 8]\nReset RX_MINE,\ntoggle data ID,\nfree transmission buffer,\nsend empty data
+
+READ_DATA --> LISTEN: [IN, request error]\nSend STALL
 
 READ_DATA --> READ_STATUS: [ACK, no more data]\nFree transmission buffer
 
