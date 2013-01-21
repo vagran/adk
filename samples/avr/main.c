@@ -12,6 +12,7 @@
 
 #include <adk.h>
 
+#if 0 //XXX
 static void
 DumpData(u8 *data, u8 size)
 {
@@ -31,21 +32,13 @@ DumpData(u8 *data, u8 size)
         _delay_ms(2000);
     }
 }
+#endif
 
 ISR(INT0_vect)
 {
-    static u8 count;
     AdkUsbInterrupt();
     /* Reset pending interrupt flag. */
     EIFR = _BV(INTF0);
-    count++;
-    //XXX
-    if (!AVR_BIT_GET8(GIMSK, INT0)) {
-        _delay_ms(5000);
-        DumpData(&count, 1);
-//        DumpData(&adkUsbRxSize, 1);
-//        DumpData(adkUsbRxBuf, adkUsbRxSize);
-    }
 }
 
 int
@@ -61,6 +54,7 @@ main(void)
     sei();
 
     while (1) {
+        //AVR_BIT_SET8(PINB, 2);//XXX
         AdkUsbPoll();
     }
 

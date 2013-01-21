@@ -54,24 +54,20 @@ void
 AdkUsbPoll()
 {
     if (adkUsbRxState & ADK_USB_RX_SIZE_MASK) {
-        AVR_USB_DBG_SET(5);//XXX
         /* Have incoming data. */
         if (adkUsbRxState & ADK_USB_RX_SETUP) {
             /* SETUP data received, process the request. */
-
             AdkUsbSetupData *req = (AdkUsbSetupData *)AdkUsbGetRxData();
             bool_t hasFailed = FALSE;
 
             if ((req->bmRequestType & ADK_USB_REQ_TYPE_TYPE_MASK) ==
                 ADK_USB_REQ_TYPE_TYPE_STANDARD) {
                 /* Standard request received. */
-
                 if (req->bRequest == ADK_USB_REQ_SET_ADDRESS) {
                     /* Device address designated by a host. Assuming it is
                      * correct (1-127), no resources to check.
                      */
                     adkUsbNewDeviceAddress = req->wValue;
-                    AVR_USB_DBG_SET(3);//XXX
                 } else if (0) {
                     //XXX
                 } else {
@@ -102,7 +98,7 @@ AdkUsbPoll()
             }
             cli();
             adkUsbRxState &= ~(ADK_USB_RX_SETUP | ADK_USB_RX_SIZE_MASK);
-            adkUsbState = (adkUsbState & ADK_USB_STATE_MASK) | nextState |
+            adkUsbState = (adkUsbState & ~ADK_USB_STATE_MASK) | nextState |
                 (hasFailed ? ADK_USB_STATE_TRANS_FAILED : 0);
             sei();
         }
@@ -118,4 +114,5 @@ _AdkUsbOnReset()
     adkUsbState = (adkUsbState & ~ADK_USB_STATE_MASK) | ADK_USB_STATE_LISTEN;
     adkUsbDeviceAddress = 0;
     adkUsbRxState = 0;
+    AVR_BIT_SET8(PINB, 3);//XXX
 }

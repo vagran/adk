@@ -100,7 +100,8 @@
 /* Variables below used after the packet is received. */
 
 /* PID of the received packet. */
-#define RX_PID              ONES_CNT
+#define RX_PID              r18
+#define STATE               r22
 
 /** Value to substract from leap counter. */
 #define LEAP_VALUE          (0x101 / 3)
@@ -116,6 +117,100 @@
     ori TMP0, \token & 0x0f
     out _SFR_IO_ADDR(AVR_USB_DBGPORT_PORT), TMP0
 .endm
+
+/* Set new state. */
+.macro m_SetState state
+    andi STATE, ~ADK_USB_STATE_MASK
+    ori STATE, \state
+.endm
+
+/* Transmit the provided packet. The provided data should include SYNC pattern.
+ * This function is not supposed to be used from C. It does not correct the leap
+ * cycle because 13 cycles per bit is still in the acceptable rate range (per
+ * the specification), host receiver synchronizes with edges anyway.
+ */
+/* Arguments. */
+#define TRANS_DATA          X
+#define TRANS_DATA_LO       r26
+#define TRANS_DATA_HI       r27
+#define TRANS_LEN           r18
+/* Variables. */
+#define TRANS_STUFF_CNT     r19
+#define TRANS_BYTE          r20
+#define TRANS_BIT_CNT       r21
+
+.global AdkUsbTrasmit
+.type   AdkUsbTrasmit, @function
+AdkUsbTrasmit:
+    ldi TRANS_STUFF_CNT, 6
+    ldi TRANS_BIT_CNT, 255 // Carry each eight iterations.
+    ld TRANS_BYTE, TRANS_DATA+
+    ldi TMP0, DATA_LINES_MASK
+
+    /* Drive the data lines. */
+    sbi _SFR_IO_ADDR(AVR_USB_DPORT_PORT), AVR_USB_DMINUS_PIN
+    sbi _SFR_IO_ADDR(AVR_USB_DPORT_DDR), AVR_USB_DPLUS_PIN
+    sbi _SFR_IO_ADDR(AVR_USB_DPORT_DDR), AVR_USB_DMINUS_PIN
+
+    /* Numbers in square brackets are number of cycles since last bit front edge. */
+
+trans_loop: // [10]
+    lsr TRANS_BYTE // [11]
+    brcs trans_1 // [12]
+    /* Transmit bit zero. */
+    ldi TRANS_STUFF_CNT, 6 // [13] Reset stuffing counter.
+    out _SFR_IO_ADDR(AVR_USB_DPORT_PIN), TMP0 // [1] Toggle data lines.
+    WAIT_1 // [2]
+    subi TRANS_BIT_CNT, 0x20 // [3] Carry each eight iterations.
+    brcc trans_same_byte // [4]
+    dec TRANS_LEN // [5]
+    breq trans_EOP // [6]
+    ld TRANS_BYTE, TRANS_DATA+ // [8]
+    rjmp trans_loop // [10]
+trans_1: // [13]
+    /* Transmit bit one. */
+    dec TRANS_STUFF_CNT // [1]
+    breq trans_stuff // [2]
+trans_check_byte:
+    subi TRANS_BIT_CNT, 0x20 // [3] Carry each eight iterations.
+    brcc trans_same_byte // [4]
+trans_next_byte:
+    dec TRANS_LEN // [5]
+    breq trans_EOP // [6] All bytes transmitted.
+    ld TRANS_BYTE, TRANS_DATA+ // [8]
+    rjmp trans_loop // [10]
+trans_same_byte: // [5]
+    WAIT_3 // [8]
+    rjmp trans_loop // [10]
+trans_stuff: // [3]
+    ldi TRANS_STUFF_CNT, 6 // [4] Reset stuffing counter.
+    WAIT_8 // [12]
+    subi TRANS_BIT_CNT, 0x20 // [13] Carry each eight iterations.
+    /* Transmit stuff bit. */
+    out _SFR_IO_ADDR(AVR_USB_DPORT_PIN), TMP0 // [1] Toggle data lines.
+    WAIT_1 // [2]
+    brcc trans_next_byte // [3]
+    rjmp trans_same_byte // [5]
+
+trans_EOP: // [7]
+    /* Low level for both lines. */
+    in TMP0, _SFR_IO_ADDR(AVR_USB_DPORT_PORT) // [8]
+    andi TMP0, ~DATA_LINES_MASK // [9]
+    WAIT_4 // [13]
+    out _SFR_IO_ADDR(AVR_USB_DPORT_PORT), TMP0 // [1]
+    /* Wait for approximately two bits (26 cycles). */
+    ldi TMP0, 8 // [2]
+trans_EOP_loop:
+    dec TMP0 // [3]
+    brne trans_EOP_loop // [5]
+
+    /* Drive to J state. */
+    sbi _SFR_IO_ADDR(AVR_USB_DPORT_PORT), AVR_USB_DMINUS_PIN
+    /* Switch lines back to receiving. */
+    cbi _SFR_IO_ADDR(AVR_USB_DPORT_DDR), AVR_USB_DMINUS_PIN
+    cbi _SFR_IO_ADDR(AVR_USB_DPORT_DDR), AVR_USB_DPLUS_PIN
+    cbi _SFR_IO_ADDR(AVR_USB_DPORT_PORT), AVR_USB_DMINUS_PIN
+    ret
 
 /* Arguments for AdkUsbCrc16() function. Per GCC calling convention. */
 #define CRC_DATA_ARG_LO     r24
@@ -510,7 +605,8 @@ token_found:
     /* Have a packet for us, set RX_MINE and process through the state machine. */
     ori RX_STATE, ADK_USB_RX_MINE
 state_machine_enter:
-    lds TMP0, adkUsbState
+    lds STATE, adkUsbState
+    mov TMP0, STATE
     andi TMP0, ADK_USB_STATE_MASK
     /* Get address for vector of this state. Assuming POWERED state cannot
      * reach this point.
@@ -543,8 +639,7 @@ sm_listen:
     ldi TMP0, ADK_USB_PID_SETUP
     cpse RX_PID, TMP0
     rjmp send_stall
-    ldi TMP0, ADK_USB_STATE_SETUP
-    rcall SetState
+    m_SetState ADK_USB_STATE_SETUP
     rjmp sm_exit
 
 /************************* SETUP **********************************************/
@@ -579,8 +674,29 @@ sm_write_data:
 
 /************************* WRITE_STATUS *****************************************/
 sm_write_status:
-    //TRIGGER//XXX
+    /* IN: send status.
+     * ACK: accept new address if any, advance to LISTEN.
+     */
+    cpi RX_PID, ADK_USB_PID_IN
+    brne sm_wd_not_in
+    rjmp send_status
+sm_wd_not_in:
+    cpi RX_PID, ADK_USB_PID_ACK
+    brne sm_wd_not_ack
+    /* Check if new address assigned. */
+    lds TMP0, adkUsbNewDeviceAddress
+    andi TMP0, 0x7f
+    breq sm_wd_no_address
+    /* Have new address. */
+    sts adkUsbDeviceAddress, TMP0
+    sts adkUsbNewDeviceAddress, ZERO
+sm_wd_no_address:
+    m_SetState ADK_USB_STATE_LISTEN
+    andi STATE, ~ADK_USB_RX_MINE
+
     rjmp sm_exit
+sm_wd_not_ack:
+    rjmp send_stall
 
 sm_read_data:
 sm_read_status:
@@ -588,15 +704,35 @@ sm_read_status:
 sm_exit:
     /* Save RX state. */
     sts adkUsbRxState, RX_STATE
+    sts adkUsbState, STATE
     rjmp check_idle
 
-/* Set new current state. State value in TMP0. */
-SetState:
-    lds TMP1, adkUsbState
-    andi TMP1, ~ADK_USB_STATE_MASK
-    or TMP1, TMP0
-    sts adkUsbState, TMP1
-    ret
+    /* Send current transaction status. If transaction is not yet complete
+     * (ADK_USB_STATE_TRANS_ACTIVE set) send NAK. If transaction failed
+     * (ADK_USB_STATE_TRANS_FAILED set) send stall, reset failed indication and
+     * advance state to LISTEN. If transaction completed sucessfully send empty
+     * DATA1 packet.
+     */
+send_status:
+    sbrc STATE, ADK_USB_STATE_TRANS_ACTIVE_BIT
+    rjmp send_nak // Transaction not yet complete.
+    bst STATE, ADK_USB_STATE_TRANS_FAILED_BIT
+    brts send_status_failed
+    /* Transaction completed successfully, send empty DATA1 packet. */
+    ldi TMP0, ADK_USB_PID_DATA1
+    sts adkUsbTxAuxBuf + 1, TMP0
+    ldi TRANS_LEN, 4
+    ldi TRANS_DATA_LO, AVR_LO8(adkUsbTxAuxBuf)
+    ldi TRANS_DATA_HI, AVR_HI8(adkUsbTxAuxBuf)
+    rcall AdkUsbTrasmit
+    rjmp sm_exit
+send_status_failed:
+    /* Transaction failed, reset indication, andvance state to LISTEN and send
+     * STALL.
+     */
+    andi STATE, ~ADK_USB_STATE_TRANS_FAILED
+    m_SetState ADK_USB_STATE_LISTEN
+    rjmp send_stall
 
 /* Send ACK and exit. */
 send_ack:
@@ -614,14 +750,13 @@ send_stall:
      */
 send_handshake:
     sts adkUsbTxAuxBuf + 1, TMP0
-    ldi r18, 2
-    ldi r26, AVR_LO8(adkUsbTxAuxBuf)
-    ldi r27, AVR_HI8(adkUsbTxAuxBuf)
+    ldi TRANS_LEN, 2
+    ldi TRANS_DATA_LO, AVR_LO8(adkUsbTxAuxBuf)
+    ldi TRANS_DATA_HI, AVR_HI8(adkUsbTxAuxBuf)
     rcall AdkUsbTrasmit
     /* Reset RX_MINE. */
     andi RX_STATE, ~ADK_USB_RX_MINE
-    sts adkUsbRxState, RX_STATE
-    rjmp check_idle
+    rjmp sm_exit
 
     /* Device is in POWERED state. Skip anything but reset signal. */
 powered_state_process:
@@ -705,98 +840,4 @@ check_idle_inactive:
     dec TMP0 // [7]
     brne check_idle_loop // [9]
     /* Timeout exceeded while the line is still idle. Can return now. */
-    //XXX
-    lds TMP0, adkUsbRxState
-    andi TMP0, ADK_USB_RX_SIZE_MASK
-    breq tmp_lbl
-    TRIGGER//XXX not reached!!!
-tmp_lbl:
-    ret
-
-/* Transmit the provided packet. The provided data should include SYNC pattern.
- * This function is not supposed to be used from C. It does not correct the leap
- * cycle because 13 cycles per bit is still in the acceptable rate range (per
- * the specification), host receiver synchronizes with edges anyway.
- */
-/* Arguments. */
-#define TRANS_DATA          X
-#define TRANS_DATA_LO       r26
-#define TRANS_DATA_HI       r27
-#define TRANS_LEN           r18
-/* Variables. */
-#define TRANS_STUFF_CNT     r19
-#define TRANS_BYTE          r20
-#define TRANS_BIT_CNT       r21
-
-.global AdkUsbTrasmit
-.type   AdkUsbTrasmit, @function
-AdkUsbTrasmit:
-    ldi TRANS_STUFF_CNT, 6
-    ldi TRANS_BIT_CNT, 255 // Carry each eight iterations.
-    ld TRANS_BYTE, TRANS_DATA+
-    ldi TMP0, DATA_LINES_MASK
-
-    /* Drive the data lines. */
-    sbi _SFR_IO_ADDR(AVR_USB_DPORT_PORT), AVR_USB_DMINUS_PIN
-    sbi _SFR_IO_ADDR(AVR_USB_DPORT_DDR), AVR_USB_DPLUS_PIN
-    sbi _SFR_IO_ADDR(AVR_USB_DPORT_DDR), AVR_USB_DMINUS_PIN
-
-    /* Numbers in square brackets are number of cycles since last bit front edge. */
-
-trans_loop: // [10]
-    lsr TRANS_BYTE // [11]
-    brcs trans_1 // [12]
-    /* Transmit bit zero. */
-    ldi TRANS_STUFF_CNT, 6 // [13] Reset stuffing counter.
-    out _SFR_IO_ADDR(AVR_USB_DPORT_PIN), TMP0 // [1] Toggle data lines.
-    WAIT_1 // [2]
-    subi TRANS_BIT_CNT, 0x20 // [3] Carry each eight iterations.
-    brcc trans_same_byte // [4]
-    dec TRANS_LEN // [5]
-    breq trans_EOP // [6]
-    ld TRANS_BYTE, TRANS_DATA+ // [8]
-    rjmp trans_loop // [10]
-trans_1: // [13]
-    /* Transmit bit one. */
-    dec TRANS_STUFF_CNT // [1]
-    breq trans_stuff // [2]
-trans_check_byte:
-    subi TRANS_BIT_CNT, 0x20 // [3] Carry each eight iterations.
-    brcc trans_same_byte // [4]
-trans_next_byte:
-    dec TRANS_LEN // [5]
-    breq trans_EOP // [6] All bytes transmitted.
-    ld TRANS_BYTE, TRANS_DATA+ // [8]
-    rjmp trans_loop // [10]
-trans_same_byte: // [5]
-    WAIT_3 // [8]
-    rjmp trans_loop // [10]
-trans_stuff: // [3]
-    ldi TRANS_STUFF_CNT, 6 // [4] Reset stuffing counter.
-    WAIT_8 // [12]
-    subi TRANS_BIT_CNT, 0x20 // [13] Carry each eight iterations.
-    /* Transmit stuff bit. */
-    out _SFR_IO_ADDR(AVR_USB_DPORT_PIN), TMP0 // [1] Toggle data lines.
-    WAIT_1 // [2]
-    brcc trans_next_byte // [3]
-    rjmp trans_same_byte // [5]
-
-trans_EOP: // [7]
-    /* Low level for both lines. */
-    in TMP0, _SFR_IO_ADDR(AVR_USB_DPORT_PORT) // [8]
-    andi TMP0, ~DATA_LINES_MASK // [9]
-    WAIT_4 // [13]
-    out _SFR_IO_ADDR(AVR_USB_DPORT_PORT), TMP0 // [1]
-    /* Wait for approximately two bits (26 cycles). */
-    ldi TMP0, 8 // [2]
-trans_EOP_loop:
-    dec TMP0 // [3]
-    brne trans_EOP_loop // [5]
-
-    /* Drive to J state. */
-    sbi _SFR_IO_ADDR(AVR_USB_DPORT_PORT), AVR_USB_DMINUS_PIN
-    /* Switch lines back to receiving. */
-    cbi _SFR_IO_ADDR(AVR_USB_DPORT_DDR), AVR_USB_DMINUS_PIN
-    cbi _SFR_IO_ADDR(AVR_USB_DPORT_DDR), AVR_USB_DPLUS_PIN
-    cbi _SFR_IO_ADDR(AVR_USB_DPORT_PORT), AVR_USB_DMINUS_PIN
     ret

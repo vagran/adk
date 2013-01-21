@@ -236,8 +236,8 @@ class Event(object):
             return True
         type = self._GetType(dminus, dplus)
         if type == self.type:
-            if self.type == Event.TYPE_J and self.endTime - self.startTime > 6.0 * Tperiod_max:
-                # J state longer than 6 bits - bus is idle
+            if self.type == Event.TYPE_J and self.endTime - self.startTime > 7.0 * Tperiod_max:
+                # J state longer than 6 bits (plus one spare) - bus is idle
                 self.type = Event.TYPE_IDLE
             elif self.type == Event.TYPE_SE0 and self.endTime - self.startTime > 2.5e-6:
                 # SE0 longer than 2.5us - bus reset
@@ -561,6 +561,11 @@ class Packet:
         if self.bitCount != 0:
             Warning('Packet byte truncated', self.events[-1])
             self.isInvalid = True
+        
+        if not self.isInvalid and not self.isKeepAlive:
+            if len(self.bytes) == 0:
+                self.isInvalid = True
+            
         if not self.isInvalid and not self.isKeepAlive:
             self.pid = self.bytes[0] & 0xf
             if self.pid ^ (self.bytes[0] >> 4) != 0xf:

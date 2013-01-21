@@ -84,16 +84,16 @@
  * however they are also always present in the buffer. Zero value indicates that
  * there are no data pending.
  */
-#define ADK_USB_RX_SIZE_MASK        0x7
-#define ADK_USB_RX_CUR_BUF_BIT      3
+#define ADK_USB_RX_SIZE_MASK        0xf
+#define ADK_USB_RX_CUR_BUF_BIT      4
 /** Indicates which receiving buffer is active (in @ref adkUsbRxState). */
 #define ADK_USB_RX_CUR_BUF          _BV(ADK_USB_RX_CUR_BUF_BIT)
-#define ADK_USB_RX_MINE_BIT         4
+#define ADK_USB_RX_MINE_BIT         5
 /** Indicates that current transactions packets addressed to this device (set
  * after token decoding and address checking, reset after transaction completion).
  */
 #define ADK_USB_RX_MINE             _BV(ADK_USB_RX_MINE_BIT)
-#define ADK_USB_RX_SETUP_BIT        5
+#define ADK_USB_RX_SETUP_BIT        6
 /** Set when setup request is received, not data. */
 #define ADK_USB_RX_SETUP            _BV(ADK_USB_RX_SETUP_BIT)
 
@@ -294,13 +294,13 @@ extern u8 adkUsbTxDataBuf[];
 /** Transmission buffer for handshake packets. */
 extern u8 adkUsbTxAuxBuf[];
 
-/** Get data in active receiving buffer (after PID). */
+/** Get data in shadow receiving buffer (after PID). */
 static inline u8 *
 AdkUsbGetRxData()
 {
     return adkUsbRxState & ADK_USB_RX_CUR_BUF ?
-                adkUsbRxBuf + ADK_USB_RX_BUF_SIZE + 1:
-                adkUsbRxBuf + 1;
+                adkUsbRxBuf + 1:
+                adkUsbRxBuf + ADK_USB_RX_BUF_SIZE + 1;
 }
 
 /** Prepare USB interface. */
