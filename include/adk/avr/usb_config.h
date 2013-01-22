@@ -46,6 +46,46 @@
 
 #endif /* AVR_USB_DEBUG */
 
+#ifndef AVR_USB_DEVICE_CLASS
+/** Device class code for device descriptor. Vendor-specific by default. */
+#define AVR_USB_DEVICE_CLASS    0xff
+#endif /* AVR_USB_DEVICE_CLASS */
+
+#ifndef AVR_USB_DEVICE_SUBCLASS
+/** Device subclass code for device descriptor. */
+#define AVR_USB_DEVICE_SUBCLASS 0
+#endif /* AVR_USB_DEVICE_SUBCLASS */
+
+#ifndef AVR_USB_VENDOR_ID
+/** Vendor ID for device descriptor. */
+#define AVR_USB_VENDOR_ID       0xbeef //XXX
+#endif /* AVR_USB_VENDOR_ID */
+
+#ifndef AVR_USB_PRODUCT_ID
+/** Product ID for device descriptor. */
+#define AVR_USB_PRODUCT_ID      0xbeef //XXX
+#endif /* AVR_USB_PRODUCT_ID */
+
+#ifndef AVR_USB_VERSION
+/** Device version (BCD) for device descriptor. */
+#define AVR_USB_VERSION         0x0100
+#endif /* AVR_USB_VERSION */
+
+#ifndef AVR_USB_MANUFACTURER_STRING
+/** Manufacturer string for device descriptor. Can be defined 0. */
+#define AVR_USB_MANUFACTURER_STRING         "Artyom Lebedev"
+#endif /* AVR_USB_MANUFACTURER_STRING */
+
+#ifndef AVR_USB_PRODUCT_STRING
+/** Product string for device descriptor. Can be defined 0. */
+#define AVR_USB_PRODUCT_STRING              "ADK I/O"
+#endif /* AVR_USB_PRODUCT_STRING */
+
+#ifndef AVR_USB_SERIAL_STRING
+/** Serial number string for device descriptor. Can be defined 0. */
+#define AVR_USB_SERIAL_STRING               0
+#endif /* AVR_USB_SERIAL_STRING */
+
 /* Internal definitions. */
 
 /** PORTx register for data port. */

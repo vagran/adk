@@ -110,6 +110,11 @@
  */
 #define ADK_USB_TX_AUX_BUF_SIZE     4
 
+/** Mask for size field in @ref adkUsbTxState. Non-zero value indicates that
+ * data (including SYNC and CRC) placed in the buffer and ready for transmission.
+ */
+#define ADK_USB_TX_SIZE_MASK        0xf
+
 #ifndef __ASSEMBLER__
 
 /** Setup transaction data payload format (Table 9-2 of the specification). */
@@ -173,6 +178,13 @@ typedef struct {
 #define ADK_USB_DESC_TYPE_STRING        0x03
 #define ADK_USB_DESC_TYPE_INTERFACE     0x04
 #define ADK_USB_DESC_TYPE_ENDPOINT      0x05
+
+/** String index for manufacturer name. */
+#define ADK_USB_STRING_IDX_MANUFACTURER 1
+/** String index for product name. */
+#define ADK_USB_STRING_IDX_PRODUCT      2
+/** String index for serial number. */
+#define ADK_USB_STRING_IDX_SERIAL       3
 
 /** Standard device descriptor (Table 9-8). */
 typedef struct {
@@ -289,10 +301,24 @@ extern u8 adkUsbDeviceAddress;
  * the SET_ADDRESS request transaction completes (final ACK sent).
  */
 extern u8 adkUsbNewDeviceAddress;
+/** Transmitter state. */
+extern u8 adkUsbTxState;
 /** Transmission buffer for data packets. */
 extern u8 adkUsbTxDataBuf[];
 /** Transmission buffer for handshake packets. */
 extern u8 adkUsbTxAuxBuf[];
+/** Pointer to pending outgoing system data (e.g. descriptors). Most significant
+ * bit indicates that data are placed in program memory.
+ */
+extern u8 *adkUsbSysTxData;
+/** Pointer to pending outgoing user data. Most significant bit indicates that
+ * data are placed in program memory.
+ */
+extern u8 *adkUsbUserTxData;
+/** Size of data pointed by @ref adkUsbSysTxData or @ref adkUsbUserTxData. */
+extern u8 adkTxDataSize;
+/** Device descriptor. */
+extern const PROGMEM AdkUsbDeviceDesc adkUsbDeviceDesc;
 
 /** Get data in shadow receiving buffer (after PID). */
 static inline u8 *

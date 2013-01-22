@@ -13,17 +13,49 @@
 #include <adk.h>
 
 u8 adkUsbState;
+u8 adkUsbTxState;
+u8 adkUsbRxState;
 
 u8 adkUsbRxBuf[2 * ADK_USB_RX_BUF_SIZE];
-
-u8 adkUsbRxState;
+u8 adkUsbTxDataBuf[ADK_USB_TX_BUF_SIZE];
+u8 adkUsbTxAuxBuf[ADK_USB_TX_AUX_BUF_SIZE];
 
 u8 adkUsbDeviceAddress;
 u8 adkUsbNewDeviceAddress;
+u8 *adkUsbSysTxData;
+u8 *adkUsbUserTxData;
+u8 adkTxDataSize;
 
-u8 adkUsbTxDataBuf[ADK_USB_TX_BUF_SIZE];
-
-u8 adkUsbTxAuxBuf[ADK_USB_TX_AUX_BUF_SIZE];
+const PROGMEM AdkUsbDeviceDesc adkUsbDeviceDesc = {
+    /* bLength */
+    sizeof(AdkUsbDeviceDesc),
+    /* bDescriptorType */
+    ADK_USB_DESC_TYPE_DEVICE,
+    /* bcdUSB */
+    0x210,
+    /* bDeviceClass */
+    AVR_USB_DEVICE_CLASS,
+    /* bDeviceSubClass */
+    AVR_USB_DEVICE_SUBCLASS,
+    /* bDeviceProtocol */
+    0xff,
+    /* bMaxPacketSize0 */
+    ADK_USB_MAX_DATA_SIZE,
+    /* idVendor */
+    AVR_USB_VENDOR_ID,
+    /* idProduct */
+    AVR_USB_PRODUCT_ID,
+    /* bcdDevice */
+    AVR_USB_VERSION,
+    /* iManufacturer */
+    AVR_USB_MANUFACTURER_STRING != 0 ? ADK_USB_STRING_IDX_MANUFACTURER : 0,
+    /* iProduct */
+    AVR_USB_PRODUCT_STRING != 0 ? ADK_USB_STRING_IDX_PRODUCT : 0,
+    /* iSerialNumber */
+    AVR_USB_SERIAL_STRING != 0 ? ADK_USB_STRING_IDX_SERIAL : 0,
+    /* bNumConfigurations */
+    1
+};
 
 void
 AdkUsbSetup()
@@ -68,8 +100,8 @@ AdkUsbPoll()
                      * correct (1-127), no resources to check.
                      */
                     adkUsbNewDeviceAddress = req->wValue;
-                } else if (0) {
-                    //XXX
+                } else if (req->bRequest == ADK_USB_REQ_GET_DESCRIPTOR) {
+
                 } else {
                     hasFailed = TRUE;
                 }

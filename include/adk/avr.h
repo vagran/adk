@@ -20,6 +20,7 @@
 
 #ifndef __ASSEMBLER__
 
+#include <avr/pgmspace.h>
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
 #include <util/delay.h>
