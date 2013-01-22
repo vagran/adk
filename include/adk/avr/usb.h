@@ -109,11 +109,28 @@
  * empty data packets in status stage. SYNC + PID + CRC16.
  */
 #define ADK_USB_TX_AUX_BUF_SIZE     4
+/** When this flag is set in @ref adkTxDataSize the corresponding data pointer in
+ * @ref adkUsbSysTxData or @ref adkUsbSysTxData points to program memory.
+ */
+#define ADK_USB_TX_PROGMEM_PTR      0x80
+/** Maximal amount of data which can be transmitted in one transaction (multiple
+ * packets).
+ */
+#define ADK_USB_TX_MAX_SIZE         0x7f
 
 /** Mask for size field in @ref adkUsbTxState. Non-zero value indicates that
  * data (including SYNC and CRC) placed in the buffer and ready for transmission.
  */
 #define ADK_USB_TX_SIZE_MASK        0xf
+/** Flag indicates that currently system data are being transmitted (using @ref
+ * adkUsbSysTxData pointer).
+ */
+#define ADK_USB_TX_SYS              0x10
+/** Constant which is returned by FetchPacket() to indicate that no data will be
+ * transmitted. When adding to packet overhead (SYNC + PID + CRC) it results to
+ * zero.
+ */
+#define ADK_USB_TX_NO_DATA          ((u8)-4)
 
 #ifndef __ASSEMBLER__
 
@@ -307,15 +324,26 @@ extern u8 adkUsbTxState;
 extern u8 adkUsbTxDataBuf[];
 /** Transmission buffer for handshake packets. */
 extern u8 adkUsbTxAuxBuf[];
-/** Pointer to pending outgoing system data (e.g. descriptors). Most significant
- * bit indicates that data are placed in program memory.
+
+/** Pointer to transmission data. */
+typedef union {
+    /** Pointer as integer value. */
+    uintptr_t ui_ptr;
+    /** Pointer to data in RAM. */
+    u8 *ram_ptr;
+    /** Pointer in program memory. */
+    PGM_P pgm_ptr;
+} AdkUsbTxDataPtr;
+
+/** Pointer to pending outgoing system data (e.g. descriptors). */
+extern AdkUsbTxDataPtr adkUsbSysTxData;
+/** Pointer to pending outgoing user data. */
+extern AdkUsbTxDataPtr adkUsbUserTxData;
+
+/** Size of data pointed by @ref adkUsbSysTxData or @ref adkUsbUserTxData.
+ * Most significant bit indicates that data are located in program memory (see
+ * @ref ADK_USB_TX_PROGMEM_PTR.
  */
-extern u8 *adkUsbSysTxData;
-/** Pointer to pending outgoing user data. Most significant bit indicates that
- * data are placed in program memory.
- */
-extern u8 *adkUsbUserTxData;
-/** Size of data pointed by @ref adkUsbSysTxData or @ref adkUsbUserTxData. */
 extern u8 adkTxDataSize;
 /** Device descriptor. */
 extern const PROGMEM AdkUsbDeviceDesc adkUsbDeviceDesc;

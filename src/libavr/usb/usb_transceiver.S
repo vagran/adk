@@ -672,7 +672,8 @@ sm_write_data:
     //XXX
     rjmp sm_exit
 
-/************************* WRITE_STATUS *****************************************/
+/************************* WRITE_STATUS ***************************************/
+
 sm_write_status:
     /* IN: send status.
      * ACK: accept new address if any, advance to LISTEN.
@@ -698,8 +699,16 @@ sm_wd_no_address:
 sm_wd_not_ack:
     rjmp send_stall
 
+/************************* READ_DATA ******************************************/
+
 sm_read_data:
+
+
+/************************* READ_STATUS ****************************************/
+
 sm_read_status:
+
+/******************************************************************************/
 
 sm_exit:
     /* Save RX state. */

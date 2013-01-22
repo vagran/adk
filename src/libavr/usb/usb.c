@@ -22,8 +22,8 @@ u8 adkUsbTxAuxBuf[ADK_USB_TX_AUX_BUF_SIZE];
 
 u8 adkUsbDeviceAddress;
 u8 adkUsbNewDeviceAddress;
-u8 *adkUsbSysTxData;
-u8 *adkUsbUserTxData;
+AdkUsbTxDataPtr adkUsbSysTxData;
+AdkUsbTxDataPtr adkUsbUserTxData;
 u8 adkTxDataSize;
 
 const PROGMEM AdkUsbDeviceDesc adkUsbDeviceDesc = {
@@ -80,17 +80,70 @@ AdkUsbSetup()
     /* CRC-16 for empty data packets. */
     adkUsbTxAuxBuf[2] = 0;
     adkUsbTxAuxBuf[3] = 0;
+    adkUsbTxDataBuf[0] = ADK_USB_SYNC_PAT;
+}
+
+/** Fetch next packet from outgoing data stream. PID should already be properly
+ * initialized.
+ * @return Size of data prepared in transmission buffer.
+ */
+static u8
+FetchPacket()
+{
+    AdkUsbTxDataPtr ptr;
+    if (adkUsbTxState & ADK_USB_TX_SYS) {
+        ptr.ui_ptr = adkUsbSysTxData.ui_ptr;
+    } else {
+        ptr.ui_ptr = adkUsbUserTxData.ui_ptr;
+    }
+    if (!ptr.ui_ptr) {
+        return ADK_USB_TX_NO_DATA;
+    }
+    /* Fetch not more than ADK_USB_MAX_DATA_SIZE at once. If data size is
+     * multiple of the granularity, leave the pointer non-zero to send zero-sized
+     * packet at the end.
+     */
+    u8 size = adkTxDataSize & ~ADK_USB_TX_PROGMEM_PTR;
+    if (size > ADK_USB_MAX_DATA_SIZE) {
+        size = ADK_USB_MAX_DATA_SIZE;
+    }
+    /* Copy to transmission buffer skipping SYNC and PID. */
+    if (adkTxDataSize & ADK_USB_TX_PROGMEM_PTR) {
+        /* Data in program memory. */
+        memcpy_P(&adkUsbTxDataBuf[2], ptr.pgm_ptr, size);
+    } else {
+        /* Data in RAM. */
+        memcpy(&adkUsbTxDataBuf[2], ptr.ram_ptr, size);
+    }
+    /* Release outgoing data pointer if the last chunk transmitted. */
+    if (size != ADK_USB_MAX_DATA_SIZE) {
+        if (adkUsbTxState & ADK_USB_TX_SYS) {
+            adkUsbSysTxData.ui_ptr = 0;
+            adkUsbTxState &= ~ADK_USB_TX_SYS;
+        } else {
+            adkUsbUserTxData.ui_ptr = 0;
+        }
+    }
+    /* Calculate CRC. */
+    u16 crc = AdkUsbCrc16(adkUsbTxDataBuf + 2, size);
+    adkUsbTxDataBuf[size + 2] = AVR_LO8(crc);
+    adkUsbTxDataBuf[size + 3] = AVR_HI8(crc);
+    /* Total length of the prepared data. */
+    return size + 4;
 }
 
 void
 AdkUsbPoll()
 {
+    bool_t hasFailed = FALSE;
+    u8 nextState = 0;
+    u8 txSize = ADK_USB_TX_NO_DATA;
+
     if (adkUsbRxState & ADK_USB_RX_SIZE_MASK) {
         /* Have incoming data. */
         if (adkUsbRxState & ADK_USB_RX_SETUP) {
             /* SETUP data received, process the request. */
             AdkUsbSetupData *req = (AdkUsbSetupData *)AdkUsbGetRxData();
-            bool_t hasFailed = FALSE;
 
             if ((req->bmRequestType & ADK_USB_REQ_TYPE_TYPE_MASK) ==
                 ADK_USB_REQ_TYPE_TYPE_STANDARD) {
@@ -101,7 +154,10 @@ AdkUsbPoll()
                      */
                     adkUsbNewDeviceAddress = req->wValue;
                 } else if (req->bRequest == ADK_USB_REQ_GET_DESCRIPTOR) {
-
+                    adkUsbTxState |= ADK_USB_TX_SYS;
+                    adkUsbSysTxData.pgm_ptr = (PGM_P)&adkUsbDeviceDesc;
+                    adkTxDataSize = sizeof(adkUsbDeviceDesc) | ADK_USB_TX_PROGMEM_PTR;
+                    adkUsbTxDataBuf[1] = ADK_USB_PID_DATA1;
                 } else {
                     hasFailed = TRUE;
                 }
@@ -113,8 +169,6 @@ AdkUsbPoll()
                 hasFailed = TRUE;
             }
 
-            /* State should be modified atomically. */
-            u8 nextState;
             if ((req->bmRequestType & ADK_USB_REQ_TYPE_DIR_MASK) ==
                 ADK_USB_REQ_TYPE_DIR_H2D) {
 
@@ -128,13 +182,22 @@ AdkUsbPoll()
                 /* Read request. */
                 nextState = ADK_USB_STATE_READ_DATA;
             }
-            cli();
-            adkUsbRxState &= ~(ADK_USB_RX_SETUP | ADK_USB_RX_SIZE_MASK);
-            adkUsbState = (adkUsbState & ~ADK_USB_STATE_MASK) | nextState |
-                (hasFailed ? ADK_USB_STATE_TRANS_FAILED : 0);
-            sei();
         }
     }
+
+    /* Fetch next out-coming packet if read transaction is in progress. */
+    if (1) {//XXX
+        txSize = FetchPacket();
+    }
+
+    /* State should be modified atomically. */
+    cli();
+    adkUsbRxState &= ~(ADK_USB_RX_SETUP | ADK_USB_RX_SIZE_MASK);
+    adkUsbState = (adkUsbState & ~ADK_USB_STATE_MASK) |
+        (nextState ? nextState : (adkUsbState & ADK_USB_STATE_MASK)) |
+        (hasFailed ? ADK_USB_STATE_TRANS_FAILED : 0);
+    adkUsbTxState = (adkUsbTxState & ADK_USB_TX_SIZE_MASK) | (txSize + 4);
+    sei();
 }
 
 /** This function is called from assembler interrupt handler when reset is

@@ -372,9 +372,26 @@ class SetupDataParser(Parser):
             params.update(self.ParseNum8(data[1],
                                          {'name': 'bRequest',
                                           'desc': 'Specific request'}))
-        params.update(self.ParseNum16(data[2:4],
-                                     {'name': 'wValue',
-                                      'desc': 'Word parameter'}))
+        
+        if (params['bmRequestType:type'].value == 0 and 
+            (params['bRequest'].value == 0x06 or params['bRequest'].value == 0x07)):
+            
+            params.update(self.ParseEnum(data[3],
+                                         {'name': 'wValue.descType',
+                                          'desc': 'Descriptor type',
+                                          0x01: 'Device',
+                                          0x02: 'Configuration',
+                                          0x03: 'String',
+                                          0x04: 'Interface',
+                                          0x05: 'Endpoint'}))
+            params.update(self.ParseNum8(data[2],
+                                         {'name': 'wValue.descIndex',
+                                          'desc': 'Descriptor index'}))
+        else:
+            params.update(self.ParseNum16(data[2:4],
+                                         {'name': 'wValue',
+                                          'desc': 'Word parameter'}))
+        
         params.update(self.ParseNum16(data[4:6],
                                      {'name': 'wIndex',
                                       'desc': 'Word index'}))

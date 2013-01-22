@@ -25,6 +25,8 @@
 #include <avr/sleep.h>
 #include <util/delay.h>
 
+#include <string.h>
+
 #include <adk/types.h>
 
 #endif /* __ASSEMBLER__ */
