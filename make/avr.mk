@@ -26,8 +26,8 @@ ifeq ($(ADK_BUILD_TYPE),release)
     endif
 else ifeq ($(ADK_BUILD_TYPE),debug)
     ifndef DEBUG_OPT_FLAGS
-        # Do not optimize by default
-        COMMON_COMP_FLAGS += -O0
+        # Optimize for size by default
+        COMMON_COMP_FLAGS += -Os -mcall-prologues
     else
         COMMON_COMP_FLAGS += $(DEBUG_OPT_FLAGS)
     endif

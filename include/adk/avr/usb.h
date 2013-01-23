@@ -77,6 +77,11 @@
 #define ADK_USB_STATE_TRANS_FAILED_BIT  4
 /** Error occurred in the last transaction. */
 #define ADK_USB_STATE_TRANS_FAILED      _BV(ADK_USB_STATE_TRANS_FAILED_BIT)
+#define ADK_USB_STATE_READ_WAIT_BIT      5
+/** ISR is waiting for transmission data from polling function. This bit is set
+ * only by ISR and reset only after data size is set by polling function.
+ */
+#define ADK_USB_STATE_READ_WAIT         _BV(ADK_USB_STATE_READ_WAIT_BIT)
 
 /** Mask for size field in @ref adkUsbRxState. Non-zero field value indicates
  * number of bytes received in data stage and pending for processing in
