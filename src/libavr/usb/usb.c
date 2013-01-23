@@ -84,15 +84,15 @@ AdkUsbSetup()
 }
 
 /** Fetch next packet from outgoing data stream. PID should already be properly
- * initialized.
- * @return Size of data prepared in transmission buffer.
+ * initialized to previous DATAX ID (will be toggled in this function).
+ * @return Full size of data prepared in transmission buffer.
  */
 static u8
 FetchPacket()
 {
     AdkUsbTxDataPtr *pptr, ptr;
 
-    if (adkUsbTxState & ADK_USB_TX_SYS) {
+    if (adkTxDataSize & ADK_USB_TX_SYS) {
         pptr = &adkUsbSysTxData;
     } else {
         pptr = &adkUsbUserTxData;
@@ -100,7 +100,7 @@ FetchPacket()
     ptr.ui_ptr = pptr->ui_ptr;
 
     if (!ptr.ui_ptr) {
-        return ADK_USB_TX_NO_DATA;
+        return 0;
     }
 
     /* Fetch not more than ADK_USB_MAX_DATA_SIZE at once. If data size is
@@ -111,6 +111,9 @@ FetchPacket()
     if (size > ADK_USB_MAX_DATA_SIZE) {
         size = ADK_USB_MAX_DATA_SIZE;
     }
+
+    /* Toggle DATAX ID. */
+    adkUsbTxDataBuf[1] ^= ADK_USB_PID_DATA0 ^ ADK_USB_PID_DATA1;
 
     /* Copy to transmission buffer skipping SYNC and PID. */
     if (adkTxDataSize & ADK_USB_TX_PROGMEM_PTR) {
@@ -136,7 +139,7 @@ FetchPacket()
     adkUsbTxDataBuf[size + 2] = AVR_LO8(crc);
     adkUsbTxDataBuf[size + 3] = AVR_HI8(crc);
 
-    /* Total length of the prepared data. */
+    /* Length of the prepared data not including SYNC, PID and CRC. */
     return size + 4;
 }
 
@@ -147,8 +150,10 @@ AdkUsbPoll()
     u8 hasFailed = 0;
     /* Next state if non-zero. */
     u8 nextState = 0;
-    /* Size of prepared transmission data. */
-    u8 txSize = ADK_USB_TX_NO_DATA;
+    /* Size of prepared transmission data. Set to non-zero to force packet
+     * fetching.
+     */
+    u8 txSize = 0;
 
     if (adkUsbRxState & ADK_USB_RX_SIZE_MASK) {
         /* Have incoming data. */
@@ -170,14 +175,16 @@ AdkUsbPoll()
                     if (req->wValue.bytes[1] == ADK_USB_DESC_TYPE_DEVICE) {
                         adkUsbSysTxData.pgm_ptr = (PGM_P)&adkUsbDeviceDesc;
                         size = sizeof(adkUsbDeviceDesc);
-                        AVR_USB_DBG_SET(7);//XXX
                     } else {
                         hasFailed = ADK_USB_STATE_TRANS_FAILED;
                     }
                     if (!hasFailed) {
                         adkUsbTxState |= ADK_USB_TX_SYS;
-                        adkTxDataSize = MAX(size, req->wLength) | ADK_USB_TX_PROGMEM_PTR;
-                        adkUsbTxDataBuf[1] = ADK_USB_PID_DATA1;
+                        adkTxDataSize = MAX(size, (u8)req->wLength) | ADK_USB_TX_PROGMEM_PTR;
+                        /* PID will be toggled in FetchPacket(). */
+                        adkUsbTxDataBuf[1] = ADK_USB_PID_DATA0;
+                        /* Force packet fetching. */
+                        txSize = 1;
                     }
                 } else {
                     hasFailed = ADK_USB_STATE_TRANS_FAILED;
@@ -217,7 +224,7 @@ AdkUsbPoll()
      * transmitted. Packet less than ADK_USB_MAX_DATA_SIZE terminates data stage
      * of the read transaction.
      */
-    if (adkUsbState & ADK_USB_STATE_READ_WAIT) {
+    if (txSize || (adkUsbState & ADK_USB_STATE_READ_WAIT)) {
         txSize = FetchPacket();
     }
 
@@ -231,7 +238,9 @@ AdkUsbPoll()
     }
     adkUsbState = state;
     /* Pass TX buffer if any data ready. */
-    adkUsbTxState = (adkUsbTxState & ~ADK_USB_TX_SIZE_MASK) | (txSize + 4);
+    if (txSize) {
+        adkUsbTxState = (adkUsbTxState & ~ADK_USB_TX_SIZE_MASK) | txSize;
+    }
     sei();
 }
 

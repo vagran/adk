@@ -702,7 +702,21 @@ sm_wd_not_ack:
 /************************* READ_DATA ******************************************/
 
 sm_read_data:
-
+    TRIGGER//XXX
+    cpi RX_PID, ADK_USB_PID_IN
+    brne sm_rd_not_in
+    lds TMP1, adkUsbTxState
+    mov TRANS_LEN, TMP1
+    andi TRANS_LEN, ADK_USB_TX_SIZE_MASK
+    breq send_nak
+sm_rd_send_data:
+    ldi TRANS_DATA_LO, AVR_LO8(adkUsbTxDataBuf)
+    ldi TRANS_DATA_HI, AVR_HI8(adkUsbTxDataBuf)
+    rcall AdkUsbTrasmit
+    /* Transmission buffer released only after host acknowledgement. */
+    rjmp sm_exit
+sm_rd_not_in:
+    //XXX
 
 /************************* READ_STATUS ****************************************/
 
