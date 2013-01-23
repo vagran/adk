@@ -146,7 +146,12 @@ typedef struct {
     /** Specific request. */
     u8 bRequest;
     /** Word-sized field that varies according to request. */
-    u16 wValue;
+    union {
+        /** Word representation. */
+        u16 word;
+        /** Bytes representation. */
+        u8 bytes[2];
+    } wValue;
     /** Word-sized field that varies according to request; typically used to
      * pass an index or offset.
      */

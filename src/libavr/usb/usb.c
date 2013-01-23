@@ -163,12 +163,21 @@ AdkUsbPoll()
                     /* Device address designated by a host. Assuming it is
                      * correct (1-127), no resources to check.
                      */
-                    adkUsbNewDeviceAddress = req->wValue;
+                    adkUsbNewDeviceAddress = req->wValue.bytes[0];
                 } else if (req->bRequest == ADK_USB_REQ_GET_DESCRIPTOR) {
-                    adkUsbTxState |= ADK_USB_TX_SYS;
-                    adkUsbSysTxData.pgm_ptr = (PGM_P)&adkUsbDeviceDesc;
-                    adkTxDataSize = sizeof(adkUsbDeviceDesc) | ADK_USB_TX_PROGMEM_PTR;
-                    adkUsbTxDataBuf[1] = ADK_USB_PID_DATA1;
+                    /* Check requested descriptor type. */
+                    u8 size;
+                    if (req->wValue.bytes[1] == ADK_USB_DESC_TYPE_DEVICE) {
+                        adkUsbSysTxData.pgm_ptr = (PGM_P)&adkUsbDeviceDesc;
+                        size = sizeof(adkUsbDeviceDesc);
+                    } else {
+                        hasFailed = ADK_USB_STATE_TRANS_FAILED;
+                    }
+                    if (!hasFailed) {
+                        adkUsbTxState |= ADK_USB_TX_SYS;
+                        adkTxDataSize = MAX(size, req->wLength) | ADK_USB_TX_PROGMEM_PTR;
+                        adkUsbTxDataBuf[1] = ADK_USB_PID_DATA1;
+                    }
                 } else {
                     hasFailed = ADK_USB_STATE_TRANS_FAILED;
                 }
