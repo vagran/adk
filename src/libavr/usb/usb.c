@@ -170,6 +170,7 @@ AdkUsbPoll()
                     if (req->wValue.bytes[1] == ADK_USB_DESC_TYPE_DEVICE) {
                         adkUsbSysTxData.pgm_ptr = (PGM_P)&adkUsbDeviceDesc;
                         size = sizeof(adkUsbDeviceDesc);
+                        AVR_USB_DBG_SET(7);//XXX
                     } else {
                         hasFailed = ADK_USB_STATE_TRANS_FAILED;
                     }
