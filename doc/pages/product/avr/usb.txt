@@ -51,25 +51,13 @@ WRITE_STATUS --> LISTEN: [ACK]\nReset RX_MINE,\nset address if new one received
 
 SETUP --> READ_DATA: [D2H request processed]\nFree buffer,\nreset RX_SETUP
 
-READ_DATA --> READ_DATA: [IN, no data ready]\nSend NAK
+READ_DATA --> READ_DATA: [IN, no data ready]\nSend NAK,\nrequest more data (ADK_USB_STATE_READ_WAIT)
 
 READ_DATA --> READ_DATA: [IN, data ready]\nSet RX_MINE,\nsend DATA1/DATA0
 
-READ_DATA --> READ_DATA: [ACK, have more data]\nReset RX_MINE,\ntoggle data ID,\nfree transmission buffer
+READ_DATA --> READ_DATA: [ACK]\nFree transmission buffer,\nreset RX_MINE
 
-READ_DATA --> READ_DATA: [ACK, no more data, last size 8]\nReset RX_MINE,\ntoggle data ID,\nfree transmission buffer,\nsend empty data
-
-READ_DATA --> LISTEN: [IN, request error]\nSend STALL
-
-READ_DATA --> READ_STATUS: [ACK, no more data]\nFree transmission buffer
-
-READ_STATUS --> READ_STATUS: [OUT]\nSet RX_MINE
-
-READ_STATUS --> LISTEN: [DATA1]\nReset RX_MINE,\nsend ACK
-
-READ_STATUS --> READ_STATUS: [NAK]\nReset RX_MINE
-
-READ_STATUS --> LISTEN: [STALL]\nReset RX_MINE
+READ_DATA --> LISTEN: [DATA1]\nSend ACK,\nreset RX_MINE
 
 </uml>
 

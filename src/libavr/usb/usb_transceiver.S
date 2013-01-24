@@ -628,7 +628,6 @@ sm_jump_table:
     rjmp sm_write_data
     rjmp sm_write_status
     rjmp sm_read_data
-    rjmp sm_read_status
 
 /* State handlers. */
 
@@ -693,8 +692,7 @@ sm_wd_not_in:
     sts adkUsbNewDeviceAddress, ZERO
 sm_wd_no_address:
     m_SetState ADK_USB_STATE_LISTEN
-    andi STATE, ~ADK_USB_RX_MINE
-
+    andi RX_STATE, ~ADK_USB_RX_MINE
     rjmp sm_exit
 sm_wd_not_ack:
     rjmp send_stall
@@ -702,13 +700,15 @@ sm_wd_not_ack:
 /************************* READ_DATA ******************************************/
 
 sm_read_data:
-    TRIGGER//XXX
     cpi RX_PID, ADK_USB_PID_IN
     brne sm_rd_not_in
     lds TMP1, adkUsbTxState
     mov TRANS_LEN, TMP1
     andi TRANS_LEN, ADK_USB_TX_SIZE_MASK
-    breq send_nak
+    brne sm_rd_send_data
+    /* Request more data. */
+    ori STATE, ADK_USB_STATE_READ_WAIT
+    rjmp send_nak
 sm_rd_send_data:
     ldi TRANS_DATA_LO, AVR_LO8(adkUsbTxDataBuf)
     ldi TRANS_DATA_HI, AVR_HI8(adkUsbTxDataBuf)
@@ -716,11 +716,18 @@ sm_rd_send_data:
     /* Transmission buffer released only after host acknowledgement. */
     rjmp sm_exit
 sm_rd_not_in:
-    //XXX
-
-/************************* READ_STATUS ****************************************/
-
-sm_read_status:
+    cpi RX_PID, ADK_USB_PID_ACK
+    brne sm_rd_not_ack
+    /* Free transmission buffer. */
+    andi TMP1, ~ADK_USB_TX_SIZE_MASK
+    sts adkUsbTxState, TMP1
+    rjmp sm_exit
+sm_rd_not_ack:
+    TRIGGER//XXX
+    cpi RX_PID, ADK_USB_PID_DATA1
+    brne sm_exit
+    /* Send ACK on DATA1 - status stage. */
+    rjmp send_ack
 
 /******************************************************************************/
 

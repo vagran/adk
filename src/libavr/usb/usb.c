@@ -84,7 +84,9 @@ AdkUsbSetup()
 }
 
 /** Fetch next packet from outgoing data stream. PID should already be properly
- * initialized to previous DATAX ID (will be toggled in this function).
+ * initialized to previous DATAX ID (will be toggled in this function). The
+ * function can leave the non-zero pointer for the last chunk which anyway
+ * will be overwritten in the start of the next transaction.
  * @return Full size of data prepared in transmission buffer.
  */
 static u8
@@ -124,15 +126,8 @@ FetchPacket()
         memcpy(&adkUsbTxDataBuf[2], ptr.ram_ptr, size);
     }
 
-    /* Release outgoing data pointer if the last chunk transmitted. */
-    if (size != ADK_USB_MAX_DATA_SIZE) {
-        pptr->ui_ptr = 0;
-        adkUsbTxState &= ~ADK_USB_TX_SYS;
-        adkTxDataSize = 0;
-    } else {
-        adkTxDataSize -= size;
-        pptr->ui_ptr += size;
-    }
+    adkTxDataSize -= size;
+    pptr->ui_ptr += size;
 
     /* Calculate CRC. */
     u16 crc = AdkUsbCrc16(adkUsbTxDataBuf + 2, size);
@@ -150,10 +145,6 @@ AdkUsbPoll()
     u8 hasFailed = 0;
     /* Next state if non-zero. */
     u8 nextState = 0;
-    /* Size of prepared transmission data. Set to non-zero to force packet
-     * fetching.
-     */
-    u8 txSize = 0;
 
     if (adkUsbRxState & ADK_USB_RX_SIZE_MASK) {
         /* Have incoming data. */
@@ -183,8 +174,6 @@ AdkUsbPoll()
                         adkTxDataSize = MAX(size, (u8)req->wLength) | ADK_USB_TX_PROGMEM_PTR;
                         /* PID will be toggled in FetchPacket(). */
                         adkUsbTxDataBuf[1] = ADK_USB_PID_DATA0;
-                        /* Force packet fetching. */
-                        txSize = 1;
                     }
                 } else {
                     hasFailed = ADK_USB_STATE_TRANS_FAILED;
@@ -224,8 +213,12 @@ AdkUsbPoll()
      * transmitted. Packet less than ADK_USB_MAX_DATA_SIZE terminates data stage
      * of the read transaction.
      */
-    if (txSize || (adkUsbState & ADK_USB_STATE_READ_WAIT)) {
+    /* Size of prepared transmission data. */
+    u8 txSize;
+    if (adkUsbState & ADK_USB_STATE_READ_WAIT) {
         txSize = FetchPacket();
+    } else {
+        txSize = 0;
     }
 
     /* State should be modified atomically. */
@@ -236,11 +229,12 @@ AdkUsbPoll()
     if (nextState) {
         state = (state & ~ADK_USB_STATE_MASK) | nextState;
     }
-    adkUsbState = state;
     /* Pass TX buffer if any data ready. */
     if (txSize) {
         adkUsbTxState = (adkUsbTxState & ~ADK_USB_TX_SIZE_MASK) | txSize;
+        state &= ~ADK_USB_STATE_READ_WAIT;
     }
+    adkUsbState = state;
     sei();
 }
 

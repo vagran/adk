@@ -68,7 +68,6 @@
 #define ADK_USB_STATE_WRITE_DATA        3
 #define ADK_USB_STATE_WRITE_STATUS      4
 #define ADK_USB_STATE_READ_DATA         5
-#define ADK_USB_STATE_READ_STATUS       6
 /** Mask to get state from @ref adkUsbState. */
 #define ADK_USB_STATE_MASK              0x7
 #define ADK_USB_STATE_TRANS_ACTIVE_BIT  3
