@@ -143,7 +143,7 @@
 .type   AdkUsbTrasmit, @function
 AdkUsbTrasmit:
     ldi TRANS_STUFF_CNT, 6
-    ldi TRANS_BIT_CNT, 255 // Carry each eight iterations.
+    ldi TRANS_BIT_CNT, 0xff // Carry each eight iterations.
     ld TRANS_BYTE, TRANS_DATA+
     ldi TMP0, DATA_LINES_MASK
 
@@ -174,7 +174,7 @@ trans_1: // [13]
 trans_check_byte:
     subi TRANS_BIT_CNT, 0x20 // [3] Carry each eight iterations.
     brcc trans_same_byte // [4]
-trans_next_byte:
+trans_next_byte: // [4]
     dec TRANS_LEN // [5]
     breq trans_EOP // [6] All bytes transmitted.
     ld TRANS_BYTE, TRANS_DATA+ // [8]
@@ -189,7 +189,7 @@ trans_stuff: // [3]
     /* Transmit stuff bit. */
     out _SFR_IO_ADDR(AVR_USB_DPORT_PIN), TMP0 // [1] Toggle data lines.
     WAIT_1 // [2]
-    brcc trans_next_byte // [3]
+    brcs trans_next_byte // [3]
     rjmp trans_same_byte // [5]
 
 trans_EOP: // [7]
