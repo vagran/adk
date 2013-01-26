@@ -94,7 +94,7 @@ FetchPacket()
 {
     AdkUsbTxDataPtr *pptr, ptr;
 
-    if (adkTxDataSize & ADK_USB_TX_SYS) {
+    if (adkUsbTxState & ADK_USB_TX_SYS) {
         pptr = &adkUsbSysTxData;
     } else {
         pptr = &adkUsbUserTxData;
@@ -134,7 +134,7 @@ FetchPacket()
     adkUsbTxDataBuf[size + 2] = AVR_LO8(crc);
     adkUsbTxDataBuf[size + 3] = AVR_HI8(crc);
 
-    /* Length of the prepared data not including SYNC, PID and CRC. */
+    /* Total length of the prepared data. */
     return size + 4;
 }
 
@@ -171,7 +171,7 @@ AdkUsbPoll()
                     }
                     if (!hasFailed) {
                         adkUsbTxState |= ADK_USB_TX_SYS;
-                        adkTxDataSize = MAX(size, (u8)req->wLength) | ADK_USB_TX_PROGMEM_PTR;
+                        adkTxDataSize = MIN(size, (u8)req->wLength) | ADK_USB_TX_PROGMEM_PTR;
                         /* PID will be toggled in FetchPacket(). */
                         adkUsbTxDataBuf[1] = ADK_USB_PID_DATA0;
                     }
@@ -204,7 +204,8 @@ AdkUsbPoll()
              * system write requests which are supported have all data in the
              * setup payload so it will be handled above.
              */
-            //XXX invoke user callback
+            //XXX invoke user callback, the callback should not return until
+            // data fully processed/copied.
         }
     }
 
@@ -247,5 +248,7 @@ _AdkUsbOnReset()
     adkUsbState = (adkUsbState & ~ADK_USB_STATE_MASK) | ADK_USB_STATE_LISTEN;
     adkUsbDeviceAddress = 0;
     adkUsbRxState = 0;
+    adkTxDataSize = 0;
+    adkUsbTxState = 0;
     AVR_BIT_SET8(PINB, 3);//XXX
 }

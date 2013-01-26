@@ -125,16 +125,11 @@
 /** Mask for size field in @ref adkUsbTxState. Non-zero value indicates that
  * data (including SYNC and CRC) placed in the buffer and ready for transmission.
  */
-#define ADK_USB_TX_SIZE_MASK        0xf
-/** Flag indicates that currently system data are being transmitted (using @ref
- * adkUsbSysTxData pointer).
+#define ADK_USB_TX_SIZE_MASK        0x0f
+/** Flag in @ref adkUsbTxState indicates that currently system data are being
+ * transmitted (using @ref adkUsbSysTxData pointer).
  */
 #define ADK_USB_TX_SYS              0x10
-/** Constant which is returned by FetchPacket() to indicate that no data will be
- * transmitted. When adding to packet overhead (SYNC + PID + CRC) it results to
- * zero.
- */
-#define ADK_USB_TX_NO_DATA          ((u8)-4)
 
 #ifndef __ASSEMBLER__
 

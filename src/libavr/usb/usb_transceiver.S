@@ -700,9 +700,10 @@ sm_wd_not_ack:
 /************************* READ_DATA ******************************************/
 
 sm_read_data:
+    lds TMP1, adkUsbTxState
     cpi RX_PID, ADK_USB_PID_IN
     brne sm_rd_not_in
-    lds TMP1, adkUsbTxState
+    /* IN token received. */
     mov TRANS_LEN, TMP1
     andi TRANS_LEN, ADK_USB_TX_SIZE_MASK
     brne sm_rd_send_data
@@ -718,15 +719,15 @@ sm_rd_send_data:
 sm_rd_not_in:
     cpi RX_PID, ADK_USB_PID_ACK
     brne sm_rd_not_ack
-    /* Free transmission buffer. */
+    /* ACK received, free transmission buffer. */
     andi TMP1, ~ADK_USB_TX_SIZE_MASK
     sts adkUsbTxState, TMP1
     rjmp sm_exit
 sm_rd_not_ack:
-    TRIGGER//XXX
     cpi RX_PID, ADK_USB_PID_DATA1
     brne sm_exit
-    /* Send ACK on DATA1 - status stage. */
+    /* Send ACK on DATA1 and end the transaction - status stage complete. */
+    m_SetState ADK_USB_STATE_LISTEN
     rjmp send_ack
 
 /******************************************************************************/
