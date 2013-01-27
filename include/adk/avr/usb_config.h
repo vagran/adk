@@ -71,20 +71,17 @@
 #define AVR_USB_VERSION         0x0100
 #endif /* AVR_USB_VERSION */
 
-#ifndef AVR_USB_MANUFACTURER_STRING
-/** Manufacturer string for device descriptor. Can be defined 0. */
-#define AVR_USB_MANUFACTURER_STRING         "Artyom Lebedev"
-#endif /* AVR_USB_MANUFACTURER_STRING */
+/* The following strings may be defined in the configuration:
+ *  AVR_USB_MANUFACTURER_STRING
+ *  AVR_USB_PRODUCT_STRING
+ *  AVR_USB_SERIAL_STRING
+ * If the macro is not defined the corresponding string is not present.
+ */
 
-#ifndef AVR_USB_PRODUCT_STRING
-/** Product string for device descriptor. Can be defined 0. */
-#define AVR_USB_PRODUCT_STRING              "ADK I/O"
-#endif /* AVR_USB_PRODUCT_STRING */
-
-#ifndef AVR_USB_SERIAL_STRING
-/** Serial number string for device descriptor. Can be defined 0. */
-#define AVR_USB_SERIAL_STRING               0
-#endif /* AVR_USB_SERIAL_STRING */
+#ifndef AVR_USB_POWER_CONSUMPTION
+/** Device power consumption in mA. */
+#define AVR_USB_POWER_CONSUMPTION           100
+#endif /* AVR_USB_POWER_CONSUMPTION */
 
 /* Internal definitions. */
 

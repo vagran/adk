@@ -36,7 +36,7 @@ else
     $(error Build type not supported: $(ADK_BUILD_TYPE))
 endif
 
-COMMON_COMP_FLAGS += -mmcu=$(ADK_MCU)
+COMMON_COMP_FLAGS += -mmcu=$(ADK_MCU) -fshort-wchar
 LDFLAGS += -mmcu=$(ADK_MCU)
 
 ifndef ADK_MCU_FREQ

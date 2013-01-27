@@ -200,18 +200,11 @@ typedef struct {
 #define ADK_USB_DESC_TYPE_INTERFACE     0x04
 #define ADK_USB_DESC_TYPE_ENDPOINT      0x05
 
-/** String index for manufacturer name. */
-#define ADK_USB_STRING_IDX_MANUFACTURER 1
-/** String index for product name. */
-#define ADK_USB_STRING_IDX_PRODUCT      2
-/** String index for serial number. */
-#define ADK_USB_STRING_IDX_SERIAL       3
-
 /** Standard device descriptor (Table 9-8). */
 typedef struct {
     /** Size of this descriptor in bytes. */
     u8 bLength;
-    /** Device descriptor type. */
+    /** DEVICE descriptor type. */
     u8 bDescriptorType;
     /** USB Specification Release Number in Binary-Coded Decimal (i.e., 2.10 is
      * 210H). This field identifies the release of the USB Specification with
@@ -267,7 +260,7 @@ typedef struct {
 typedef struct {
     /** Size of this descriptor in bytes. */
     u8 bLength;
-    /** Configuration descriptor type. */
+    /** CONFIGURATION descriptor type. */
     u8 bDescriptorType;
     /** Total length of data returned for this configuration. Includes the
      * combined length of all descriptors (configuration, interface, endpoint,
@@ -302,6 +295,126 @@ typedef struct {
 #define ADK_UBS_CONF_ATTR_SELF_POWERED  0x40
 /** Set if a device configuration supports remote wake-up. */
 #define ADK_UBS_CONF_ATTR_REMOTE_WAKEUP 0x20
+
+/** Standard interface descriptor. */
+typedef struct {
+    /** Size of this descriptor in bytes. */
+    u8 bLength;
+    /** INTERFACE descriptor type. */
+    u8 bDescriptorType;
+    /** Number of this interface. Zero-based value identifying the index in the
+     * array of concurrent interfaces supported by this configuration.
+     */
+    u8 bInterfaceNumber;
+    /** Value used to select this alternate setting for the interface identified
+     * in the prior field.
+     */
+    u8 bAlternateSetting;
+    /** Number of endpoints used by this interface (excluding endpoint zero). If
+     * this value is zero, this interface only uses the Default Control Pipe.
+     */
+    u8 bNumEndpoints;
+    /** Class code (assigned by the USB-IF). A value of zero is reserved for
+     * future standardization. If this field is set to FFH, the interface class
+     * is vendor-specific. All other values are reserved for assignment by the
+     * USB-IF.
+     */
+    u8 bInterfaceClass;
+    /** Subclass code (assigned by the USB-IF). These codes are qualified by the
+     * value of the bInterfaceClass field. If the bInterfaceClass field is reset
+     * to zero, this field must also be reset to zero. If the bInterfaceClass
+     * field is not set to FFH, all values are reserved for assignment by the
+     * USB-IF.
+     */
+    u8 bInterfaceSubClass;
+    /** Protocol code (assigned by the USB). These codes are qualified by the
+     * value of the bInterfaceClass and the bInterfaceSubClass fields. If an
+     * interface supports class-specific requests, this code identifies the
+     * protocols that the device uses as defined by the specification of the
+     * device class. If this field is reset to zero, the device does not use a
+     * class-specific protocol on this interface. If this field is set to FFH,
+     * the device uses a vendor-specific protocol for this interface.
+     */
+    u8 bInterfaceProtocol;
+    /** Index of string descriptor describing this interface. */
+    u8 iInterface;
+} AdkUsbInterfaceDesc;
+
+/** Whole the chunk to return on "GET CONFIGURATION DESCRIPTOR" request. */
+typedef struct __attribute__((packed)) {
+    /** Configuration descriptor. */
+    AdkUsbConfigDesc config;
+    /** The first (and only) interface descriptor. */
+    AdkUsbInterfaceDesc interface;
+} AdkUsbFullConfigDesc;
+
+/** Make unicode string from the provided string literal. */
+#define _ADK_USB_STRING(s)  L ## s
+#define ADK_USB_STRING(s)   _ADK_USB_STRING(s)
+
+/** Standard string descriptor header. */
+typedef struct {
+    /** Size of descriptor in bytes. */
+    u8 bLength;
+    /** STRING descriptor type. */
+    u8 bDescriptorType;
+} AdkUsbStringDescHdr;
+
+/** Index of string descriptor with language array. */
+#define ADK_USB_STRING_IDX_LANG     0
+
+/** Structure for strings descriptors. */
+typedef struct {
+    /** Languages array. */
+    struct {
+        /** Header. */
+        AdkUsbStringDescHdr hdr;
+        /** LANGID code. */
+        u16 wLANGID;
+    } lang;
+
+    /** Manufacturer string. */
+#   ifdef AVR_USB_MANUFACTURER_STRING
+    struct {
+        /** Header. */
+        AdkUsbStringDescHdr hdr;
+        /** String. */
+        wchar_t string[sizeof(ADK_USB_STRING(AVR_USB_MANUFACTURER_STRING)) / sizeof(wchar_t)];
+    } manufacturer;
+#   define ADK_USB_STRING_IDX_MANUFACTURER  1
+#   else /* AVR_USB_MANUFACTURER_STRING */
+#   define ADK_USB_STRING_IDX_MANUFACTURER  0
+#   endif /* AVR_USB_MANUFACTURER_STRING */
+
+    /** Product string. */
+#   ifdef AVR_USB_PRODUCT_STRING
+    struct {
+        /** Header. */
+        AdkUsbStringDescHdr hdr;
+        /** String. */
+        wchar_t string[sizeof(ADK_USB_STRING(AVR_USB_PRODUCT_STRING)) / sizeof(wchar_t)];
+    } product;
+#   define ADK_USB_STRING_IDX_PRODUCT       (ADK_USB_STRING_IDX_MANUFACTURER + 1)
+#   else /* AVR_USB_PRODUCT_STRING */
+#   define ADK_USB_STRING_IDX_PRODUCT       ADK_USB_STRING_IDX_MANUFACTURER
+#   endif /* AVR_USB_PRODUCT_STRING */
+
+    /** Serial string. */
+#   ifdef AVR_USB_SERIAL_STRING
+    struct {
+        /** Header. */
+        AdkUsbStringDescHdr hdr;
+        /** String. */
+        wchar_t string[sizeof(ADK_USB_STRING(AVR_USB_SERIAL_STRING)) / sizeof(wchar_t)];
+    } serial;
+#   define ADK_USB_STRING_IDX_SERIAL        (ADK_USB_STRING_IDX_PRODUCT + 1)
+#   else /* AVR_USB_SERIAL_STRING */
+#   define ADK_USB_STRING_IDX_SERIAL        ADK_USB_STRING_IDX_PRODUCT
+#   endif /* AVR_USB_SERIAL_STRING */
+} AdkUsbFullStringDesc;
+
+/** US-English language ID. */
+#define ADK_USB_LANGID_US_ENGLISH       0x0409
 
 /** Current USB device state and flags. */
 extern u8 adkUsbState;
@@ -351,6 +464,10 @@ extern AdkUsbTxDataPtr adkUsbUserTxData;
 extern u8 adkTxDataSize;
 /** Device descriptor. */
 extern const PROGMEM AdkUsbDeviceDesc adkUsbDeviceDesc;
+/** Full configuration descriptor. */
+extern const PROGMEM AdkUsbFullConfigDesc adkUsbConfigDesc;
+/** Strings descriptors. */
+extern const PROGMEM AdkUsbFullStringDesc adkUsbFullStringDesc;
 
 /** Get data in shadow receiving buffer (after PID). */
 static inline u8 *

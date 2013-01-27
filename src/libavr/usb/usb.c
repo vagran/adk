@@ -32,7 +32,7 @@ const PROGMEM AdkUsbDeviceDesc adkUsbDeviceDesc = {
     /* bDescriptorType */
     ADK_USB_DESC_TYPE_DEVICE,
     /* bcdUSB */
-    0x210,
+    0x200,
     /* bDeviceClass */
     AVR_USB_DEVICE_CLASS,
     /* bDeviceSubClass */
@@ -47,14 +47,134 @@ const PROGMEM AdkUsbDeviceDesc adkUsbDeviceDesc = {
     AVR_USB_PRODUCT_ID,
     /* bcdDevice */
     AVR_USB_VERSION,
+
     /* iManufacturer */
-    AVR_USB_MANUFACTURER_STRING != 0 ? ADK_USB_STRING_IDX_MANUFACTURER : 0,
+#   ifdef AVR_USB_MANUFACTURER_STRING
+    ADK_USB_STRING_IDX_MANUFACTURER,
+#   else
+    0,
+#   endif
+
     /* iProduct */
-    AVR_USB_PRODUCT_STRING != 0 ? ADK_USB_STRING_IDX_PRODUCT : 0,
+#   ifdef AVR_USB_PRODUCT_STRING
+    ADK_USB_STRING_IDX_PRODUCT,
+#   else
+    0,
+#   endif
+
     /* iSerialNumber */
-    AVR_USB_SERIAL_STRING != 0 ? ADK_USB_STRING_IDX_SERIAL : 0,
+#   ifdef AVR_USB_SERIAL_STRING
+    ADK_USB_STRING_IDX_SERIAL,
+#   else
+    0,
+#   endif
+
     /* bNumConfigurations */
     1
+};
+
+const PROGMEM AdkUsbFullConfigDesc adkUsbConfigDesc = {
+    /* Configuration descriptor. */
+    {
+        /* bLength */
+        sizeof(AdkUsbConfigDesc),
+        /* bDescriptorType */
+        ADK_USB_DESC_TYPE_CONFIGURATION,
+        /* wTotalLength */
+        sizeof(AdkUsbFullConfigDesc),
+        /* bNumInterfaces */
+        1,
+        /* bConfigurationValue */
+        1,
+        /* iConfiguration */
+        0,
+        /* bmAttributes */
+        ADK_USB_CONF_ATTR_ONE,
+        /* bMaxPower */
+        AVR_USB_POWER_CONSUMPTION / 2
+    },
+    /* Interface descriptor. */
+    {
+        /* bLength */
+        sizeof(AdkUsbConfigDesc),
+        /* bDescriptorType */
+        ADK_USB_DESC_TYPE_INTERFACE,
+        /* bInterfaceNumber */
+        0,
+        /* bAlternateSetting */
+        0,
+        /* bNumEndpoints */
+        0,
+        /* bInterfaceClass */
+        0xff,
+        /* bInterfaceSubClass */
+        0xff,
+        /* bInterfaceProtocol */
+        0xff,
+        /* iInterface */
+        0
+    }
+};
+
+/* Strings are initialized without terminating null. */
+const PROGMEM AdkUsbFullStringDesc adkUsbFullStringDesc = {
+    /* Languages array. */
+    {
+        /* Header */
+        {
+            /* bLength */
+            sizeof(adkUsbFullStringDesc.lang),
+            /* bDescriptorType */
+            ADK_USB_DESC_TYPE_STRING
+        },
+        /* wLANGID */
+        ADK_USB_LANGID_US_ENGLISH
+    },
+
+    /* Manufacturer string. */
+#   ifdef AVR_USB_MANUFACTURER_STRING
+    {
+        /* Header */
+        {
+            /* bLength */
+            sizeof(adkUsbFullStringDesc.manufacturer),
+            /* bDescriptorType */
+            ADK_USB_DESC_TYPE_STRING
+        },
+        /* string */
+        ADK_USB_STRING(AVR_USB_MANUFACTURER_STRING)
+    },
+#   endif /* AVR_USB_MANUFACTURER_STRING */
+
+    /* Product string. */
+#   ifdef AVR_USB_PRODUCT_STRING
+    {
+        /* Header */
+        {
+            /* bLength */
+            sizeof(adkUsbFullStringDesc.product),
+            /* bDescriptorType */
+            ADK_USB_DESC_TYPE_STRING
+        },
+        /* string */
+        ADK_USB_STRING(AVR_USB_PRODUCT_STRING)
+    },
+#   endif /* AVR_USB_PRODUCT_STRING */
+
+    /* Serial string. */
+#   ifdef AVR_USB_SERIAL_STRING
+    {
+        /* Header */
+        {
+            /* bLength */
+            sizeof(adkUsbFullStringDesc.serial),
+            /* bDescriptorType */
+            ADK_USB_DESC_TYPE_STRING
+        },
+        /* string */
+        ADK_USB_STRING(AVR_USB_SERIAL_STRING)
+    },
+#   endif /* AVR_USB_SERIAL_STRING */
 };
 
 void
@@ -163,9 +283,45 @@ AdkUsbPoll()
                 } else if (req->bRequest == ADK_USB_REQ_GET_DESCRIPTOR) {
                     /* Check requested descriptor type. */
                     u8 size;
-                    if (req->wValue.bytes[1] == ADK_USB_DESC_TYPE_DEVICE) {
+                    u8 descType = req->wValue.bytes[1];
+
+                    if (descType == ADK_USB_DESC_TYPE_DEVICE) {
                         adkUsbSysTxData.pgm_ptr = (PGM_P)&adkUsbDeviceDesc;
                         size = sizeof(adkUsbDeviceDesc);
+
+                    } else if (descType == ADK_USB_DESC_TYPE_CONFIGURATION) {
+                        adkUsbSysTxData.pgm_ptr = (PGM_P)&adkUsbConfigDesc;
+                        size = sizeof(AdkUsbFullConfigDesc);
+
+                    } else if (descType == ADK_USB_DESC_TYPE_STRING) {
+                        descType = req->wValue.bytes[0];
+
+                        if (descType == ADK_USB_STRING_IDX_LANG) {
+                            adkUsbSysTxData.pgm_ptr = (PGM_P)&adkUsbFullStringDesc.lang;
+                            size = sizeof(adkUsbFullStringDesc.lang);
+
+#                       ifdef AVR_USB_MANUFACTURER_STRING
+                        } else if (descType == ADK_USB_STRING_IDX_MANUFACTURER) {
+                            adkUsbSysTxData.pgm_ptr = (PGM_P)&adkUsbFullStringDesc.lang;
+                            size = sizeof(adkUsbFullStringDesc.manufacturer);
+#                       endif /* AVR_USB_MANUFACTURER_STRING */
+
+#                       ifdef AVR_USB_PRODUCT_STRING
+                        } else if (descType == ADK_USB_STRING_IDX_PRODUCT) {
+                            adkUsbSysTxData.pgm_ptr = (PGM_P)&adkUsbFullStringDesc.product;
+                            size = sizeof(adkUsbFullStringDesc.product);
+#                       endif /* AVR_USB_PRODUCT_STRING */
+
+#                       ifdef AVR_USB_SERIAL_STRING
+                        } else if (descType == ADK_USB_STRING_IDX_SERIAL) {
+                            adkUsbSysTxData.pgm_ptr = (PGM_P)&adkUsbFullStringDesc.serial;
+                            size = sizeof(adkUsbFullStringDesc.serial);
+#                       endif /* AVR_USB_SERIAL_STRING */
+
+                        } else {
+                            hasFailed = ADK_USB_STATE_TRANS_FAILED;
+                        }
+
                     } else {
                         hasFailed = ADK_USB_STATE_TRANS_FAILED;
                     }
