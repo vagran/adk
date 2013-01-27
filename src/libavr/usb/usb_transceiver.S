@@ -673,6 +673,7 @@ sm_s_not_data0:
 /************************* WRITE_DATA *****************************************/
 
 sm_write_data:
+    TRIGGER//XXX
     //XXX
     rjmp sm_exit
 

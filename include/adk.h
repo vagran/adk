@@ -71,4 +71,8 @@
 
 #endif /* ADK_PLATFORM_AVR */
 
+#ifdef ADK_AVR_USE_USB
+#include <adk/usb.h>
+#endif /* ADK_AVR_USE_USB */
+
 #endif /* ADK_H_ */

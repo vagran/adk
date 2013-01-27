@@ -1,4 +1,4 @@
-/* /ADK/samples/avr/main.c
+/* /ADK/samples/avr/firmware/main.c
  *
  * This file is a part of ADK library.
  * Copyright (c) 2012-2013, Artyom Lebedev <artyom.lebedev@gmail.com>

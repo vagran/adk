@@ -23,6 +23,8 @@ LISTEN: If address is mine and one of state-exiting tokens, set RX_MINE.
 
 LISTEN --> SETUP: [SETUP]
 
+ANY_STATE --> SETUP: [SETUP]
+
 SETUP --> SETUP: [DATA0, RX_SETUP not set]\nReceive in buffer,\nsend ACK,\nset RX_SETUP
 
 SETUP --> SETUP: [IN]\nSend NAK

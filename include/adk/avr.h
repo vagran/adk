@@ -61,8 +61,4 @@ typedef __WCHAR_TYPE__ wchar_t;
 /** Get specified bit in source 8-bits operand. */
 #define AVR_BIT_GET8(__src, __bit)          ((__src) & (u8)_BV(__bit))
 
-#ifdef ADK_AVR_USE_USB
-#include <adk/avr/usb.h>
-#endif /* ADK_AVR_USE_USB */
-
 #endif /* AVR_H_ */

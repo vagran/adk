@@ -10,8 +10,8 @@
  * USB interface software implementation.
  */
 
-#ifndef USB_H_
-#define USB_H_
+#ifndef AVR_USB_H_
+#define AVR_USB_H_
 
 /* User application USB configuration file. Should be provided by the application.
  * It also should include <adk/avr/usb_config.h> file in the end of definitions.
@@ -188,10 +188,6 @@ typedef struct {
 #define ADK_USB_REQ_GET_INTERFACE       0x0a
 #define ADK_USB_REQ_SET_INTERFACE       0x0b
 #define ADK_USB_REQ_SYNC_FRAME          0x0c
-/** Custom request for transferring data from host to device. */
-#define ADK_USB_REQ_ADK_WRITE           0xf0
-/** Custom request for transferring data from device to host. */
-#define ADK_USB_REQ_ADK_READ            0xf1
 
 /* Descriptor types used in GET/SET_DESCRIPTOR requests (Table 9-5). */
 #define ADK_USB_DESC_TYPE_DEVICE        0x01
@@ -516,4 +512,4 @@ AdkUsbCrc16(u8 *data, u8 len);
 
 #endif /* __ASSEMBLER__ */
 
-#endif /* USB_H_ */
+#endif /* AVR_USB_H_ */

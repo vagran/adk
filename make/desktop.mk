@@ -17,6 +17,15 @@ else ifeq ($(ADK_BUILD_TYPE),debug)
     CFLAGS += $(DEBUG_OPT_FLAGS) -ggdb3
 endif
 
+# Libusb support for communicating with AVR USB device.
+ifeq ($(ADK_AVR_USE_USB),yes)
+
+DEFS += ADK_AVR_USE_USB
+LIBS += usb-$(LIBUSB_VERSION)
+
+# ADK_AVR_USE_USB
+endif
+
 include $(ADK_ROOT)/make/desktop_ut_shared.mk
 
 ifeq ($(ADK_APP_TYPE),lib)

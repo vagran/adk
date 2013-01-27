@@ -95,6 +95,7 @@ export GTKMM_VERSION = 3.0
 export SIGCPP_VERSION = 2.0
 export ATK_VERSION = 1.0
 export ATKMM_VERSION = 1.6
+export LIBUSB_VERSION = 1.0
 
 export PYTHON_VERSION = 3.3m
 
@@ -128,6 +129,7 @@ export DESKTOP_LIBS_INC_DIRS = \
     $(LIB_INC_DIR)/giomm-$(GIOMM_VERSION) \
     $(LIB_INC_DIR)/sigc++-$(SIGCPP_VERSION) \
     $(LIB_LIB_DIR)/sigc++-$(SIGCPP_VERSION)/include \
+    $(LIB_INC_DIR)/libusb-$(LIBUSB_VERSION)
 
 # Inlcude directories for desktop GUI libraries
 export DESKTOP_GUI_LIBS_INC_DIRS = \

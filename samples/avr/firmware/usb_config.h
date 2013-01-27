@@ -1,4 +1,4 @@
-/* /ADK/samples/avr/usb_config.h
+/* /ADK/samples/avr/firmware/usb_config.h
  *
  * This file is a part of ADK library.
  * Copyright (c) 2012-2013, Artyom Lebedev <artyom.lebedev@gmail.com>
@@ -12,6 +12,8 @@
 
 #ifndef USB_CONFIG_H_
 #define USB_CONFIG_H_
+
+#include "app_config.h"
 
 /* Define some device strings. */
 #define AVR_USB_MANUFACTURER_STRING         "Artyom Lebedev"
