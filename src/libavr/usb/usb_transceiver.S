@@ -584,6 +584,7 @@ handle_EOP:
      * First thing to do is check RX_MINE flag. If it is not set then process
      * only tokens which match our address.
      */
+    lds STATE, adkUsbState
     sbrc RX_STATE, ADK_USB_RX_MINE_BIT
     rjmp state_machine_enter
     /* Currently not waiting for a packet. Check if it is token to us. */
@@ -604,8 +605,12 @@ token_found:
     rjmp check_idle
     /* Have a packet for us, set RX_MINE and process through the state machine. */
     ori RX_STATE, ADK_USB_RX_MINE
+    cpi RX_PID, ADK_USB_PID_SETUP
+    brne state_machine_enter
+    /* SETUP token always sets current state to SETUP. */
+    m_SetState ADK_USB_STATE_SETUP
+    rjmp sm_exit
 state_machine_enter:
-    lds STATE, adkUsbState
     mov TMP0, STATE
     andi TMP0, ADK_USB_STATE_MASK
     /* Get address for vector of this state. Assuming POWERED state cannot

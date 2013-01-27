@@ -280,6 +280,7 @@ AdkUsbPoll()
                      * correct (1-127), no resources to check.
                      */
                     adkUsbNewDeviceAddress = req->wValue.bytes[0];
+
                 } else if (req->bRequest == ADK_USB_REQ_GET_DESCRIPTOR) {
                     /* Check requested descriptor type. */
                     u8 size;
@@ -302,7 +303,7 @@ AdkUsbPoll()
 
 #                       ifdef AVR_USB_MANUFACTURER_STRING
                         } else if (descType == ADK_USB_STRING_IDX_MANUFACTURER) {
-                            adkUsbSysTxData.pgm_ptr = (PGM_P)&adkUsbFullStringDesc.lang;
+                            adkUsbSysTxData.pgm_ptr = (PGM_P)&adkUsbFullStringDesc.manufacturer;
                             size = sizeof(adkUsbFullStringDesc.manufacturer);
 #                       endif /* AVR_USB_MANUFACTURER_STRING */
 
@@ -331,7 +332,9 @@ AdkUsbPoll()
                         /* PID will be toggled in FetchPacket(). */
                         adkUsbTxDataBuf[1] = ADK_USB_PID_DATA0;
                     }
-                } else {
+
+                } else if (req->bRequest != ADK_USB_REQ_SET_CONFIGURATION) {
+                    /* Configuration request is ignored, all the rest cause error. */
                     hasFailed = ADK_USB_STATE_TRANS_FAILED;
                 }
             } else if ((req->bmRequestType & ADK_USB_REQ_TYPE_TYPE_MASK) ==
