@@ -70,7 +70,7 @@
 #define ADK_USB_STATE_READ_DATA         5
 /** Mask to get state from @ref adkUsbState. */
 #define ADK_USB_STATE_MASK              0x7
-#define ADK_USB_STATE_TRANS_ACTIVE_BIT  3
+#define ADK_USB_STATE_TRANS_ACTIVE_BIT  3 //XXX is it needed?
 /** Transaction still is not complete. */
 #define ADK_USB_STATE_TRANS_ACTIVE      _BV(ADK_USB_STATE_TRANS_ACTIVE_BIT)
 #define ADK_USB_STATE_TRANS_FAILED_BIT  4

@@ -684,23 +684,23 @@ sm_write_status:
      * ACK: accept new address if any, advance to LISTEN.
      */
     cpi RX_PID, ADK_USB_PID_IN
-    brne sm_wd_not_in
+    brne sm_ws_not_in
     rjmp send_status
-sm_wd_not_in:
+sm_ws_not_in:
     cpi RX_PID, ADK_USB_PID_ACK
-    brne sm_wd_not_ack
+    brne sm_ws_not_ack
     /* Check if new address assigned. */
     lds TMP0, adkUsbNewDeviceAddress
     andi TMP0, 0x7f
-    breq sm_wd_no_address
+    breq sm_ws_no_address
     /* Have new address. */
     sts adkUsbDeviceAddress, TMP0
     sts adkUsbNewDeviceAddress, ZERO
-sm_wd_no_address:
+sm_ws_no_address:
     m_SetState ADK_USB_STATE_LISTEN
     andi RX_STATE, ~ADK_USB_RX_MINE
     rjmp sm_exit
-sm_wd_not_ack:
+sm_ws_not_ack:
     rjmp send_stall
 
 /************************* READ_DATA ******************************************/
@@ -728,10 +728,11 @@ sm_rd_not_in:
     /* ACK received, free transmission buffer. */
     andi TMP1, ~ADK_USB_TX_SIZE_MASK
     sts adkUsbTxState, TMP1
+    andi RX_STATE, ~ADK_USB_RX_MINE
     rjmp sm_exit
 sm_rd_not_ack:
     cpi RX_PID, ADK_USB_PID_DATA1
-    brne sm_exit
+    brne sm_exit // Should be OUT token, no action
     /* Send ACK on DATA1 and end the transaction - status stage complete. */
     m_SetState ADK_USB_STATE_LISTEN
     rjmp send_ack
@@ -753,8 +754,8 @@ sm_exit:
 send_status:
     sbrc STATE, ADK_USB_STATE_TRANS_ACTIVE_BIT
     rjmp send_nak // Transaction not yet complete.
-    bst STATE, ADK_USB_STATE_TRANS_FAILED_BIT
-    brts send_status_failed
+    sbrc STATE, ADK_USB_STATE_TRANS_FAILED_BIT
+    rjmp send_status_failed
     /* Transaction completed successfully, send empty DATA1 packet. */
     ldi TMP0, ADK_USB_PID_DATA1
     sts adkUsbTxAuxBuf + 1, TMP0
