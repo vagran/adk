@@ -605,12 +605,9 @@ token_found:
     rjmp check_idle
     /* Have a packet for us, set RX_MINE and process through the state machine. */
     ori RX_STATE, ADK_USB_RX_MINE
-    cpi RX_PID, ADK_USB_PID_SETUP
-    brne state_machine_enter
     /* SETUP token always sets current state to SETUP. */
-    m_SetState ADK_USB_STATE_SETUP
-    andi RX_STATE, ~(ADK_USB_RX_SETUP | ADK_USB_RX_SIZE_MASK)
-    rjmp sm_exit
+    cpi RX_PID, ADK_USB_PID_SETUP
+    breq sm_listen
 state_machine_enter:
     mov TMP0, STATE
     andi TMP0, ADK_USB_STATE_MASK
