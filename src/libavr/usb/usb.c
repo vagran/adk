@@ -173,7 +173,7 @@ const PROGMEM AdkUsbFullStringDesc adkUsbFullStringDesc = {
         },
         /* string */
         ADK_USB_STRING(AVR_USB_SERIAL_STRING)
-    },
+    }
 #   endif /* AVR_USB_SERIAL_STRING */
 };
 

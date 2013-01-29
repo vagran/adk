@@ -235,7 +235,11 @@ AdkUsbCrc16:
     movw CRC_DATA_LO, CRC_DATA_ARG_LO
     ldi CRC_RESULT_LO, 0xff
     ldi CRC_RESULT_HI, 0xff
+    inc CRC_LEN_ARG
 crc_loop:
+    dec CRC_LEN_ARG
+    breq crc_exit
+
     ld CRC_X, CRC_DATA+
     eor CRC_X, CRC_RESULT_LO
 
@@ -266,15 +270,14 @@ crc_loop:
      */
     inc CRC_X
     andi CRC_X, 2
-    breq crc_next
+    breq crc_loop
     /* Parity set, apply XOR 0xc001 to result. */
     ldi CRC_X, 0x01
     eor CRC_RESULT_LO, CRC_X
     ldi CRC_X, 0xc0
     eor CRC_RESULT_HI, CRC_X
-crc_next:
-    dec CRC_LEN_ARG
-    brne crc_loop
+    rjmp crc_loop
+crc_exit:
     com CRC_RESULT_LO
     com CRC_RESULT_HI
     ret
