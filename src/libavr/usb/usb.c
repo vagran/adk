@@ -266,7 +266,8 @@ AdkUsbPoll()
     /* Next state if non-zero. */
     u8 nextState = 0;
 
-    if (adkUsbRxState & ADK_USB_RX_SIZE_MASK) {
+    u8 rxSize = adkUsbRxState & ADK_USB_RX_SIZE_MASK;
+    if (rxSize) {
         /* Have incoming data. */
         if (adkUsbRxState & ADK_USB_RX_SETUP) {
             /* SETUP data received, process the request. */
@@ -383,8 +384,10 @@ AdkUsbPoll()
 
     /* State should be modified atomically. */
     cli();
-    /* Free RX buffer. */
-    adkUsbRxState &= ~(ADK_USB_RX_SETUP | ADK_USB_RX_SIZE_MASK);
+    if (rxSize) {
+        /* Free RX buffer. */
+        adkUsbRxState &= ~(ADK_USB_RX_SETUP | ADK_USB_RX_SIZE_MASK);
+    }
     register u8 state = adkUsbState | hasFailed;
     if (nextState) {
         state = (state & ~ADK_USB_STATE_MASK) | nextState;

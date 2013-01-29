@@ -609,6 +609,7 @@ token_found:
     brne state_machine_enter
     /* SETUP token always sets current state to SETUP. */
     m_SetState ADK_USB_STATE_SETUP
+    andi RX_STATE, ~(ADK_USB_RX_SETUP | ADK_USB_RX_SIZE_MASK)
     rjmp sm_exit
 state_machine_enter:
     mov TMP0, STATE
@@ -673,7 +674,6 @@ sm_s_not_data0:
 /************************* WRITE_DATA *****************************************/
 
 sm_write_data:
-    TRIGGER//XXX
     //XXX
     rjmp sm_exit
 
@@ -861,13 +861,9 @@ wait_reset_finish:
      * follow the reset signal.
      */
 
-    /* Ensure the line is idle for some time before exiting from interrupt
-     * handler. Otherwise we could miss packet SYNC pattern if the is exited and
-     * reentered. Wait for a packet for 8 bits (107 cycles). The loop time
-     * should be less than bit length.
-     */
+    /* Check line is idle before exiting. */
 check_idle:
-    ldi TMP0, 11
+    ldi TMP0, 2
 check_idle_loop:
     in TMP1, _SFR_IO_ADDR(AVR_USB_DPORT_PIN) // [1]
     andi TMP1, DATA_LINES_MASK // [2]
