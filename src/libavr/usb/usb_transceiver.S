@@ -585,24 +585,29 @@ handle_EOP:
      * only tokens which match our address.
      */
     lds STATE, adkUsbState
-    sbrc RX_STATE, ADK_USB_RX_MINE_BIT
-    rjmp state_machine_enter
-    /* Currently not waiting for a packet. Check if it is token to us. */
+    /* Check if it is token to us. */
     cpi RX_PID, ADK_USB_PID_SETUP
     breq token_found
     cpi RX_PID, ADK_USB_PID_IN
     breq token_found
     cpi RX_PID, ADK_USB_PID_OUT
     breq token_found
-    /* Not a token for us. */
+    /* Not a token, check if current transaction is our one. */
+    sbrc RX_STATE, ADK_USB_RX_MINE_BIT
+    rjmp state_machine_enter
+    /* Not our packet. */
     rjmp check_idle
 token_found:
     /* Check destination address. */
     ld TMP0, RX_BUF
     andi TMP0, 0x7f
     lds TMP1, adkUsbDeviceAddress
-    cpse TMP0, TMP1
-    rjmp check_idle
+    cp TMP0, TMP1
+    breq transaction_start
+    /* Transaction for other device started. Clear RX_MINE for a case. */
+    andi RX_STATE, ~ADK_USB_RX_MINE
+    rjmp sm_exit
+transaction_start:
     /* Have a packet for us, set RX_MINE and process through the state machine. */
     ori RX_STATE, ADK_USB_RX_MINE
     /* SETUP token always sets current state to SETUP. */
