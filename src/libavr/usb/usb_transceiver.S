@@ -866,9 +866,12 @@ wait_reset_finish:
      * follow the reset signal.
      */
 
-    /* Check line is idle before exiting. */
+    /* Check line is idle before exiting. The delay is experimentally set to
+     * to work on USB 3.0 hubs which have smaller gaps between KEEP-ALIVE and
+     * a packet.
+     */
 check_idle:
-    ldi TMP0, 2
+    ldi TMP0, 6
 check_idle_loop:
     in TMP1, _SFR_IO_ADDR(AVR_USB_DPORT_PIN) // [1]
     andi TMP1, DATA_LINES_MASK // [2]
