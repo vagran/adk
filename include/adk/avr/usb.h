@@ -375,7 +375,7 @@ typedef struct {
         /** Header. */
         AdkUsbStringDescHdr hdr;
         /** String. */
-        wchar_t string[sizeof(ADK_USB_STRING(ADK_USB_MANUFACTURER_STRING)) / sizeof(wchar_t)];
+        wchar_t string[sizeof(ADK_USB_STRING(ADK_USB_MANUFACTURER_STRING)) / sizeof(wchar_t) - 1];
     } manufacturer;
 #   define ADK_USB_STRING_IDX_MANUFACTURER  1
 #   else /* ADK_USB_MANUFACTURER_STRING */
@@ -388,7 +388,7 @@ typedef struct {
         /** Header. */
         AdkUsbStringDescHdr hdr;
         /** String. */
-        wchar_t string[sizeof(ADK_USB_STRING(ADK_USB_PRODUCT_STRING)) / sizeof(wchar_t)];
+        wchar_t string[sizeof(ADK_USB_STRING(ADK_USB_PRODUCT_STRING)) / sizeof(wchar_t) - 1];
     } product;
 #   define ADK_USB_STRING_IDX_PRODUCT       (ADK_USB_STRING_IDX_MANUFACTURER + 1)
 #   else /* ADK_USB_PRODUCT_STRING */
@@ -401,7 +401,7 @@ typedef struct {
         /** Header. */
         AdkUsbStringDescHdr hdr;
         /** String. */
-        wchar_t string[sizeof(ADK_USB_STRING(ADK_USB_SERIAL_STRING)) / sizeof(wchar_t)];
+        wchar_t string[sizeof(ADK_USB_STRING(ADK_USB_SERIAL_STRING)) / sizeof(wchar_t) - 1];
     } serial;
 #   define ADK_USB_STRING_IDX_SERIAL        (ADK_USB_STRING_IDX_PRODUCT + 1)
 #   else /* ADK_USB_SERIAL_STRING */

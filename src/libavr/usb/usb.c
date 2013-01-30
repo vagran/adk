@@ -97,7 +97,7 @@ const PROGMEM AdkUsbFullConfigDesc adkUsbConfigDesc = {
     /* Interface descriptor. */
     {
         /* bLength */
-        sizeof(AdkUsbConfigDesc),
+        sizeof(AdkUsbInterfaceDesc),
         /* bDescriptorType */
         ADK_USB_DESC_TYPE_INTERFACE,
         /* bInterfaceNumber */
