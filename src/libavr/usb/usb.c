@@ -270,13 +270,16 @@ AdkUsbPoll()
     u8 rxSize = adkUsbRxState & ADK_USB_RX_SIZE_MASK;
     if (rxSize) {
         /* Have incoming data. */
+
         if (adkUsbRxState & ADK_USB_RX_SETUP) {
             /* SETUP data received, process the request. */
+
             AdkUsbSetupData *req = (AdkUsbSetupData *)AdkUsbGetRxData();
 
             if ((req->bmRequestType & ADK_USB_REQ_TYPE_TYPE_MASK) ==
                 ADK_USB_REQ_TYPE_TYPE_STANDARD) {
                 /* Standard request received. */
+
                 if (req->bRequest == ADK_USB_REQ_SET_ADDRESS) {
                     /* Device address designated by a host. Assuming it is
                      * correct (1-127), no resources to check.
@@ -367,9 +370,12 @@ AdkUsbPoll()
         } else {
             /* Any payload of write requests is interpreted as user data. All
              * system write requests which are supported have all data in the
-             * setup payload so it will be handled above.
+             * setup payload so it will be handled above. Hold the receiving
+             * buffer if the client callback returns FALSE.
              */
-            AdkUsbOnReceive(AdkUsbGetRxData(), rxSize);
+            if (!AdkUsbOnReceive(AdkUsbGetRxData(), rxSize)) {
+                rxSize = 0;
+            }
         }
     }
 
@@ -389,6 +395,7 @@ AdkUsbPoll()
     if (hasFailed) {
         AVR_BIT_SET8(PORTB, 0);//XXX
     }
+
     /* State should be modified atomically. */
     cli();
     if (rxSize) {
@@ -419,5 +426,4 @@ _AdkUsbOnReset()
     adkUsbRxState = 0;
     adkTxDataSize = 0;
     adkUsbTxState = 0;
-    AVR_BIT_SET8(PINB, 3);//XXX
 }

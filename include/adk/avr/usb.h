@@ -516,17 +516,30 @@ AdkUsbCrc16(u8 *data, u8 len);
  * application. It is called when user data packet is received. The application
  * is responsible for data validation/defragmentation. CRC is not verified by
  * the USB framework because of timing restrictions. Application can do it by
- * comparing 16-bit CRC value which follows the data with the result of @ref
- * AdkUsbCrc16() function call for the data. Data pointer is not accessible
- * after the callback returns so all processing/copying must be done during its
- * invocation.
+ * calling @ref AdkUsbVerifyCrc() function.
  *
  * @param data Pointer to received data.
  * @param size Size of the data chunk in bytes. CRC value available at
  *      &data[size] location.
+ * @return @a TRUE if data was processed, @a FALSE if additional invocation is
+ *      needed later for fully process the data. Data buffer is not after the
+ *      function return if @a TRUE value is returned.
  */
-void
+bool_t
 AdkUsbOnReceive(u8 *data, u8 size);
+
+/** Verify CRC of the data passed to @ref AdkUsbOnReceive function.
+ *
+ * @param data Data argument passed to @ref AdkUsbOnReceive function.
+ * @param size Size argument passed to @ref AdkUsbOnReceive function.
+ * @return @a TRUE if CRC is valid, @a FALSE otherwise.
+ */
+static inline bool_t
+AdkUsbVerifyCrc(u8 *data, u8 size)
+{
+    u16 crc = AdkUsbCrc16(data, size);
+    return crc = *(u16 *)&data[size];
+}
 
 #endif /* __ASSEMBLER__ */
 
