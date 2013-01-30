@@ -798,15 +798,12 @@ sm_exit:
     sts adkUsbState, STATE
     rjmp check_idle
 
-    /* Send current transaction status. If transaction is not yet complete
-     * (ADK_USB_STATE_TRANS_ACTIVE set) send NAK. If transaction failed
+    /* Send current transaction status. If transaction failed
      * (ADK_USB_STATE_TRANS_FAILED set) send stall, reset failed indication and
      * advance state to LISTEN. If transaction completed sucessfully send empty
      * DATA1 packet.
      */
 send_status:
-    sbrc STATE, ADK_USB_STATE_TRANS_ACTIVE_BIT
-    rjmp send_nak // Transaction not yet complete.
     /* If transaction is failed then send STALL until SETUP token is received. */
     sbrc STATE, ADK_USB_STATE_TRANS_FAILED_BIT
     rjmp send_stall

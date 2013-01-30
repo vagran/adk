@@ -30,6 +30,7 @@ AdkUsbOnReceive(u8 *data, u8 size)
     return TRUE;
 }
 
+/* Provide callback for transmitted data. */
 u8
 AdkUsbOnTransmit(u16 size)
 {

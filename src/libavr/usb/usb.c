@@ -345,6 +345,7 @@ AdkUsbPoll()
                        ADK_USB_REQ_TYPE_TYPE_VENDOR) {
                 /* Vendor-specific request, most probably ADK I/O. */
                 if (req->bRequest == ADK_USB_REQ_ADK_READ) {
+                    adkUsbTxState &= ~ADK_USB_TX_SYS;
                     adkTxDataSize = AdkUsbOnTransmit(req->wLength);
                     /* PID will be toggled in FetchPacket(). */
                     adkUsbTxDataBuf[1] = ADK_USB_PID_DATA0;

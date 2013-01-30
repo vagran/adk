@@ -70,13 +70,10 @@
 #define ADK_USB_STATE_READ_DATA         5
 /** Mask to get state from @ref adkUsbState. */
 #define ADK_USB_STATE_MASK              0x7
-#define ADK_USB_STATE_TRANS_ACTIVE_BIT  3 //XXX is it needed?
-/** Transaction still is not complete. */
-#define ADK_USB_STATE_TRANS_ACTIVE      _BV(ADK_USB_STATE_TRANS_ACTIVE_BIT)
-#define ADK_USB_STATE_TRANS_FAILED_BIT  4
+#define ADK_USB_STATE_TRANS_FAILED_BIT  3
 /** Error occurred in the last transaction. */
 #define ADK_USB_STATE_TRANS_FAILED      _BV(ADK_USB_STATE_TRANS_FAILED_BIT)
-#define ADK_USB_STATE_READ_WAIT_BIT      5
+#define ADK_USB_STATE_READ_WAIT_BIT      4
 /** ISR is waiting for transmission data from polling function. This bit is set
  * only by ISR and reset only after data size is set by polling function.
  */
