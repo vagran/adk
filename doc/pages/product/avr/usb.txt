@@ -23,7 +23,7 @@ LISTEN: If address is mine and one of state-exiting tokens, set RX_MINE.
 
 LISTEN --> SETUP: [SETUP]
 
-ANY_STATE --> SETUP: [SETUP]
+ANY_STATE --> SETUP: [SETUP] Clear last failure indication
 
 SETUP --> SETUP: [DATA0, RX_SETUP not set]\nReceive in buffer,\nsend ACK,\nset RX_SETUP
 
@@ -41,13 +41,13 @@ WRITE_DATA --> WRITE_DATA: [DATA0/DATA1]\nReceive in buffer if data toggled,\ndo
 
 WRITE_DATA --> WRITE_STATUS: [IN]\nSet RX_MINE,\nsend status
 
-WRITE_DATA --> LISTEN: [IN, request error]\nReset RX_MINE,\nsend STALL
+WRITE_DATA --> WRITE_DATA: [IN, request error]\nReset RX_MINE,\nsend STALL
 
 SETUP --> WRITE_STATUS: [H2D request processed, wLength == 0]\nFree buffer,\nreset RX_SETUP
 
 WRITE_STATUS --> WRITE_STATUS: [IN]\nSet RX_MINE,\nsend status
 
-WRITE_STATUS --> LISTEN: [IN, request error]\nReset RX_MINE,\nsend STALL
+WRITE_STATUS --> WRITE_STATUS: [IN, request error]\nReset RX_MINE,\nsend STALL
 
 WRITE_STATUS --> LISTEN: [ACK]\nReset RX_MINE,\nset address if new one received
 

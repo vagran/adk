@@ -123,17 +123,19 @@ public:
      * @param data Data buffer.
      * @param size Size of data in bytes.
      * @param timeout Timeout in milliseconds. Zero fo unlimited timeout.
+     * @return Number of bytes actually transferred.
      */
-    void
+    size_t
     Write(const void *data, size_t size, int timeout = 0)
     {
         int ec = libusb_control_transfer(_hDevice,
             LIBUSB_RECIPIENT_DEVICE | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_OUT,
             ADK_USB_REQ_ADK_WRITE, 0, 0,
             const_cast<u8 *>(static_cast<const u8 *>(data)), size, timeout);
-        if (ec) {
+        if (ec < 0) {
             ADK_USB_EXCEPTION(ec, "Failed to write to device");
         }
+        return ec;
     }
 };
 

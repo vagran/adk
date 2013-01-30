@@ -24,6 +24,10 @@ main(int argc, char **argv)
         return 1;
     }
     ADK_INFO("Device address: %d", device->GetAddress());
-    device->Write("aaa", 3);//XXX
+
+    char buf[128] = {'\x08'};
+    size_t size = device->Write(buf, 3);//XXX
+    ADK_INFO("%lu bytes written", size);
+
     return 0;
 }

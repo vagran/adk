@@ -425,6 +425,8 @@ extern u8 adkUsbState;
 extern u8 adkUsbRxBuf[];
 /** Actually is a bit-field variable reflecting receiver state. */
 extern u8 adkUsbRxState;
+/** Previous DATAX PID for write transfer on data stage. */
+extern u8 adkUsbRxPrevDataID;
 /** Currently assigned device address. Zero if the device is below ADDRESS state. */
 extern u8 adkUsbDeviceAddress;
 /** Currently pending device address if non-zero. Should be applied only when
@@ -509,6 +511,22 @@ AdkUsbPoll();
  */
 u16
 AdkUsbCrc16(u8 *data, u8 len);
+
+/** Callback for received data. This function should be defined by client
+ * application. It is called when user data packet is received. The application
+ * is responsible for data validation/defragmentation. CRC is not verified by
+ * the USB framework because of timing restrictions. Application can do it by
+ * comparing 16-bit CRC value which follows the data with the result of @ref
+ * AdkUsbCrc16() function call for the data. Data pointer is not accessible
+ * after the callback returns so all processing/copying must be done during its
+ * invocation.
+ *
+ * @param data Pointer to received data.
+ * @param size Size of the data chunk in bytes. CRC value available at
+ *      &data[size] location.
+ */
+void
+AdkUsbOnReceive(u8 *data, u8 size);
 
 #endif /* __ASSEMBLER__ */
 

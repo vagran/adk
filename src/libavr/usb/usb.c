@@ -15,6 +15,7 @@
 u8 adkUsbState;
 u8 adkUsbTxState;
 u8 adkUsbRxState;
+u8 adkUsbRxPrevDataID;
 
 u8 adkUsbRxBuf[2 * ADK_USB_RX_BUF_SIZE];
 u8 adkUsbTxDataBuf[ADK_USB_TX_BUF_SIZE];
@@ -352,6 +353,10 @@ AdkUsbPoll()
                 /* Write request. */
                 if (req->wLength) {
                     nextState = ADK_USB_STATE_WRITE_DATA;
+                    /* Initialize data PID toggling control. Write transfer
+                     * should start from DATA1 PID so set previous to DATA0.
+                     */
+                    adkUsbRxPrevDataID = ADK_USB_PID_DATA0;
                 } else {
                     nextState = ADK_USB_STATE_WRITE_STATUS;
                 }
@@ -364,8 +369,7 @@ AdkUsbPoll()
              * system write requests which are supported have all data in the
              * setup payload so it will be handled above.
              */
-            //XXX invoke user callback, the callback should not return until
-            // data fully processed/copied.
+            AdkUsbOnReceive(AdkUsbGetRxData(), rxSize);
         }
     }
 
@@ -382,6 +386,9 @@ AdkUsbPoll()
         txSize = 0;
     }
 
+    if (hasFailed) {
+        AVR_BIT_SET8(PORTB, 0);//XXX
+    }
     /* State should be modified atomically. */
     cli();
     if (rxSize) {

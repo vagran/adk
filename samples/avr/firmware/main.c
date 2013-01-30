@@ -41,6 +41,13 @@ ISR(INT0_vect)
     EIFR = _BV(INTF0);
 }
 
+/* Provide callback for received data. */
+void
+AdkUsbOnReceive(u8 *data, u8 size)
+{
+    PORTB = *data & 0xf;
+}
+
 int
 main(void)
 {

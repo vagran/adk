@@ -649,6 +649,8 @@ sm_listen:
     ldi TMP0, ADK_USB_PID_SETUP
     cpse RX_PID, TMP0
     rjmp send_stall
+    /* Clear last transaction failure indication. */
+    andi STATE, ~ADK_USB_STATE_TRANS_FAILED
     m_SetState ADK_USB_STATE_SETUP
     rjmp sm_exit
 
@@ -679,8 +681,38 @@ sm_s_not_data0:
 /************************* WRITE_DATA *****************************************/
 
 sm_write_data:
-    //XXX
+    cpi RX_PID, ADK_USB_PID_IN
+    brne sm_wd_not_in
+    m_SetState ADK_USB_STATE_WRITE_STATUS
+    rjmp sm_write_status
+sm_wd_not_in:
+    cpi RX_PID, ADK_USB_PID_DATA0
+    breq sm_wd_data
+    cpi RX_PID, ADK_USB_PID_DATA1
+    breq sm_wd_data
+    /* Non DATAX, ignore (should be OUT). */
     rjmp sm_exit
+sm_wd_data:
+    /* Send NAK if receiving buffer is already occupied. */
+    mov TMP0, RX_STATE
+    andi TMP0, ADK_USB_RX_SIZE_MASK
+    breq sm_wd_buffer_free
+    rjmp send_nak
+sm_wd_buffer_free:
+    /* Accept data if PID toggled. */
+    lds TMP0, adkUsbRxPrevDataID
+    cp RX_PID, TMP0
+    breq sm_wd_data_received
+    /* PID toggled, accept the data. */
+    sts adkUsbRxPrevDataID, RX_PID
+    subi RX_BUF_SIZE, 3 // Not account PID and CRC in length
+    /* Assume buffer is currently free so the size field is already zero. */
+    or RX_STATE, RX_BUF_SIZE
+    ldi TMP0, ADK_USB_RX_CUR_BUF
+    eor RX_STATE, TMP0 // Toggle current active buffer.
+    /* Always send ACK for DATAX. */
+sm_wd_data_received:
+    rjmp send_ack
 
 /************************* WRITE_STATUS ***************************************/
 
@@ -714,7 +746,11 @@ sm_read_data:
     lds TMP1, adkUsbTxState
     cpi RX_PID, ADK_USB_PID_IN
     brne sm_rd_not_in
-    /* IN token received. */
+    /* IN token received. If transaction is failed then STALL should be sent
+     * until next SETUP is received.
+     */
+    sbrc STATE, ADK_USB_STATE_TRANS_FAILED_BIT
+    rjmp send_stall
     mov TRANS_LEN, TMP1
     andi TRANS_LEN, ADK_USB_TX_SIZE_MASK
     brne sm_rd_send_data
@@ -759,8 +795,9 @@ sm_exit:
 send_status:
     sbrc STATE, ADK_USB_STATE_TRANS_ACTIVE_BIT
     rjmp send_nak // Transaction not yet complete.
+    /* If transaction is failed then send STALL until SETUP token is received. */
     sbrc STATE, ADK_USB_STATE_TRANS_FAILED_BIT
-    rjmp send_status_failed
+    rjmp send_stall
     /* Transaction completed successfully, send empty DATA1 packet. */
     ldi TMP0, ADK_USB_PID_DATA1
     sts adkUsbTxAuxBuf + 1, TMP0
@@ -769,13 +806,6 @@ send_status:
     ldi TRANS_DATA_HI, AVR_HI8(adkUsbTxAuxBuf)
     rcall AdkUsbTrasmit
     rjmp sm_exit
-send_status_failed:
-    /* Transaction failed, reset indication, andvance state to LISTEN and send
-     * STALL.
-     */
-    andi STATE, ~ADK_USB_STATE_TRANS_FAILED
-    m_SetState ADK_USB_STATE_LISTEN
-    rjmp send_stall
 
 /* Send ACK and exit. */
 send_ack:
