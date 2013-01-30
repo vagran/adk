@@ -14,7 +14,7 @@
 #ifndef APP_CONFIG_H_
 #define APP_CONFIG_H_
 
-#define AVR_USB_VENDOR_ID       0xc001
-#define AVR_USB_PRODUCT_ID      0xbabe
+#define ADK_USB_VENDOR_ID       0xc001
+#define ADK_USB_PRODUCT_ID      0xbabe
 
 #endif /* APP_CONFIG_H_ */

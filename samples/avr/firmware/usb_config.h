@@ -16,8 +16,8 @@
 #include "app_config.h"
 
 /* Define some device strings. */
-#define AVR_USB_MANUFACTURER_STRING         "Artyom Lebedev"
-#define AVR_USB_PRODUCT_STRING              "ADK I/O"
+#define ADK_USB_MANUFACTURER_STRING         "Artyom Lebedev"
+#define ADK_USB_PRODUCT_STRING              "ADK I/O"
 
 #include <adk/avr/usb_config.h>
 

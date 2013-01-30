@@ -35,36 +35,36 @@ const PROGMEM AdkUsbDeviceDesc adkUsbDeviceDesc = {
     /* bcdUSB */
     0x200,
     /* bDeviceClass */
-    AVR_USB_DEVICE_CLASS,
+    ADK_USB_DEVICE_CLASS,
     /* bDeviceSubClass */
-    AVR_USB_DEVICE_SUBCLASS,
+    ADK_USB_DEVICE_SUBCLASS,
     /* bDeviceProtocol */
     0xff,
     /* bMaxPacketSize0 */
     ADK_USB_MAX_DATA_SIZE,
     /* idVendor */
-    AVR_USB_VENDOR_ID,
+    ADK_USB_VENDOR_ID,
     /* idProduct */
-    AVR_USB_PRODUCT_ID,
+    ADK_USB_PRODUCT_ID,
     /* bcdDevice */
-    AVR_USB_VERSION,
+    ADK_USB_VERSION,
 
     /* iManufacturer */
-#   ifdef AVR_USB_MANUFACTURER_STRING
+#   ifdef ADK_USB_MANUFACTURER_STRING
     ADK_USB_STRING_IDX_MANUFACTURER,
 #   else
     0,
 #   endif
 
     /* iProduct */
-#   ifdef AVR_USB_PRODUCT_STRING
+#   ifdef ADK_USB_PRODUCT_STRING
     ADK_USB_STRING_IDX_PRODUCT,
 #   else
     0,
 #   endif
 
     /* iSerialNumber */
-#   ifdef AVR_USB_SERIAL_STRING
+#   ifdef ADK_USB_SERIAL_STRING
     ADK_USB_STRING_IDX_SERIAL,
 #   else
     0,
@@ -92,7 +92,7 @@ const PROGMEM AdkUsbFullConfigDesc adkUsbConfigDesc = {
         /* bmAttributes */
         ADK_USB_CONF_ATTR_ONE,
         /* bMaxPower */
-        AVR_USB_POWER_CONSUMPTION / 2
+        ADK_USB_POWER_CONSUMPTION / 2
     },
     /* Interface descriptor. */
     {
@@ -133,7 +133,7 @@ const PROGMEM AdkUsbFullStringDesc adkUsbFullStringDesc = {
     },
 
     /* Manufacturer string. */
-#   ifdef AVR_USB_MANUFACTURER_STRING
+#   ifdef ADK_USB_MANUFACTURER_STRING
     {
         /* Header */
         {
@@ -143,12 +143,12 @@ const PROGMEM AdkUsbFullStringDesc adkUsbFullStringDesc = {
             ADK_USB_DESC_TYPE_STRING
         },
         /* string */
-        ADK_USB_STRING(AVR_USB_MANUFACTURER_STRING)
+        ADK_USB_STRING(ADK_USB_MANUFACTURER_STRING)
     },
-#   endif /* AVR_USB_MANUFACTURER_STRING */
+#   endif /* ADK_USB_MANUFACTURER_STRING */
 
     /* Product string. */
-#   ifdef AVR_USB_PRODUCT_STRING
+#   ifdef ADK_USB_PRODUCT_STRING
     {
         /* Header */
         {
@@ -158,12 +158,12 @@ const PROGMEM AdkUsbFullStringDesc adkUsbFullStringDesc = {
             ADK_USB_DESC_TYPE_STRING
         },
         /* string */
-        ADK_USB_STRING(AVR_USB_PRODUCT_STRING)
+        ADK_USB_STRING(ADK_USB_PRODUCT_STRING)
     },
-#   endif /* AVR_USB_PRODUCT_STRING */
+#   endif /* ADK_USB_PRODUCT_STRING */
 
     /* Serial string. */
-#   ifdef AVR_USB_SERIAL_STRING
+#   ifdef ADK_USB_SERIAL_STRING
     {
         /* Header */
         {
@@ -173,9 +173,9 @@ const PROGMEM AdkUsbFullStringDesc adkUsbFullStringDesc = {
             ADK_USB_DESC_TYPE_STRING
         },
         /* string */
-        ADK_USB_STRING(AVR_USB_SERIAL_STRING)
+        ADK_USB_STRING(ADK_USB_SERIAL_STRING)
     }
-#   endif /* AVR_USB_SERIAL_STRING */
+#   endif /* ADK_USB_SERIAL_STRING */
 };
 
 void
@@ -183,15 +183,15 @@ AdkUsbSetup()
 {
     /* Configure debug port if enabled. */
 #   ifdef AVR_USB_DEBUG
-    AVR_USB_DBGPORT_DDR |= 0x0f;
-    AVR_USB_DBGPORT_PORT &= 0xf0;
+    ADK_USB_DBGPORT_DDR |= 0x0f;
+    ADK_USB_DBGPORT_PORT &= 0xf0;
 #   endif /* AVR_USB_DEBUG */
 
     /* Configure data lines for input and disable pull-up resistors. */
-    AVR_BIT_CLR8(AVR_USB_DPORT_DDR, AVR_USB_DPLUS_PIN);
-    AVR_BIT_CLR8(AVR_USB_DPORT_DDR, AVR_USB_DMINUS_PIN);
-    AVR_BIT_CLR8(AVR_USB_DPORT_PORT, AVR_USB_DPLUS_PIN);
-    AVR_BIT_CLR8(AVR_USB_DPORT_PORT, AVR_USB_DMINUS_PIN);
+    AVR_BIT_CLR8(ADK_USB_DPORT_DDR, ADK_USB_DPLUS_PIN);
+    AVR_BIT_CLR8(ADK_USB_DPORT_DDR, ADK_USB_DMINUS_PIN);
+    AVR_BIT_CLR8(ADK_USB_DPORT_PORT, ADK_USB_DPLUS_PIN);
+    AVR_BIT_CLR8(ADK_USB_DPORT_PORT, ADK_USB_DMINUS_PIN);
 
     adkUsbState = 0;
     adkUsbDeviceAddress = 0;
@@ -306,23 +306,23 @@ AdkUsbPoll()
                             adkUsbSysTxData.pgm_ptr = (PGM_P)&adkUsbFullStringDesc.lang;
                             size = sizeof(adkUsbFullStringDesc.lang);
 
-#                       ifdef AVR_USB_MANUFACTURER_STRING
+#                       ifdef ADK_USB_MANUFACTURER_STRING
                         } else if (descType == ADK_USB_STRING_IDX_MANUFACTURER) {
                             adkUsbSysTxData.pgm_ptr = (PGM_P)&adkUsbFullStringDesc.manufacturer;
                             size = sizeof(adkUsbFullStringDesc.manufacturer);
-#                       endif /* AVR_USB_MANUFACTURER_STRING */
+#                       endif /* ADK_USB_MANUFACTURER_STRING */
 
-#                       ifdef AVR_USB_PRODUCT_STRING
+#                       ifdef ADK_USB_PRODUCT_STRING
                         } else if (descType == ADK_USB_STRING_IDX_PRODUCT) {
                             adkUsbSysTxData.pgm_ptr = (PGM_P)&adkUsbFullStringDesc.product;
                             size = sizeof(adkUsbFullStringDesc.product);
-#                       endif /* AVR_USB_PRODUCT_STRING */
+#                       endif /* ADK_USB_PRODUCT_STRING */
 
-#                       ifdef AVR_USB_SERIAL_STRING
+#                       ifdef ADK_USB_SERIAL_STRING
                         } else if (descType == ADK_USB_STRING_IDX_SERIAL) {
                             adkUsbSysTxData.pgm_ptr = (PGM_P)&adkUsbFullStringDesc.serial;
                             size = sizeof(adkUsbFullStringDesc.serial);
-#                       endif /* AVR_USB_SERIAL_STRING */
+#                       endif /* ADK_USB_SERIAL_STRING */
 
                         } else {
                             hasFailed = ADK_USB_STATE_TRANS_FAILED;

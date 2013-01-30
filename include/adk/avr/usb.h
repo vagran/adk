@@ -33,18 +33,18 @@
 /** Set debug token. The token is 4-bits integer which is output to the
  * configured debug port.
  */
-#define AVR_USB_DBG_SET(__token) \
-    (AVR_USB_DBGPORT_PORT = (AVR_USB_DBGPORT_PORT & 0xf0) | ((__token) & 0x0f))
+#define ADK_USB_DBG_SET(__token) \
+    (ADK_USB_DBGPORT_PORT = (ADK_USB_DBGPORT_PORT & 0xf0) | ((__token) & 0x0f))
 
 #else /* __ASSEMBLER__ */
 
-#define AVR_USB_DBG_SET(__token) m_AVR_USB_DBG_SET (__token)
+#define ADK_USB_DBG_SET(__token) m_ADK_USB_DBG_SET (__token)
 
 #endif /* __ASSEMBLER__ */
 
 #else /* AVR_USB_DEBUG */
 
-#define AVR_USB_DBG_SET(__token)
+#define ADK_USB_DBG_SET(__token)
 
 #endif /* AVR_USB_DEBUG */
 
@@ -370,43 +370,43 @@ typedef struct {
     } lang;
 
     /** Manufacturer string. */
-#   ifdef AVR_USB_MANUFACTURER_STRING
+#   ifdef ADK_USB_MANUFACTURER_STRING
     struct {
         /** Header. */
         AdkUsbStringDescHdr hdr;
         /** String. */
-        wchar_t string[sizeof(ADK_USB_STRING(AVR_USB_MANUFACTURER_STRING)) / sizeof(wchar_t)];
+        wchar_t string[sizeof(ADK_USB_STRING(ADK_USB_MANUFACTURER_STRING)) / sizeof(wchar_t)];
     } manufacturer;
 #   define ADK_USB_STRING_IDX_MANUFACTURER  1
-#   else /* AVR_USB_MANUFACTURER_STRING */
+#   else /* ADK_USB_MANUFACTURER_STRING */
 #   define ADK_USB_STRING_IDX_MANUFACTURER  0
-#   endif /* AVR_USB_MANUFACTURER_STRING */
+#   endif /* ADK_USB_MANUFACTURER_STRING */
 
     /** Product string. */
-#   ifdef AVR_USB_PRODUCT_STRING
+#   ifdef ADK_USB_PRODUCT_STRING
     struct {
         /** Header. */
         AdkUsbStringDescHdr hdr;
         /** String. */
-        wchar_t string[sizeof(ADK_USB_STRING(AVR_USB_PRODUCT_STRING)) / sizeof(wchar_t)];
+        wchar_t string[sizeof(ADK_USB_STRING(ADK_USB_PRODUCT_STRING)) / sizeof(wchar_t)];
     } product;
 #   define ADK_USB_STRING_IDX_PRODUCT       (ADK_USB_STRING_IDX_MANUFACTURER + 1)
-#   else /* AVR_USB_PRODUCT_STRING */
+#   else /* ADK_USB_PRODUCT_STRING */
 #   define ADK_USB_STRING_IDX_PRODUCT       ADK_USB_STRING_IDX_MANUFACTURER
-#   endif /* AVR_USB_PRODUCT_STRING */
+#   endif /* ADK_USB_PRODUCT_STRING */
 
     /** Serial string. */
-#   ifdef AVR_USB_SERIAL_STRING
+#   ifdef ADK_USB_SERIAL_STRING
     struct {
         /** Header. */
         AdkUsbStringDescHdr hdr;
         /** String. */
-        wchar_t string[sizeof(ADK_USB_STRING(AVR_USB_SERIAL_STRING)) / sizeof(wchar_t)];
+        wchar_t string[sizeof(ADK_USB_STRING(ADK_USB_SERIAL_STRING)) / sizeof(wchar_t)];
     } serial;
 #   define ADK_USB_STRING_IDX_SERIAL        (ADK_USB_STRING_IDX_PRODUCT + 1)
-#   else /* AVR_USB_SERIAL_STRING */
+#   else /* ADK_USB_SERIAL_STRING */
 #   define ADK_USB_STRING_IDX_SERIAL        ADK_USB_STRING_IDX_PRODUCT
-#   endif /* AVR_USB_SERIAL_STRING */
+#   endif /* ADK_USB_SERIAL_STRING */
 } AdkUsbFullStringDesc;
 
 /** US-English language ID. */

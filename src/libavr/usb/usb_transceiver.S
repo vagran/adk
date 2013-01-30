@@ -16,17 +16,17 @@
 #define ZERO                 r1
 
 /** Mask for D+ and D- lines. */
-#define DATA_LINES_MASK     (_BV(AVR_USB_DPLUS_PIN) | _BV(AVR_USB_DMINUS_PIN))
+#define DATA_LINES_MASK     (_BV(ADK_USB_DPLUS_PIN) | _BV(ADK_USB_DMINUS_PIN))
 /** Masked value for J state. */
-#define DATA_LINES_J        _BV(AVR_USB_DMINUS_PIN)
+#define DATA_LINES_J        _BV(ADK_USB_DMINUS_PIN)
 /** Masked value for K state. */
-#define DATA_LINES_K        _BV(AVR_USB_DPLUS_PIN)
+#define DATA_LINES_K        _BV(ADK_USB_DPLUS_PIN)
 /** Masked value for idle state. */
 #define DATA_LINES_IDLE     DATA_LINES_J
 /** Masked value for SE0 (single-ended zero) state. */
 #define DATA_LINES_SE0      0
 /** Masked value for SE1 (single-ended one) state. */
-#define DATA_LINES_SE1      (_BV(AVR_USB_DPLUS_PIN) | _BV(AVR_USB_DMINUS_PIN))
+#define DATA_LINES_SE1      (_BV(ADK_USB_DPLUS_PIN) | _BV(ADK_USB_DMINUS_PIN))
 
 #define TRIGGER sbi _SFR_IO_ADDR(PORTB), 0 //XXX
 
@@ -111,11 +111,11 @@
 /* Temporal register 1. */
 #define TMP1                r25
 
-.macro m_AVR_USB_DBG_SET token
-    in TMP0, _SFR_IO_ADDR(AVR_USB_DBGPORT_PORT)
+.macro m_ADK_USB_DBG_SET token
+    in TMP0, _SFR_IO_ADDR(ADK_USB_DBGPORT_PORT)
     andi TMP0, 0xf0
     ori TMP0, \token & 0x0f
-    out _SFR_IO_ADDR(AVR_USB_DBGPORT_PORT), TMP0
+    out _SFR_IO_ADDR(ADK_USB_DBGPORT_PORT), TMP0
 .endm
 
 /* Set new state. */
@@ -148,9 +148,9 @@ AdkUsbTrasmit:
     ldi TMP0, DATA_LINES_MASK
 
     /* Drive the data lines. */
-    sbi _SFR_IO_ADDR(AVR_USB_DPORT_PORT), AVR_USB_DMINUS_PIN
-    sbi _SFR_IO_ADDR(AVR_USB_DPORT_DDR), AVR_USB_DPLUS_PIN
-    sbi _SFR_IO_ADDR(AVR_USB_DPORT_DDR), AVR_USB_DMINUS_PIN
+    sbi _SFR_IO_ADDR(ADK_USB_DPORT_PORT), ADK_USB_DMINUS_PIN
+    sbi _SFR_IO_ADDR(ADK_USB_DPORT_DDR), ADK_USB_DPLUS_PIN
+    sbi _SFR_IO_ADDR(ADK_USB_DPORT_DDR), ADK_USB_DMINUS_PIN
 
     /* Numbers in square brackets are number of cycles since last bit front edge. */
 
@@ -159,7 +159,7 @@ trans_loop: // [10]
     brcs trans_1 // [12]
     /* Transmit bit zero. */
     ldi TRANS_STUFF_CNT, 6 // [13] Reset stuffing counter.
-    out _SFR_IO_ADDR(AVR_USB_DPORT_PIN), TMP0 // [1] Toggle data lines.
+    out _SFR_IO_ADDR(ADK_USB_DPORT_PIN), TMP0 // [1] Toggle data lines.
     WAIT_1 // [2]
     subi TRANS_BIT_CNT, 0x20 // [3] Carry each eight iterations.
     brcc trans_same_byte // [4]
@@ -187,17 +187,17 @@ trans_stuff: // [3]
     WAIT_8 // [12]
     subi TRANS_BIT_CNT, 0x20 // [13] Carry each eight iterations.
     /* Transmit stuff bit. */
-    out _SFR_IO_ADDR(AVR_USB_DPORT_PIN), TMP0 // [1] Toggle data lines.
+    out _SFR_IO_ADDR(ADK_USB_DPORT_PIN), TMP0 // [1] Toggle data lines.
     WAIT_1 // [2]
     brcs trans_next_byte // [3]
     rjmp trans_same_byte // [5]
 
 trans_EOP: // [7]
     /* Low level for both lines. */
-    in TMP0, _SFR_IO_ADDR(AVR_USB_DPORT_PORT) // [8]
+    in TMP0, _SFR_IO_ADDR(ADK_USB_DPORT_PORT) // [8]
     andi TMP0, ~DATA_LINES_MASK // [9]
     WAIT_4 // [13]
-    out _SFR_IO_ADDR(AVR_USB_DPORT_PORT), TMP0 // [1]
+    out _SFR_IO_ADDR(ADK_USB_DPORT_PORT), TMP0 // [1]
     /* Wait for approximately two bits (26 cycles). */
     ldi TMP0, 8 // [2]
 trans_EOP_loop:
@@ -205,11 +205,11 @@ trans_EOP_loop:
     brne trans_EOP_loop // [5]
 
     /* Drive to J state. */
-    sbi _SFR_IO_ADDR(AVR_USB_DPORT_PORT), AVR_USB_DMINUS_PIN
+    sbi _SFR_IO_ADDR(ADK_USB_DPORT_PORT), ADK_USB_DMINUS_PIN
     /* Switch lines back to receiving. */
-    cbi _SFR_IO_ADDR(AVR_USB_DPORT_DDR), AVR_USB_DMINUS_PIN
-    cbi _SFR_IO_ADDR(AVR_USB_DPORT_DDR), AVR_USB_DPLUS_PIN
-    cbi _SFR_IO_ADDR(AVR_USB_DPORT_PORT), AVR_USB_DMINUS_PIN
+    cbi _SFR_IO_ADDR(ADK_USB_DPORT_DDR), ADK_USB_DMINUS_PIN
+    cbi _SFR_IO_ADDR(ADK_USB_DPORT_DDR), ADK_USB_DPLUS_PIN
+    cbi _SFR_IO_ADDR(ADK_USB_DPORT_PORT), ADK_USB_DMINUS_PIN
     ret
 
 /* Arguments for AdkUsbCrc16() function. Per GCC calling convention. */
@@ -301,7 +301,7 @@ above_powered_state:
     /* Next we should check if interrupt is caused by SE0 or differential signal.
      * SE0 indicates possible reset.
      */
-    in TMP0, _SFR_IO_ADDR(AVR_USB_DPORT_PIN)
+    in TMP0, _SFR_IO_ADDR(ADK_USB_DPORT_PIN)
     andi TMP0, DATA_LINES_MASK
     brne not_se0
     rjmp check_reset
@@ -318,30 +318,30 @@ not_se0:
 
     /* Wait for J token. */
 sync_wait_J:
-    sbic _SFR_IO_ADDR(AVR_USB_DPORT_PIN), AVR_USB_DPLUS_PIN
+    sbic _SFR_IO_ADDR(ADK_USB_DPORT_PIN), ADK_USB_DPLUS_PIN
     rjmp sync_wait_J
     /* Skip J token. */
 sync_skip_J:
     /* Two cycles per sample in the code below - the maximally achievable
      * resolution value.
      */
-    sbic _SFR_IO_ADDR(AVR_USB_DPORT_PIN), AVR_USB_DPLUS_PIN
+    sbic _SFR_IO_ADDR(ADK_USB_DPORT_PIN), ADK_USB_DPLUS_PIN
     rjmp found_K
-    sbic _SFR_IO_ADDR(AVR_USB_DPORT_PIN), AVR_USB_DPLUS_PIN
+    sbic _SFR_IO_ADDR(ADK_USB_DPORT_PIN), ADK_USB_DPLUS_PIN
     rjmp found_K
-    sbic _SFR_IO_ADDR(AVR_USB_DPORT_PIN), AVR_USB_DPLUS_PIN
+    sbic _SFR_IO_ADDR(ADK_USB_DPORT_PIN), ADK_USB_DPLUS_PIN
     rjmp found_K
-    sbic _SFR_IO_ADDR(AVR_USB_DPORT_PIN), AVR_USB_DPLUS_PIN
+    sbic _SFR_IO_ADDR(ADK_USB_DPORT_PIN), ADK_USB_DPLUS_PIN
     rjmp found_K
-    sbic _SFR_IO_ADDR(AVR_USB_DPORT_PIN), AVR_USB_DPLUS_PIN
+    sbic _SFR_IO_ADDR(ADK_USB_DPORT_PIN), ADK_USB_DPLUS_PIN
     rjmp found_K
-    sbic _SFR_IO_ADDR(AVR_USB_DPORT_PIN), AVR_USB_DPLUS_PIN
+    sbic _SFR_IO_ADDR(ADK_USB_DPORT_PIN), ADK_USB_DPLUS_PIN
     rjmp found_K
-    sbic _SFR_IO_ADDR(AVR_USB_DPORT_PIN), AVR_USB_DPLUS_PIN
+    sbic _SFR_IO_ADDR(ADK_USB_DPORT_PIN), ADK_USB_DPLUS_PIN
     rjmp found_K
-    sbic _SFR_IO_ADDR(AVR_USB_DPORT_PIN), AVR_USB_DPLUS_PIN
+    sbic _SFR_IO_ADDR(ADK_USB_DPORT_PIN), ADK_USB_DPLUS_PIN
     rjmp found_K
-    sbic _SFR_IO_ADDR(AVR_USB_DPORT_PIN), AVR_USB_DPLUS_PIN
+    sbic _SFR_IO_ADDR(ADK_USB_DPORT_PIN), ADK_USB_DPLUS_PIN
     rjmp found_K
     /* J token is too long, probably false interrupt and line is idle. Double
      * check this by polling for idle state some additional time.
@@ -401,7 +401,7 @@ hb1_handle_1: // [6]
     /* Handle stuff bit after the first bit of the next byte. */
 hb1_handle_stuff_bit_1: // [12]
     /* Check line state a bit earlier. */
-    in TMP0, _SFR_IO_ADDR(AVR_USB_DPORT_PIN) // [13]
+    in TMP0, _SFR_IO_ADDR(ADK_USB_DPORT_PIN) // [13]
     andi TMP0, DATA_LINES_MASK // [1]
     breq hb1_handle_invalid_EOP // [2]
     cp TMP0, LAST_STATE // [3]
@@ -420,7 +420,7 @@ handle_byte_1: // [9]
     st RX_BUF+, RX_BYTE // [11]
     dec ONES_CNT // [12]
     breq hb1_handle_stuff_bit // [13]
-    in TMP0, _SFR_IO_ADDR(AVR_USB_DPORT_PIN) // [1]
+    in TMP0, _SFR_IO_ADDR(ADK_USB_DPORT_PIN) // [1]
     andi TMP0, DATA_LINES_MASK // [2]
     breq hb1_handle_EOP // [3]
     cp TMP0, LAST_STATE // [4]
@@ -439,7 +439,7 @@ handle_byte_1: // [9]
     rjmp rx_loop // [14] (every leap bit)
 
 hb1_handle_stuff_bit: // [1]
-    in TMP0, _SFR_IO_ADDR(AVR_USB_DPORT_PIN) // [2]
+    in TMP0, _SFR_IO_ADDR(ADK_USB_DPORT_PIN) // [2]
     andi TMP0, DATA_LINES_MASK // [3]
     breq hb1_handle_invalid_EOP // [4]
     /* Unfortunately we do not have enough spare cycles to check for stuffing
@@ -469,7 +469,7 @@ rx_buf_initialized:
      */
 
     /* Check if we still have K token. */
-    sbis _SFR_IO_ADDR(AVR_USB_DPORT_PIN), AVR_USB_DPLUS_PIN // [1]
+    sbis _SFR_IO_ADDR(ADK_USB_DPORT_PIN), ADK_USB_DPLUS_PIN // [1]
     rjmp sync_skip_J // [2] It was KJ, continue SYNC pattern skipping
 
     /* Skip 13 cycles up to the middle of the first data bit. */
@@ -483,7 +483,7 @@ sync_skip_first_bit:
      * data bit.
      */
 rx_loop:
-    in TMP0, _SFR_IO_ADDR(AVR_USB_DPORT_PIN) // [1]
+    in TMP0, _SFR_IO_ADDR(ADK_USB_DPORT_PIN) // [1]
     andi TMP0, DATA_LINES_MASK // [2]
     breq handle_invalid_EOP // [3]
     cpse TMP0, LAST_STATE // [4]
@@ -514,7 +514,7 @@ handle_byte_0: // [10]
     /* Check line state a bit earlier than center of bit. It should not affect
      * the result because we are still very close to the bit center.
      */
-    in TMP0, _SFR_IO_ADDR(AVR_USB_DPORT_PIN) // [13]
+    in TMP0, _SFR_IO_ADDR(ADK_USB_DPORT_PIN) // [13]
     andi TMP0, DATA_LINES_MASK // [1]
     breq handle_EOP // [2]
     cpse TMP0, LAST_STATE // [3]
@@ -548,7 +548,7 @@ hb0_handle_0: // [5]
     /* Handle stuff bit which should be zero. */
 handle_stuff_bit: // 11
     ldi ONES_CNT, 6 // [12]
-    in TMP0, _SFR_IO_ADDR(AVR_USB_DPORT_PIN) // [13]
+    in TMP0, _SFR_IO_ADDR(ADK_USB_DPORT_PIN) // [13]
     andi TMP0, DATA_LINES_MASK // [1]
     breq handle_invalid_EOP // [2]
     cp TMP0, LAST_STATE // [3]
@@ -833,7 +833,7 @@ send_handshake:
 
     /* Device is in POWERED state. Skip anything but reset signal. */
 powered_state_process:
-    in TMP0, _SFR_IO_ADDR(AVR_USB_DPORT_PIN)
+    in TMP0, _SFR_IO_ADDR(ADK_USB_DPORT_PIN)
     andi TMP0, DATA_LINES_MASK
     breq check_reset
     /* Not a reset signal, skip the packet. */
@@ -844,7 +844,7 @@ powered_state_process:
      */
     ldi TMP1, 10
 skip_packet:
-    in TMP0, _SFR_IO_ADDR(AVR_USB_DPORT_PIN) // [1]
+    in TMP0, _SFR_IO_ADDR(ADK_USB_DPORT_PIN) // [1]
     andi TMP0, DATA_LINES_MASK // [2]
     breq skip_packet_se0 // [3]
     cpi TMP0, DATA_LINES_IDLE // [4]
@@ -868,7 +868,7 @@ skip_packet_se0:
 wait_non_SE0:
     dec TMP0 // [10]
     breq check_reset // [11] Timeout exceeded, possible reset.
-    in TMP1, _SFR_IO_ADDR(AVR_USB_DPORT_PIN) // [12]
+    in TMP1, _SFR_IO_ADDR(ADK_USB_DPORT_PIN) // [12]
     andi TMP1, DATA_LINES_MASK // [13]
     breq wait_non_SE0 // [15]
     /* Non-SE0 state detected, check if the line is idle now. */
@@ -880,7 +880,7 @@ wait_non_SE0:
 check_reset:
     ldi TMP0, 8
 check_reset_loop:
-    in TMP1, _SFR_IO_ADDR(AVR_USB_DPORT_PIN) // [1]
+    in TMP1, _SFR_IO_ADDR(ADK_USB_DPORT_PIN) // [1]
     andi TMP1, DATA_LINES_MASK // [2]
     brne check_idle //[3]
     dec TMP0 // [4]
@@ -889,7 +889,7 @@ check_reset_loop:
     /* Reset confirmed, invoke the handler and wait for bus idle. */
     rcall _AdkUsbOnReset
 wait_reset_finish:
-    in TMP0, _SFR_IO_ADDR(AVR_USB_DPORT_PIN)
+    in TMP0, _SFR_IO_ADDR(ADK_USB_DPORT_PIN)
     andi TMP0, DATA_LINES_MASK
     breq wait_reset_finish
     /* Fall-through to be able to process packet which could immediately
@@ -904,7 +904,7 @@ wait_reset_finish:
 check_idle:
     ldi TMP0, 11
 check_idle_loop:
-    in TMP1, _SFR_IO_ADDR(AVR_USB_DPORT_PIN) // [1]
+    in TMP1, _SFR_IO_ADDR(ADK_USB_DPORT_PIN) // [1]
     andi TMP1, DATA_LINES_MASK // [2]
     cpi TMP1, DATA_LINES_IDLE // [3]
     breq check_idle_inactive // [5]

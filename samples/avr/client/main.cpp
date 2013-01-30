@@ -18,7 +18,7 @@ main(int argc, char **argv)
 {
     ADK_INFO("AVR USB client sample");
     adk::LibusbCtx ctx;
-    auto device = ctx.OpenDeviceByPid(AVR_USB_VENDOR_ID, AVR_USB_PRODUCT_ID);
+    auto device = ctx.OpenDeviceByPid(ADK_USB_VENDOR_ID, ADK_USB_PRODUCT_ID);
     if (!device) {
         ADK_WARNING("Cannot open device");
         return 1;
