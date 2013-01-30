@@ -298,7 +298,6 @@ AdkUsbPoll()
                     } else if (descType == ADK_USB_DESC_TYPE_CONFIGURATION) {
                         adkUsbSysTxData.pgm_ptr = (PGM_P)&adkUsbConfigDesc;
                         size = sizeof(AdkUsbFullConfigDesc);
-
                     } else if (descType == ADK_USB_DESC_TYPE_STRING) {
                         descType = req->wValue.bytes[0];
 
@@ -390,10 +389,6 @@ AdkUsbPoll()
         txSize = FetchPacket();
     } else {
         txSize = 0;
-    }
-
-    if (hasFailed) {
-        AVR_BIT_SET8(PORTB, 0);//XXX
     }
 
     /* State should be modified atomically. */

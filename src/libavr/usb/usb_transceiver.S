@@ -485,7 +485,11 @@ sync_skip_first_bit:
 rx_loop:
     in TMP0, _SFR_IO_ADDR(ADK_USB_DPORT_PIN) // [1]
     andi TMP0, DATA_LINES_MASK // [2]
-    breq handle_invalid_EOP // [3]
+    /* Here we cannot jump to handle_invalid_EOP because it might be first
+     * iteration after hb1_handle_stuff_bit when the stuffing bit terminates the
+     * packet. Additional check for incomplete byte is done in handle_EOP.
+     */
+    breq handle_EOP_rx_loop // [3]
     cpse TMP0, LAST_STATE // [4]
     rjmp handle_0 // [6] Line state differs - bit zero received
     // [5] Bit one received.
@@ -568,6 +572,14 @@ rx_buffer_overflow:
 handle_invalid_EOP:
     rjmp skip_packet_se0
 
+handle_EOP_rx_loop:
+    /* Check that complete byte is received. */
+    cpi RX_BYTE, 0x80
+    brne handle_invalid_EOP
+    /* This place is only reached when last bit is stuffing bit. RX_BUF_SIZE is
+     * less by one comparing with rest cases. Compensate it here.
+     */
+    inc RX_BUF_SIZE
     /* EOP seen when the byte is received. */
 handle_EOP:
     dec RX_BUF_SIZE
