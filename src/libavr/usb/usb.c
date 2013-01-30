@@ -344,7 +344,13 @@ AdkUsbPoll()
             } else if ((req->bmRequestType & ADK_USB_REQ_TYPE_TYPE_MASK) ==
                        ADK_USB_REQ_TYPE_TYPE_VENDOR) {
                 /* Vendor-specific request, most probably ADK I/O. */
-                //XXX
+                if (req->bRequest == ADK_USB_REQ_ADK_READ) {
+                    adkTxDataSize = AdkUsbOnTransmit(req->wLength);
+                    /* PID will be toggled in FetchPacket(). */
+                    adkUsbTxDataBuf[1] = ADK_USB_PID_DATA0;
+                } else if (req->bRequest != ADK_USB_REQ_ADK_WRITE) {
+                    hasFailed = ADK_USB_STATE_TRANS_FAILED;
+                }
             } else {
                 hasFailed = ADK_USB_STATE_TRANS_FAILED;
             }

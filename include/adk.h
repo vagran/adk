@@ -30,6 +30,7 @@
 /* Desktop applications. */
 
 #include <list>
+#include <cstring>
 #include <string>
 #include <sstream>
 #include <memory>

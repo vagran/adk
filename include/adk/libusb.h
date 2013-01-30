@@ -137,6 +137,25 @@ public:
         }
         return ec;
     }
+
+    /** Read data from device.
+     * @param data Data buffer.
+     * @param size Desired transfer size in bytes.
+     * @param timeout Timeout in milliseconds. Zero fo unlimited timeout.
+     * @return Number of bytes actually transferred.
+     */
+    size_t
+    Read(void *data, size_t size, int timeout = 0)
+    {
+        int ec = libusb_control_transfer(_hDevice,
+            LIBUSB_RECIPIENT_DEVICE | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_IN,
+            ADK_USB_REQ_ADK_READ, 0, 0,
+            const_cast<u8 *>(static_cast<const u8 *>(data)), size, timeout);
+        if (ec < 0) {
+            ADK_USB_EXCEPTION(ec, "Failed to read from device");
+        }
+        return ec;
+    }
 };
 
 /** Wrapper class for libusb context. Should be used for all USB operations. */

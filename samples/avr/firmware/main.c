@@ -19,12 +19,22 @@ ISR(INT0_vect)
     EIFR = _BV(INTF0);
 }
 
+/* Buffer for echoing received packets. */
+static u8 echoBuffer[ADK_USB_MAX_DATA_SIZE];
+
 /* Provide callback for received data. */
 bool_t
 AdkUsbOnReceive(u8 *data, u8 size)
 {
-    PORTB = *data & 0xf;
+    memcpy(echoBuffer, data, size);
     return TRUE;
+}
+
+u8
+AdkUsbOnTransmit(u16 size)
+{
+    adkUsbUserTxData.ram_ptr = echoBuffer;
+    return size;
 }
 
 int

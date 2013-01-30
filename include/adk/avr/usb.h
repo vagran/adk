@@ -541,6 +541,20 @@ AdkUsbVerifyCrc(u8 *data, u8 size)
     return crc = *(u16 *)&data[size];
 }
 
+/** Callback for data transmit request. This function should be defined by
+ * client application. It is called when read request received from host. The
+ * function should initialize @ref adkUsbUserTxData variable with pointer to
+ * data to transmit.
+ *
+ * @param size Size requested by the host. The function can return less or equal
+ *      but not more bytes.
+ * @return Size of data ready for transmission in @ref adkUsbUserTxData. Should
+ *      also include @ref ADK_USB_TX_PROGMEM_PTR flag if returned data located
+ *      in program memory.
+ */
+u8
+AdkUsbOnTransmit(u16 size);
+
 #endif /* __ASSEMBLER__ */
 
 #endif /* AVR_USB_H_ */
