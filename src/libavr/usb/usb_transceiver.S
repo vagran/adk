@@ -699,14 +699,9 @@ sm_setup:
     rjmp send_ack
 sm_s_not_data0:
     /* Tokens other than DATA0. Accept only OUT token, NAK for the rest ones. */
-    cpi RX_PID, ADK_USB_PID_OUT
-    brne sm_s_not_out
-    rjmp sm_exit
-sm_s_not_out:
-    sbrc RX_STATE, ADK_USB_RX_SETUP_BIT
+    ldi TMP0, ADK_USB_PID_OUT
+    cpse RX_PID, TMP0
     rjmp send_nak
-    /* Fail if no setup transaction is currently pending. */
-    rjmp send_stall
 
 /************************* WRITE_DATA *****************************************/
 
@@ -752,7 +747,27 @@ sm_write_status:
      */
     cpi RX_PID, ADK_USB_PID_IN
     brne sm_ws_not_in
-    rjmp send_status
+    /* Send current transaction status. If transaction failed
+     * (ADK_USB_STATE_TRANS_FAILED set) send stall, reset failed indication and
+     * advance state to LISTEN. If transaction completed sucessfully send empty
+     * DATA1 packet.
+     */
+    /* If transaction is failed then send STALL until SETUP token is received. */
+    sbrc STATE, ADK_USB_STATE_TRANS_FAILED_BIT
+    rjmp send_stall
+    /* If incoming data is not yet precessed send NAK. */
+    ldi TMP0, ADK_USB_RX_SIZE_MASK
+    and TMP0, RX_STATE
+    brne send_nak
+    /* Transaction completed successfully, send empty DATA1 packet. */
+    ldi TMP0, ADK_USB_PID_DATA1
+    sts adkUsbTxAuxBuf + 1, TMP0
+    ldi TRANS_LEN, 4
+    ldi TRANS_DATA_LO, AVR_LO8(adkUsbTxAuxBuf)
+    ldi TRANS_DATA_HI, AVR_HI8(adkUsbTxAuxBuf)
+    rcall AdkUsbTrasmit
+    rjmp sm_exit
+
 sm_ws_not_in:
     cpi RX_PID, ADK_USB_PID_ACK
     brne sm_ws_not_ack
@@ -815,24 +830,6 @@ sm_exit:
     sts adkUsbRxState, RX_STATE
     sts adkUsbState, STATE
     rjmp check_idle
-
-    /* Send current transaction status. If transaction failed
-     * (ADK_USB_STATE_TRANS_FAILED set) send stall, reset failed indication and
-     * advance state to LISTEN. If transaction completed sucessfully send empty
-     * DATA1 packet.
-     */
-send_status:
-    /* If transaction is failed then send STALL until SETUP token is received. */
-    sbrc STATE, ADK_USB_STATE_TRANS_FAILED_BIT
-    rjmp send_stall
-    /* Transaction completed successfully, send empty DATA1 packet. */
-    ldi TMP0, ADK_USB_PID_DATA1
-    sts adkUsbTxAuxBuf + 1, TMP0
-    ldi TRANS_LEN, 4
-    ldi TRANS_DATA_LO, AVR_LO8(adkUsbTxAuxBuf)
-    ldi TRANS_DATA_HI, AVR_HI8(adkUsbTxAuxBuf)
-    rcall AdkUsbTrasmit
-    rjmp sm_exit
 
 /* Send ACK and exit. */
 send_ack:
