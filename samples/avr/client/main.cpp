@@ -52,6 +52,8 @@ TestPattern(LibusbDevice::Handle device, size_t size)
     try {
         size_t numRead = device->Read(rxBuf, readSize);
         if (numRead != readSize) {
+            ADK_INFO("Received pattern:");
+            DumpPattern(rxBuf, numRead);
             ADK_EXCEPTION(Exception, "Short read: " << numRead << "/" << size);
         }
     } catch(LibusbException &) {
@@ -96,7 +98,7 @@ main(int argc, char **argv)
     }
 
     ADK_INFO("Running bit tests...");
-    for (size_t len = 1; len <=32; len++) {
+    for (size_t len = 1; len <= 8; len++) {
         for (size_t bitIdx = 0; bitIdx < len * NBBY; bitIdx++) {
             size_t byteIdx = bitIdx / 8;
             size_t bitMask = 1 << (bitIdx - byteIdx * 8);
