@@ -99,6 +99,8 @@ private:
     }
 
 public:
+    typedef std::shared_ptr<LibusbDevice> Handle;
+
     ~LibusbDevice()
     {
         libusb_close(_hDevice);
@@ -184,15 +186,15 @@ public:
     /** Open device by vendor and product ID.
      * @return Pointer to the device. @a nullptr if opening failed.
      */
-    std::shared_ptr<LibusbDevice>
+    LibusbDevice::Handle
     OpenDeviceByPid(u16 vendorId, u16 productId)
     {
         libusb_device_handle *hDevice =
             libusb_open_device_with_vid_pid(_ctx, vendorId, productId);
         if (!hDevice) {
-            return std::shared_ptr<LibusbDevice>(nullptr);
+            return LibusbDevice::Handle(nullptr);
         }
-        return std::shared_ptr<LibusbDevice>(new LibusbDevice(hDevice));
+        return LibusbDevice::Handle(new LibusbDevice(hDevice));
     }
 };
 
