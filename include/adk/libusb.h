@@ -10,7 +10,6 @@
  * ADK wrapper for libusb.
  */
 
-
 #ifndef ADK_LIBUSB_H_
 #define ADK_LIBUSB_H_
 
@@ -18,45 +17,45 @@
 
 namespace adk {
 
+/** Exception class for errors in libusb wrapper. */
 class LibusbException: public adk::Exception {
+private:
+    void
+    _AppendErrorCode()
+    {
+        if (errorCode) {
+            std::stringstream ss;
+            ss << ": " << libusb_error_name(errorCode) << "(" << errorCode << ")";
+            _msg += ss.str();
+        }
+    }
+
 public:
     int errorCode;
 
-    LibusbException(int code, const char *msg):
+    LibusbException(const char *msg, int code = 0):
         Exception(msg), errorCode(code)
     {
-        if (code) {
-            _msg += ": ";
-            _msg += libusb_error_name(code);
-        }
+        _AppendErrorCode();
     }
 
-    LibusbException(int code, const std::string &msg):
+    LibusbException(const std::string &msg, int code = 0):
         Exception(msg), errorCode(code)
     {
-        if (code) {
-            _msg += ": ";
-            _msg += libusb_error_name(code);
-        }
+        _AppendErrorCode();
     }
 
 #   ifdef DEBUG
-    LibusbException(const char *file, int line, int code, const char *msg):
+    LibusbException(const char *file, int line, const char *msg, int code = 0):
         Exception(file, line, msg), errorCode(code)
     {
-        if (code) {
-            _msg += ": ";
-            _msg += libusb_error_name(code);
-        }
+        _AppendErrorCode();
     }
 
-    LibusbException(const char *file, int line, int code, const std::string &msg):
+    LibusbException(const char *file, int line, const std::string &msg, int code = 0):
         Exception(file, line, msg), errorCode(code)
     {
-        if (code) {
-            _msg += ": ";
-            _msg += libusb_error_name(code);
-        }
+        _AppendErrorCode();
     }
 #   endif /* DEBUG */
 
@@ -65,24 +64,13 @@ public:
     {}
 };
 
-#ifdef DEBUG
-#define __ADK_USB_THROW_EXCEPTION(__code, __msg, ...) \
-    throw adk::LibusbException(__FILE__, __LINE__, __code, __msg, ## __VA_ARGS__)
-#else /* DEBUG */
-#define __ADK_THROW_EXCEPTION(code, __msg, ...) \
-    throw adk::LibusbException(__code, __msg, ## __VA_ARGS__)
-#endif /* DEBUG */
-
 /** Throw ADK USB exception.
  * @param code Error code returned by libusb call.
  * @param __msg Message which could be streaming expression. Additional arguments
  *      to the exception class constructor can be specified after the message.
  */
-#define ADK_USB_EXCEPTION(__code, __msg, ...) do { \
-    std::stringstream __ss; \
-    __ss << __msg; \
-    __ADK_USB_THROW_EXCEPTION(__code, __ss.str(), ## __VA_ARGS__); \
-} while (false)
+#define ADK_USB_EXCEPTION(__code, __msg) \
+    ADK_EXCEPTION(adk::LibusbException, __msg, __code)
 
 class LibusbCtx;
 

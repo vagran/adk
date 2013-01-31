@@ -77,7 +77,9 @@ public:
     throw __exception(__msg, ## __VA_ARGS__)
 #endif /* DEBUG */
 
-/** Throw ADK exception.
+/** Throw ADK exception. Standard ADK exceptions can be easily extended by user
+ * defined exception. See example @ref ADK_USB_EXCEPTION and @ref LibusbException.
+ *
  * @param __exception Exception class.
  * @param __msg Message which could be streaming expression. Additional arguments
  *      to the exception class constructor can be specified after the message.

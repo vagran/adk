@@ -35,25 +35,36 @@ TestPattern(LibusbDevice::Handle device, size_t size)
 {
     numPatternsTested++;
     try {
-        device->Write(txBuf, size);
+        size_t numWritten = device->Write(txBuf, size);
+        if (numWritten != size) {
+            ADK_EXCEPTION(Exception, "Short write: " << numWritten << "/" << size);
+        }
     } catch(LibusbException &) {
         ADK_WARNING("Device writing failed");
         DumpPattern(txBuf, size);
         throw;
     }
+    /* Firmware receives data in 8 bytes chunks. Only the remainder chunk is
+     * sent back.
+     */
+    size_t readOffset = (size / 8) * 8;
+    size_t readSize = size - readOffset;
     try {
-        device->Read(rxBuf, size);
+        size_t numRead = device->Read(rxBuf, readSize);
+        if (numRead != readSize) {
+            ADK_EXCEPTION(Exception, "Short read: " << numRead << "/" << size);
+        }
     } catch(LibusbException &) {
         ADK_WARNING("Device reading failed");
         DumpPattern(txBuf, size);
         throw;
     }
-    if (memcmp(txBuf, rxBuf, size)) {
+    if (memcmp(&txBuf[readOffset], rxBuf, readSize)) {
         ADK_WARNING("Received pattern mismatch");
         ADK_INFO("Transmitted pattern:");
         DumpPattern(txBuf, size);
         ADK_INFO("Received pattern:");
-        DumpPattern(rxBuf, size);
+        DumpPattern(rxBuf, readSize);
         ADK_EXCEPTION(Exception, "Pattern invalid echo response");
     }
 }
@@ -72,14 +83,30 @@ main(int argc, char **argv)
 
     ADK_INFO("Testing bit patterns with variable length packets...");
 
-    u8 patterns[] = {
+    const u8 patterns[] = {
         0x00, 0xff, 0xaa, 0x55, 0x5a, 0xa5, 0x01, 0x02,
         0x04, 0x08, 0x10, 0x20, 0x40, 0x80
     };
 
     for (u8 pat: patterns) {
-        for (size_t len = 1; len <= 8; len++) {
+        for (size_t len = 1; len <= 32; len++) {
             memset(txBuf, pat, len);
+            TestPattern(device, len);
+        }
+    }
+
+    ADK_INFO("Running bit tests...");
+    for (size_t len = 1; len <=32; len++) {
+        for (size_t bitIdx = 0; bitIdx < len * NBBY; bitIdx++) {
+            size_t byteIdx = bitIdx / 8;
+            size_t bitMask = 1 << (bitIdx - byteIdx * 8);
+            /* Running bit one. */
+            memset(txBuf, 0, len);
+            txBuf[byteIdx] |= bitMask;
+            TestPattern(device, len);
+            /* Running bit zero. */
+            memset(txBuf, 0xff, len);
+            txBuf[byteIdx] &= ~bitMask;
             TestPattern(device, len);
         }
     }
