@@ -699,10 +699,14 @@ sm_setup:
     rjmp send_ack
 sm_s_not_data0:
     /* Tokens other than DATA0. Accept only OUT token, NAK for the rest ones. */
-    ldi TMP0, ADK_USB_PID_OUT
-    cpse RX_PID, TMP0
-    rjmp send_nak
+    cpi RX_PID, ADK_USB_PID_OUT
+    brne sm_s_not_out
     rjmp sm_exit
+sm_s_not_out:
+    sbrc RX_STATE, ADK_USB_RX_SETUP_BIT
+    rjmp send_nak
+    /* Fail if no setup transaction is currently pending. */
+    rjmp send_stall
 
 /************************* WRITE_DATA *****************************************/
 
