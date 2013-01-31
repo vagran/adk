@@ -111,6 +111,16 @@
 /* Temporal register 1. */
 #define TMP1                r25
 
+/* Variable used to hold the delay value for idle checking loop which is running
+ * before exiting from interrupt to ensure that no new packet received
+ * immediately after the current one is processed.
+ */
+#define IDLE_DELAY          r30
+/* Value for short idle delay. */
+#define IDLE_DELAY_SHORT    1
+/* Value for long idle delay (default). */
+#define IDLE_DELAY_LONG     11
+
 .macro m_ADK_USB_DBG_SET token
     in TMP0, _SFR_IO_ADDR(ADK_USB_DBGPORT_PORT)
     andi TMP0, 0xf0
@@ -293,6 +303,7 @@ AdkUsbInterrupt:
      * reset (if it is in POWERED state). If yes, we should not process anything
      * but reset signal (SE0 >= 10ms).
      */
+    ldi IDLE_DELAY, IDLE_DELAY_LONG
     lds TMP0, adkUsbState
     andi TMP0, ADK_USB_STATE_MASK
     brne above_powered_state
@@ -823,6 +834,10 @@ send_ack:
 /* Send NAK and exit. */
 send_nak:
     ldi TMP0, ADK_USB_PID_NAK
+    /* Host will retry after some delay so we need to maximize time available
+     * for polling function to do useful work.
+     */
+    ldi IDLE_DELAY, IDLE_DELAY_SHORT
     rjmp send_handshake
 /* Send STALL and exit. */
 send_stall:
@@ -911,15 +926,13 @@ wait_reset_finish:
      * should be less than bit length.
      */
 check_idle:
-    ldi TMP0, 11
-check_idle_loop:
     in TMP1, _SFR_IO_ADDR(ADK_USB_DPORT_PIN) // [1]
     andi TMP1, DATA_LINES_MASK // [2]
     cpi TMP1, DATA_LINES_IDLE // [3]
     breq check_idle_inactive // [5]
     rjmp AdkUsbInterrupt // [6] Line active, handle it.
 check_idle_inactive:
-    dec TMP0 // [7]
-    brne check_idle_loop // [9]
+    dec IDLE_DELAY // [7]
+    brne check_idle // [9]
     /* Timeout exceeded while the line is still idle. Can return now. */
     ret
