@@ -178,6 +178,9 @@ const PROGMEM AdkUsbFullStringDesc adkUsbFullStringDesc = {
 #   endif /* ADK_USB_SERIAL_STRING */
 };
 
+/** Simulated device disconnection duration in milliseconds. */
+#define DISCONNECT_DURATION    2
+
 void
 AdkUsbSetup()
 {
@@ -187,11 +190,27 @@ AdkUsbSetup()
     ADK_USB_DBGPORT_PORT &= 0xf0;
 #   endif /* AVR_USB_DEBUG */
 
-    /* Configure data lines for input and disable pull-up resistors. */
-    AVR_BIT_CLR8(ADK_USB_DPORT_DDR, ADK_USB_DPLUS_PIN);
-    AVR_BIT_CLR8(ADK_USB_DPORT_DDR, ADK_USB_DMINUS_PIN);
+    /* Configure data lines for input and disable pull-up resistors. Also
+     * simulate disconnection by driving both lines low for a some time.
+     */
     AVR_BIT_CLR8(ADK_USB_DPORT_PORT, ADK_USB_DPLUS_PIN);
     AVR_BIT_CLR8(ADK_USB_DPORT_PORT, ADK_USB_DMINUS_PIN);
+    AVR_BIT_SET8(ADK_USB_DPORT_DDR, ADK_USB_DPLUS_PIN);
+    AVR_BIT_SET8(ADK_USB_DPORT_DDR, ADK_USB_DMINUS_PIN);
+    /* Make a delay for disconnection. */
+    __asm__ __volatile__(
+        "ldi r27, %0\n"
+        /* Ignore initial value in r26 - it is low order byte and has small
+         * impact on total delay value.
+         */
+        "1: sbiw r26, 1\n"
+        "brne 1b\n"
+        :
+        : "I"((DISCONNECT_DURATION * F_CPU / 1000 / 4) >> 8)
+        : "r26", "r27"
+    );
+    AVR_BIT_CLR8(ADK_USB_DPORT_DDR, ADK_USB_DPLUS_PIN);
+    AVR_BIT_CLR8(ADK_USB_DPORT_DDR, ADK_USB_DMINUS_PIN);
 
     adkUsbState = 0;
     adkUsbDeviceAddress = 0;
