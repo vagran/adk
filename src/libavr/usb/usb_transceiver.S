@@ -83,9 +83,9 @@
 /* Number of consecutive ones left before unstaff bit. */
 #define ONES_CNT            r18
 /* Pointer to receiving buffer. */
-#define RX_BUF              X
-#define RX_BUF_LO           r26
-#define RX_BUF_HI           r27
+#define RX_BUF              Z
+#define RX_BUF_LO           ZL
+#define RX_BUF_HI           ZH
 /* Number of bytes left in the receiving buffer. */
 #define RX_BUF_SIZE         r19
 /* Byte which is currently being received is accumulated in this register. */
@@ -115,11 +115,13 @@
  * before exiting from interrupt to ensure that no new packet received
  * immediately after the current one is processed.
  */
-#define IDLE_DELAY          r30
+#define IDLE_DELAY          r26
 /* Value for short idle delay. */
 #define IDLE_DELAY_SHORT    1
-/* Value for long idle delay (default). */
-#define IDLE_DELAY_LONG     11
+/* Value for normal idle delay (default). */
+#define IDLE_DELAY_NORMAL   11
+/* Value for long idle delay. */
+#define IDLE_DELAY_LONG     25
 
 .macro m_ADK_USB_DBG_SET token
     in TMP0, _SFR_IO_ADDR(ADK_USB_DBGPORT_PORT)
@@ -140,9 +142,9 @@
  * the specification), host receiver synchronizes with edges anyway.
  */
 /* Arguments. */
-#define TRANS_DATA          X
-#define TRANS_DATA_LO       r26
-#define TRANS_DATA_HI       r27
+#define TRANS_DATA          Z
+#define TRANS_DATA_LO       ZL
+#define TRANS_DATA_HI       ZH
 #define TRANS_LEN           r18
 /* Variables. */
 #define TRANS_STUFF_CNT     r19
@@ -229,9 +231,9 @@ trans_EOP_loop:
 #define CRC_RESULT_LO       r24
 #define CRC_RESULT_HI       r25
 /* Variables for AdkUsbCrc16() function. */
-#define CRC_DATA            X
-#define CRC_DATA_LO         r26
-#define CRC_DATA_HI         r27
+#define CRC_DATA            Z
+#define CRC_DATA_LO         ZL
+#define CRC_DATA_HI         ZH
 #define CRC_X               r23
 #define CRC_Y_LO            r20
 #define CRC_Y_HI            r21
@@ -303,7 +305,7 @@ AdkUsbInterrupt:
      * reset (if it is in POWERED state). If yes, we should not process anything
      * but reset signal (SE0 >= 10ms).
      */
-    ldi IDLE_DELAY, IDLE_DELAY_LONG
+    ldi IDLE_DELAY, IDLE_DELAY_NORMAL
     lds TMP0, adkUsbState
     andi TMP0, ADK_USB_STATE_MASK
     brne above_powered_state
@@ -357,6 +359,7 @@ sync_skip_J:
     /* J token is too long, probably false interrupt and line is idle. Double
      * check this by polling for idle state some additional time.
      */
+    ldi IDLE_DELAY, IDLE_DELAY_LONG
     rjmp check_idle
 
 found_K: // [3]
@@ -834,10 +837,6 @@ send_ack:
 /* Send NAK and exit. */
 send_nak:
     ldi TMP0, ADK_USB_PID_NAK
-    /* Host will retry after some delay so we need to maximize time available
-     * for polling function to do useful work.
-     */
-    ldi IDLE_DELAY, IDLE_DELAY_SHORT
     rjmp send_handshake
 /* Send STALL and exit. */
 send_stall:
@@ -853,6 +852,10 @@ send_handshake:
     rcall AdkUsbTrasmit
     /* Reset RX_MINE. */
     andi RX_STATE, ~ADK_USB_RX_MINE
+    /* Host will retry after some delay so we need to maximize time available
+     * for polling function to do useful work.
+     */
+    ldi IDLE_DELAY, IDLE_DELAY_SHORT
     rjmp sm_exit
 
     /* Device is in POWERED state. Skip anything but reset signal. */
@@ -912,6 +915,7 @@ check_reset_loop:
 
     /* Reset confirmed, invoke the handler and wait for bus idle. */
     rcall _AdkUsbOnReset
+    ldi IDLE_DELAY, IDLE_DELAY_SHORT
 wait_reset_finish:
     in TMP0, _SFR_IO_ADDR(ADK_USB_DPORT_PIN)
     andi TMP0, DATA_LINES_MASK
