@@ -15,7 +15,7 @@ ADK_DOC_DEPLOY_DIR += $(ADK_DOC_DIR)
 
 ADK_DOC_RSYNC_FLAGS = -rvzlh --delete --inplace
 
-.PHONY: update
+.PHONY: update deploy
 
 update:
 	if [ -d $(call ADK_SERV_DIR,$(ADK_DOC_DIR),pages) ]; then \
