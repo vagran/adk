@@ -11,6 +11,6 @@ ADK_APP_NAME = avr_usb_sample
 ADK_USE_GUI = no
 ADK_AVR_USE_USB = yes
 
-INCLUDE_DIRS = ../include misc
+INCLUDE_DIRS = ../include
 
 include $(ADK_ROOT)/make/make.mk
