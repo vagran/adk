@@ -82,6 +82,9 @@
 /** Predefined unit test value for boolean @a true. */
 #define UT_TRUE         UT(true)
 
+/** Wrapper which interprets value as integer type. */
+#define UT_INT(value)   UT(static_cast<int>(value))
+
 /** Wrapper which interprets value as size type. */
 #define UT_SIZE(value)  UT(static_cast<size_t>(value))
 
