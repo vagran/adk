@@ -32,6 +32,8 @@ bool __ut_mdump();
 
 bool __ut_mtrack_enabled = true;
 
+TestCheckpoint __ut_testCheckpoint;
+
 }
 
 namespace {
@@ -100,6 +102,13 @@ TestException_Describe(TestException &e, ut_string &s)
 {
     UtString str(UT_STR2HDL(s));
     e.Describe(str);
+}
+
+void
+TestCheckpoint_Describe(TestCheckpoint &cp, ut_string &s)
+{
+    UtString str(UT_STR2HDL(s));
+    cp.Describe(str);
 }
 
 /** Tests manager. */
@@ -172,6 +181,10 @@ TestMan::Run()
         } catch (TestException &e) {
             printf("\n");
             ut_string desc;
+            if (__ut_testCheckpoint) {
+                TestCheckpoint_Describe(__ut_testCheckpoint, desc);
+                printf("Last checkpoint: %s\n", desc.c_str());
+            }
             TestException_Describe(e, desc);
             printf("%s\n", desc.c_str());
             failed = true;
@@ -184,6 +197,7 @@ TestMan::Run()
         if (!failed ) {
             numPassed++;
         }
+        __ut_testCheckpoint.Invalidate();
     }
 
     printf("======== Testing complete [%s] ========\n"
@@ -222,6 +236,35 @@ TestDesc::~TestDesc()
 
 }
 
+/* Test checkpoint. */
+
+TestCheckpoint::TestCheckpoint(const char *file, int line, const char *msg, ...):
+    _isValid(true), _file(file), _line(line)
+{
+    if (msg) {
+        va_list args;
+        va_start(args, msg);
+        vsnprintf(_msg, sizeof(_msg), msg, args);
+        va_end(args);
+    } else {
+        _msg[0] = 0;
+    }
+}
+
+void
+TestCheckpoint::Describe(UtString &_s)
+{
+    ut_string &s = GetUtString(_s);
+    ut_stringstream ss;
+    if (_msg[0]) {
+        ss << _msg << " ";
+    }
+    ss << "[" << _file << ":" << _line << "]";
+    s = ss.str();
+}
+
+/* Test value. */
+
 void
 TestValueBase::Describe(UtString &_s)
 {
@@ -231,6 +274,8 @@ TestValueBase::Describe(UtString &_s)
         " (defined at " << _file << ":" << _line << ")";
     s = ss.str();
 }
+
+/* Test exception. */
 
 void
 TestException::Describe(UtString &_s)

@@ -17,6 +17,9 @@
 UT_TEST("Sample test")
 {
     UT(SampleString()) == UT_CSTR("Sample string");
+
+    UT_CKPOINT("Multiplication");
+
     UT(SampleMult(5, 3)) == UT(15);
 }
 UT_TEST_END

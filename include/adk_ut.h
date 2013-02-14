@@ -168,7 +168,7 @@ public:
     UtString(void *handle);
     ~UtString();
 
-    inline void *GetHandle() { return _handle; }
+    void *GetHandle() { return _handle; }
 
     UtString &operator =(void *handle);
     UtString &operator =(const UtString &s);
@@ -222,14 +222,62 @@ public:
 
     virtual void TestBody() = 0;
 
-    inline const char *GetName() { return _name; }
-    inline const char *GetFile() { return _file; }
-    inline int GetLine() { return _line; }
+    const char *GetName() { return _name; }
+    const char *GetFile() { return _file; }
+    int GetLine() { return _line; }
 private:
     const char *_file;
     int _line;
     const char *_name;
 };
+
+/** Checkpoint used to mark lastly passed checkpoint in test code. It is a
+ * convenient way for marking test stages where actual verification is done in
+ * some common function so that exception context does not reveal actual test
+ * step. Use @ref UT_CKPOINT macro for placing checkpoints.
+ */
+class TestCheckpoint {
+private:
+    /** Indicates that the checkpoint is set. */
+    bool _isValid = false;
+    /** Source file name. */
+    const char *_file = nullptr;
+    /** Line number in source file. */
+    int _line = 0;
+    /** Optional description message. */
+    char _msg[2048];
+public:
+    TestCheckpoint() {}
+
+    TestCheckpoint(const char *file, int line, const char *msg = nullptr, ...);
+
+    /** Invalidate this checkpoint instance. */
+    void
+    Invalidate()
+    {
+        _isValid = false;
+    }
+
+    /** Check if the checkpoint is valid. */
+    operator bool()
+    {
+        return _isValid;
+    }
+
+    /** Get human-readable description of the checkpoint. */
+    void
+    Describe(UtString &_s);
+};
+
+/** Last checkpoint. */
+extern TestCheckpoint __ut_testCheckpoint;
+
+/** Place check point in the test.
+ * @param Optional test message with "printf" formatting.
+ * @see TestCheckpoint
+ */
+#define UT_CKPOINT(...) \
+    ut::__ut_testCheckpoint = ut::TestCheckpoint(__FILE__, __LINE__, __VA_ARGS__)
 
 /** Base class for @ref TestValue. Should not be used directly. */
 class TestValueBase {
