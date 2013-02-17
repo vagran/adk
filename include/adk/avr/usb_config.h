@@ -86,18 +86,18 @@
 /* Internal definitions. */
 
 /** PORTx register for data port. */
-#define ADK_USB_DPORT_PORT      __CONCAT(PORT, ADK_USB_DATA_PORT)
+#define ADK_USB_DPORT_PORT      AVR_REG_PORT(ADK_USB_DATA_PORT)
 /** DDRx register for data port. */
-#define ADK_USB_DPORT_DDR       __CONCAT(DDR, ADK_USB_DATA_PORT)
+#define ADK_USB_DPORT_DDR       AVR_REG_DDR(ADK_USB_DATA_PORT)
 /** PINx register for data port. */
-#define ADK_USB_DPORT_PIN       __CONCAT(PIN, ADK_USB_DATA_PORT)
+#define ADK_USB_DPORT_PIN       AVR_REG_PIN(ADK_USB_DATA_PORT)
 
 #ifdef AVR_USB_DEBUG
 
 /** PORTx register for debug port. */
-#define ADK_USB_DBGPORT_PORT    __CONCAT(PORT, ADK_USB_DEBUG_PORT)
+#define ADK_USB_DBGPORT_PORT    AVR_REG_PORT(ADK_USB_DEBUG_PORT)
 /** DDRx register for debug port. */
-#define ADK_USB_DBGPORT_DDR     __CONCAT(DDR, ADK_USB_DEBUG_PORT)
+#define ADK_USB_DBGPORT_DDR     AVR_REG_DDR(ADK_USB_DEBUG_PORT)
 
 #endif /* AVR_USB_DEBUG */
 

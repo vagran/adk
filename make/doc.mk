@@ -18,12 +18,12 @@ ADK_DOC_RSYNC_FLAGS = -rvzlh --delete --inplace
 .PHONY: update deploy
 
 update:
-	if [ -d $(call ADK_SERV_DIR,$(ADK_DOC_DIR),pages) ]; then \
+	@if [ -d $(call ADK_SERV_DIR,$(ADK_DOC_DIR),pages) ]; then \
 		$(RSYNC) $(ADK_DOC_RSYNC_FLAGS) $(call ADK_SERV_DIR,$(ADK_DOC_DIR),pages)/ pages; \
 	else \
 		echo "Warning: no pages directory"; \
 	fi
-	if [ -d $(call ADK_SERV_DIR,$(ADK_DOC_DIR),media) ]; then \
+	@if [ -d $(call ADK_SERV_DIR,$(ADK_DOC_DIR),media) ]; then \
 		$(RSYNC) $(ADK_DOC_RSYNC_FLAGS) $(call ADK_SERV_DIR,$(ADK_DOC_DIR),media)/ media; \
 	else \
 		echo "Warning: no media directory"; \

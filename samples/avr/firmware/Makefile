@@ -27,14 +27,14 @@ ADK_MCU_HFUSE = 0xdb
 ADK_AVR_USE_USB = yes
 
 # Additional directory with source files
-SRC_DIRS = pwm
+SRC_DIRS += pwm
 # Additional source file
-SRCS = misc/misc.c
+SRCS += misc/misc.c
 # Additional C compilation flags
-CFLAGS = -Davr_sample_1
+CFLAGS += -Davr_sample_1
 # Additional include directories
-INCLUDE_DIRS = . ../include misc
+INCLUDE_DIRS += . ../include misc
 # Additional defines
-DEFS = AVR_USB_DEBUG
+DEFS += AVR_USB_DEBUG
 
 include $(ADK_ROOT)/make/make.mk
