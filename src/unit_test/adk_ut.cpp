@@ -17,6 +17,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
 #include <string>
 #include <sstream>
 #include <list>
@@ -345,6 +346,42 @@ unsigned
 ut::__ut_strlen(const char *s)
 {
     return strlen(s);
+}
+
+int
+ut::__ut_cmp_double(double v1, double v2)
+{
+    double delta = v1 - v2;
+
+    if (delta == 0) {
+        return 0;
+    }
+
+    if (fabs(delta) < fabs(v1 / 10e10)) {
+        return 0;
+    }
+    if (delta > 0) {
+        return 1;
+    }
+    return -1;
+}
+
+int
+ut::__ut_cmp_float(float v1, float v2)
+{
+    float delta = v1 - v2;
+
+    if (delta == 0) {
+        return 0;
+    }
+
+    if (fabs(delta) < fabs(v1 / 10e6)) {
+        return 0;
+    }
+    if (delta > 0) {
+        return 1;
+    }
+    return -1;
 }
 
 void

@@ -88,6 +88,12 @@
 /** Wrapper which interprets value as size type. */
 #define UT_SIZE(value)  UT(static_cast<size_t>(value))
 
+/** Wrapper which interprets value as float type. */
+#define UT_FLOAT(value) UT(static_cast<float>(value))
+
+/** Wrapper which interprets value as double type. */
+#define UT_DOUBLE(value) UT(static_cast<double>(value))
+
 /** Wrapper for null pointer value. */
 #define UT_NULL     ut::TestValue<void *>(nullptr, "NULL", __FILE__, __LINE__)
 
@@ -158,6 +164,25 @@ void __ut_hit_assert();
 
 unsigned __ut_strlen(const char *s);
 int __ut_strcmp(const char *s1, const char *s2);
+
+/** Compare floating point numbers considering they are equal if difference is
+ * too small.
+ *
+ * @param v1 First value to compare.
+ * @param v2 Second value to compare.
+ * @return 0 if values can be considered equal, 1 if the first is greater than
+ *      the second one, -1 if the first is less than the second one.
+ */
+int __ut_cmp_double(double v1, double v2);
+/** Compare floating point numbers considering they are equal if difference is
+ * too small.
+ *
+ * @param v1 First value to compare.
+ * @param v2 Second value to compare.
+ * @return 0 if values can be considered equal, 1 if the first is greater than
+ *      the second one, -1 if the first is less than the second one.
+ */
+int __ut_cmp_float(float v1, float v2);
 
 int __ut_snprintf(char *str, unsigned long size, const char *format, ...);
 int __ut_vsnprintf(char *str, unsigned long size, const char *format, __ut_va_list ap);
@@ -441,6 +466,38 @@ public:
     bool operator !=(const TestValue<char *> &value2) {
         __ut_hit_assert();
         if (__ut_strcmp(value, value2.value)) {
+            return true;
+        }
+        throw TestException("!=", *this, value2);
+    }
+
+    bool operator ==(const TestValue<double> &value2) {
+        __ut_hit_assert();
+        if (!__ut_cmp_double(value, value2.value)) {
+            return true;
+        }
+        throw TestException("==", *this, value2);
+    }
+
+    bool operator !=(const TestValue<double> &value2) {
+        __ut_hit_assert();
+        if (__ut_cmp_double(value, value2.value)) {
+            return true;
+        }
+        throw TestException("!=", *this, value2);
+    }
+
+    bool operator ==(const TestValue<float> &value2) {
+        __ut_hit_assert();
+        if (!__ut_cmp_float(value, value2.value)) {
+            return true;
+        }
+        throw TestException("==", *this, value2);
+    }
+
+    bool operator !=(const TestValue<float> &value2) {
+        __ut_hit_assert();
+        if (__ut_cmp_float(value, value2.value)) {
             return true;
         }
         throw TestException("!=", *this, value2);
