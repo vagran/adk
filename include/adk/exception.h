@@ -157,28 +157,22 @@ public:
 };
 
 /** Define string conversion method for trivial types. */
-#define __ADK_PARAM_EXC_DEF_STR_METHOD(__type) \
+#define __ADK_PARAM_EXC_DECL_STR_METHOD(__type) \
     template <> \
     void \
-    ParamException<__type>::_AppendParamStr() \
-    { \
-        std::stringstream ss; \
-        ss << ": " << "[" << _param << "]"; \
-        _msg += ss.str(); \
-    }
+    ParamException<__type>::_AppendParamStr();
 
-__ADK_PARAM_EXC_DEF_STR_METHOD(bool);
-__ADK_PARAM_EXC_DEF_STR_METHOD(char);
-__ADK_PARAM_EXC_DEF_STR_METHOD(unsigned char);
-__ADK_PARAM_EXC_DEF_STR_METHOD(short);
-__ADK_PARAM_EXC_DEF_STR_METHOD(unsigned short);
-__ADK_PARAM_EXC_DEF_STR_METHOD(int);
-__ADK_PARAM_EXC_DEF_STR_METHOD(unsigned int);
-__ADK_PARAM_EXC_DEF_STR_METHOD(long);
-__ADK_PARAM_EXC_DEF_STR_METHOD(unsigned long);
-__ADK_PARAM_EXC_DEF_STR_METHOD(long long);
-__ADK_PARAM_EXC_DEF_STR_METHOD(unsigned long long);
-
+__ADK_PARAM_EXC_DECL_STR_METHOD(bool);
+__ADK_PARAM_EXC_DECL_STR_METHOD(char);
+__ADK_PARAM_EXC_DECL_STR_METHOD(unsigned char);
+__ADK_PARAM_EXC_DECL_STR_METHOD(short);
+__ADK_PARAM_EXC_DECL_STR_METHOD(unsigned short);
+__ADK_PARAM_EXC_DECL_STR_METHOD(int);
+__ADK_PARAM_EXC_DECL_STR_METHOD(unsigned int);
+__ADK_PARAM_EXC_DECL_STR_METHOD(long);
+__ADK_PARAM_EXC_DECL_STR_METHOD(unsigned long);
+__ADK_PARAM_EXC_DECL_STR_METHOD(long long);
+__ADK_PARAM_EXC_DECL_STR_METHOD(unsigned long long);
 
 #ifdef DEBUG
 #define __ADK_DEFINE_EXC_DBG_CONSTR(__clsName) \
