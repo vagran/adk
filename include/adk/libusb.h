@@ -17,52 +17,23 @@
 
 namespace adk {
 
-/** Exception class for errors in libusb wrapper. */
-class LibusbException: public adk::Exception {
+/** Parameter for libusb exception which wraps the error code. */
+class LibusbExceptionParam {
 private:
-    void
-    _AppendErrorCode()
-    {
-        if (errorCode) {
-            std::stringstream ss;
-            ss << ": " << libusb_error_name(errorCode) << "(" << errorCode << ")";
-            _msg += ss.str();
-        }
-    }
-
+    /** Libusb error code. */
+    int _code;
 public:
-    int errorCode;
+    LibusbExceptionParam(int code): _code(code) {}
 
-    LibusbException(const char *msg, int code = 0):
-        Exception(msg), errorCode(code)
+    void
+    ToString(std::stringstream &ss)
     {
-        _AppendErrorCode();
+        ss << libusb_error_name(_code) << "(" << _code << ")";
     }
-
-    LibusbException(const std::string &msg, int code = 0):
-        Exception(msg), errorCode(code)
-    {
-        _AppendErrorCode();
-    }
-
-#   ifdef DEBUG
-    LibusbException(const char *file, int line, const char *msg, int code = 0):
-        Exception(file, line, msg), errorCode(code)
-    {
-        _AppendErrorCode();
-    }
-
-    LibusbException(const char *file, int line, const std::string &msg, int code = 0):
-        Exception(file, line, msg), errorCode(code)
-    {
-        _AppendErrorCode();
-    }
-#   endif /* DEBUG */
-
-    virtual
-    ~LibusbException() noexcept
-    {}
 };
+
+/** Libusb exception which is thrown when libusb API returns error code. */
+ADK_DEFINE_PARAM_EXCEPTION(LibusbException, LibusbExceptionParam)
 
 /** Throw ADK USB exception.
  * @param code Error code returned by libusb call.

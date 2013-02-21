@@ -95,6 +95,146 @@ public:
     __ADK_THROW_EXCEPTION(__exception, __ss.str(), ## __VA_ARGS__); \
 } while (false)
 
+/** Exception with parameter. Parameter can be built-in type or a class which
+ * should have @a ToString() method with the following signature:
+ * @code
+ * void ToString(std::stringstream &ss);
+ * @endcode
+ * It should write to the provided stream human readable representation of the
+ * parameter value.
+ *
+ * Usage example:
+ * @code
+ * typedef adk::ParamException<MyParamType> MyException;
+ *
+ * ADK_EXCEPTION(MyException, "message " << someValue, myParam);
+ * @endcode
+ */
+template <typename TParam>
+class ParamException: public Exception {
+protected:
+    TParam _param;
+private:
+    void
+    _AppendParamStr()
+    {
+        std::stringstream ss;
+        ss << ": " << '[';
+        _param.ToString(ss);
+        ss << ']';
+        _msg += ss.str();
+    }
+public:
+    template<class TParamArg>
+    ParamException(const char *msg, TParamArg &&param):
+        Exception(msg), _param(std::forward<TParamArg>(param))
+    {
+        _AppendParamStr();
+    }
+
+    template<class TParamArg>
+    ParamException(const std::string &msg, TParamArg &&param):
+        Exception(msg), _param(std::forward<TParamArg>(param))
+    {
+        _AppendParamStr();
+    }
+
+#   ifdef DEBUG
+    template<class TParamArg>
+    ParamException(const char *file, int line, const char *msg, TParamArg &&param):
+        Exception(file, line, msg), _param(std::forward<TParamArg>(param))
+    {
+        _AppendParamStr();
+    }
+
+    template<class TParamArg>
+    ParamException(const char *file, int line, const std::string &msg, TParamArg &&param):
+        Exception(file, line, msg), _param(std::forward<TParamArg>(param))
+    {
+        _AppendParamStr();
+    }
+#   endif /* DEBUG */
+};
+
+/** Define string conversion method for trivial types. */
+#define __ADK_PARAM_EXC_DEF_STR_METHOD(__type) \
+    template <> \
+    void \
+    ParamException<__type>::_AppendParamStr() \
+    { \
+        std::stringstream ss; \
+        ss << ": " << "[" << _param << "]"; \
+        _msg += ss.str(); \
+    }
+
+__ADK_PARAM_EXC_DEF_STR_METHOD(bool);
+__ADK_PARAM_EXC_DEF_STR_METHOD(char);
+__ADK_PARAM_EXC_DEF_STR_METHOD(unsigned char);
+__ADK_PARAM_EXC_DEF_STR_METHOD(short);
+__ADK_PARAM_EXC_DEF_STR_METHOD(unsigned short);
+__ADK_PARAM_EXC_DEF_STR_METHOD(int);
+__ADK_PARAM_EXC_DEF_STR_METHOD(unsigned int);
+__ADK_PARAM_EXC_DEF_STR_METHOD(long);
+__ADK_PARAM_EXC_DEF_STR_METHOD(unsigned long);
+__ADK_PARAM_EXC_DEF_STR_METHOD(long long);
+__ADK_PARAM_EXC_DEF_STR_METHOD(unsigned long long);
+
+
+#ifdef DEBUG
+#define __ADK_DEFINE_EXC_DBG_CONSTR(__clsName) \
+    __clsName(const char *file, int line, const char *msg): \
+        adk::Exception(file, line, msg) {} \
+    __clsName(const char *file, int line, const std::string &msg): \
+        adk::Exception(file, line, msg) {}
+#else /* DEBUG */
+#define __ADK_DEFINE_EXC_DBG_CONSTR(__clsName)
+#endif /* DEBUG */
+
+/** Define custom exception which is just another subclass from adk::Exception
+ * with the same functionality.
+ * @param __clsName Class name for new exception type.
+ */
+#define ADK_DEFINE_EXCEPTION(__clsName) \
+    class __clsName: public adk::Exception { \
+    public: \
+        __clsName(const char *msg): adk::Exception(msg) {} \
+        __clsName(const std::string &msg): adk::Exception(msg) {} \
+        __ADK_DEFINE_EXC_DBG_CONSTR(__clsName) \
+    };
+
+
+#ifdef DEBUG
+#define __ADK_DEFINE_PARAM_EXC_DBG_CONSTR(__clsName, __paramType) \
+    template<class TParamArg> \
+    __clsName(const char *file, int line, const char *msg, TParamArg &&param): \
+        adk::ParamException<__paramType>(file, line, msg, std::forward<TParamArg>(param)) {} \
+    \
+    template<class TParamArg> \
+    __clsName(const char *file, int line, const std::string &msg, TParamArg &&param): \
+        adk::ParamException<__paramType>(file, line, msg, std::forward<TParamArg>(param)) {}
+#else /* DEBUG */
+#define __ADK_DEFINE_PARAM_EXC_DBG_CONSTR(__clsName, __paramType)
+#endif /* DEBUG */
+
+/** Define custom exception with parameter. See @ref ParamException. See @ref
+ * LibusbException for example.
+ * @param __clsName Class name for new exception type.
+ * @param __paramType Type name for the parameter.
+ */
+#define ADK_DEFINE_PARAM_EXCEPTION(__clsName, __paramType) \
+    class __clsName: public adk::ParamException<__paramType> { \
+    public: \
+        template<class TParamArg> \
+        __clsName(const char *msg, TParamArg &&param): \
+            adk::ParamException<__paramType>(msg, std::forward<TParamArg>(param)) {} \
+        \
+        template<class TParamArg> \
+        __clsName(const std::string &msg, TParamArg &&param): \
+            adk::ParamException<__paramType>(msg, std::forward<TParamArg>(param)) {} \
+        \
+        __ADK_DEFINE_PARAM_EXC_DBG_CONSTR(__clsName, __paramType) \
+    };
+
 } /* namespace adk */
 
 #endif /* ADK_EXCEPTION_H_ */
