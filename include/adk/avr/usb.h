@@ -519,8 +519,8 @@ AdkUsbCrc16(u8 *data, u8 len);
  * @param size Size of the data chunk in bytes. CRC value available at
  *      &data[size] location.
  * @return @a TRUE if data was processed, @a FALSE if additional invocation is
- *      needed later for fully process the data. Data buffer is not after the
- *      function return if @a TRUE value is returned.
+ *      needed later for fully process the data. Data buffer is not valid after
+ *      the function return if @a TRUE value is returned.
  */
 bool_t
 AdkUsbOnReceive(u8 *data, u8 size);

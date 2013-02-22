@@ -154,6 +154,20 @@ public:
         _AppendParamStr();
     }
 #   endif /* DEBUG */
+
+    /** Get associated parameter. */
+    const TParam &
+    GetParam() const
+    {
+        return _param;
+    }
+
+    /** Get associated parameter. */
+    TParam &
+    GetParam()
+    {
+        return _param;
+    }
 };
 
 /** Define string conversion method for trivial types. */

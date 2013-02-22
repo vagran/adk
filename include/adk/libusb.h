@@ -26,9 +26,14 @@ public:
     LibusbExceptionParam(int code): _code(code) {}
 
     void
-    ToString(std::stringstream &ss)
+    ToString(std::stringstream &ss) const
     {
         ss << libusb_error_name(_code) << "(" << _code << ")";
+    }
+
+    operator int() const
+    {
+        return _code;
     }
 };
 
