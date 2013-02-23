@@ -32,7 +32,7 @@ AdkUsbOnReceive(u8 *data, u8 size)
 
 /* Provide callback for transmitted data. */
 u8
-AdkUsbOnTransmit(u16 size)
+AdkUsbOnTransmit(u8 size)
 {
     adkUsbUserTxData.ram_ptr = echoBuffer;
     return size;
@@ -41,7 +41,7 @@ AdkUsbOnTransmit(u16 size)
 int
 main(void)
 {
-    AdkUsbSetup();
+    AdkUsbInit();
 
     /* Interrupt by low level - bus activity on D- line. */
     AVR_BIT_CLR8(MCUCR, ISC01);

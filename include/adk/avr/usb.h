@@ -475,7 +475,7 @@ AdkUsbGetRxData()
 
 /** Prepare USB interface. */
 void
-AdkUsbSetup();
+AdkUsbInit();
 
 /** USB interrupt handler. The application should call this function when it
  * detects data line level change (data lines idle state is low D+ and high D-
@@ -494,8 +494,8 @@ AdkUsbSetup();
 void
 AdkUsbInterrupt();
 
-/** This function should be called in the application main loop.
- * XXX functionality
+/** This function should be called in the application main loop on each
+ * iteration. It processes the received or queued for sending data.
  */
 void
 AdkUsbPoll();
@@ -541,7 +541,9 @@ AdkUsbVerifyCrc(u8 *data, u8 size)
 /** Callback for data transmit request. This function should be defined by
  * client application. It is called when read request received from host. The
  * function should initialize @ref adkUsbUserTxData variable with pointer to
- * data to transmit.
+ * data to transmit. In case @ref adkUsbUserTxData is set to NULL the device
+ * will respond with NAK and the callback will be invoked again on the next
+ * iteration.
  *
  * @param size Size requested by the host. The function can return less or equal
  *      but not more bytes.
@@ -550,7 +552,7 @@ AdkUsbVerifyCrc(u8 *data, u8 size)
  *      in program memory.
  */
 u8
-AdkUsbOnTransmit(u16 size);
+AdkUsbOnTransmit(u8 size);
 
 #endif /* __ASSEMBLER__ */
 
