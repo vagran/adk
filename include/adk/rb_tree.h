@@ -79,8 +79,18 @@ namespace adk {
  * @li Comparison (== and !=) operators should be implemented.
  * @li Construction and assignment by copy and moving should be implemented.
  * @li -> operator should be implemented to access node class.
+ *
+ * @a NodeCmp class is a comparator for nodes. Function call semantic is used
+ * its invocation, using the following prototype:
+ * @code
+ * int
+ * Compare(NodePtr node1, NodePtr node2);
+ * @endcode
+ * It should return positive value if this @a node1 is greater than @a node2,
+ * negative value if @a node1 is less than @a node2, zero if both nodes are
+ * equal.
  */
-template <class NodePtr>
+template <class NodePtr, class NodeCmp>
 class RBTree {
 public:
     /** Tree node direction relatively to its parent node. */
@@ -99,7 +109,7 @@ private:
      * @param dir Rotation direction. If @ref DIR_LEFT then right child of the
      *      node will become its parent, left if @ref DIR_RIGHT.
      */
-    void
+    static void
     _Rotate(NodePtr &root, NodePtr node, Dir dir)
     {
         ASSERT(dir == DIR_LEFT || dir == DIR_RIGHT);
@@ -136,7 +146,7 @@ private:
      * @param node Inserted or lastly balanced node. Its parent should not be
      *      root and should be red.
      */
-    void
+    static void
     _RebalanceInsertion(NodePtr &root, NodePtr node)
     {
         /* Validate entrance conditions. */
@@ -190,7 +200,7 @@ private:
      * @param root Root node.
      * @param node Node to check. Node should be red.
      */
-    void
+    static void
     _CheckRebalanceInsertion(NodePtr &root, NodePtr node)
     {
         ASSERT(node->IsRed());
@@ -206,7 +216,7 @@ private:
      * @param root Root node.
      * @param node Replacement node which must be detached.
      */
-    void
+    static void
     _RebalanceDeletion(NodePtr &root, NodePtr node)
     {
         NodePtr replNode = node, tmpNode;
@@ -400,24 +410,12 @@ public:
     }
 
     /** Insert node to the tree.
-     *
-     * @a NodeCmp class is a comparator for nodes. Function call semantic is
-     * used its invocation, using the following prototype:
-     * @code
-     * int
-     * Compare(NodePtr node1, NodePtr node2);
-     * @endcode
-     * It should return positive value if this @a node1 is greater than @a node2,
-     * negative value if @a node1 is less than @a node2, zero if both nodes are
-     * equal.
-     *
      * @param root Root node.
      * @param node Node to insert.
      * @param comparator Nodes comparator.
      * @return Either @a node if it was inserted or existing node with the
      *      same key (@a node is not inserted in the tree in such case).
      */
-    template <class NodeCmp>
     static NodePtr
     InsertNode(NodePtr &root, NodePtr node, const NodeCmp &comparator)
     {
@@ -462,6 +460,101 @@ public:
         /* Set root black if it was re-colored during re-balancing. */
         root->SetColor(false);
         return node;
+    }
+
+    /** Get next tree node during the tree traversal.
+     *
+     * @param root Root node.
+     * @param node Previously visited node. Can be NULL to get the first node.
+     * @return Next node. NULL if all nodes traversed.
+     */
+    static NodePtr
+    GetNextNode(NodePtr &root, NodePtr node = nullptr)
+    {
+        if (!node) {
+            return root;
+        }
+        if (node->GetChild(DIR_LEFT)) {
+            return node->GetChild(DIR_LEFT);
+        }
+        if (node->GetChild(DIR_RIGHT)) {
+            return node->GetChild(DIR_RIGHT);
+        }
+
+        while (node->GetParent()) {
+            if (node->GetParent()->GetChild(DIR_LEFT) == node &&
+                node->GetParent()->GetChild(DIR_RIGHT)) {
+
+                return node->GetParent()->GetChild(DIR_RIGHT);
+            }
+            node = node->GetParent();
+        }
+        return nullptr;
+    }
+
+    /** Validate the tree. This method is intended for tree implementation
+     * troubleshooting and normally is not required to be used.
+     *
+     * @param root Root node.
+     * @param comparator Nodes comparator.
+     * @return @a true if the tree is valid red-black tree, @a false if there
+     *      are some rules violations or dis-integrity.
+     */
+    static bool
+    Validate(NodePtr &root, const NodeCmp &comparator)
+    {
+        /* Iterate all nodes and check balancing rules validity for each node. */
+        NodePtr node = nullptr;
+        int numBlackNodes = -1; /* Black nodes amount in a simple path. */
+        while ((node = GetNextNode(node))) {
+
+            /* Verify link with parent. */
+            if (node->GetParent()) {
+                if (node->GetParent()->GetChild(DIR_LEFT) != node &&
+                    node->GetParent()->GetChild(DIR_RIGHT) != node) {
+
+                    /* Parent link broken. */
+                    return false;
+                }
+            }
+
+            /* Validate children. */
+            if (node->GetChild(DIR_LEFT) &&
+                comparator(node->GetChild(DIR_LEFT), node) >= 0) {
+
+                return false;
+            }
+            if (node->GetChild(DIR_RIGHT) &&
+                comparator(node->GetChild(DIR_RIGHT), node) <= 0) {
+
+                return false;
+            }
+
+            /* Red node never can have red children. */
+            if (node->IsRed() && node->GetParent() && node->GetParent()->IsRed()) {
+                return false;
+            }
+
+            /* If this is a leaf node, check black nodes amount in ascendant path. */
+            if (!node->GetChild(DIR_LEFT) || !node->GetChild(DIR_RIGHT)) {
+                int n = 0;
+                NodePtr next = node;
+                do {
+                    if (!next->IsRed()) {
+                        n++;
+                    }
+                    next = next->GetParent();
+                } while (next);
+                if (numBlackNodes != -1) {
+                    if (numBlackNodes != n) {
+                        return false;
+                    }
+                } else {
+                    numBlackNodes = n;
+                }
+            }
+        }
+        return true;
     }
 };
 
