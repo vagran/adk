@@ -72,14 +72,6 @@ namespace adk {
  * SetParent(NodePtr node);
  * @endcode
  *
- * Compare with other node.
- * Return ositive value if this node greater than @a node, negative value if it
- * is less than @a node, zero if it is equal to @a node.
- * @code
- * int
- * Compare(const NodePtr node) const;
- * @endcode
- *
  * Node are always referenced using pointer semantic (@a NodePtr parameterized
  * type). User code can create any class which satisfies pointer semantic
  * requirements (or just use plain pointer to node class):
@@ -90,11 +82,7 @@ namespace adk {
  */
 template <class NodePtr>
 class RBTree {
-private:
-
-
 public:
-
     /** Tree node direction relatively to its parent node. */
     enum Dir {
         /** Left node. */
@@ -103,6 +91,241 @@ public:
         DIR_RIGHT
     };
 
+private:
+    /** Rotate subtree around the specified node in specified direction.
+     *
+     * @param root Root node.
+     * @param node Node to rotate around.
+     * @param dir Rotation direction. If @ref DIR_LEFT then right child of the
+     *      node will become its parent, left if @ref DIR_RIGHT.
+     */
+    void
+    _Rotate(NodePtr &root, NodePtr node, Dir dir)
+    {
+        ASSERT(dir == DIR_LEFT || dir == DIR_RIGHT);
+        NodePtr x = node->GetChild(dir);
+        ASSERT(x);
+        x->SetParent(node->GetParent());
+        if (node->GetParent()) {
+            if (node->GetParent()->GetChild(DIR_LEFT) == node) {
+                node->GetParent()->SetChild(DIR_LEFT, x);
+            } else {
+                ASSERT(node->GetParent()->GetChild(DIR_RIGHT) == node);
+                node->GetParent()->SetChild(DIR_RIGHT, x);
+            }
+        } else {
+            ASSERT(root == node);
+            root = x;
+        }
+
+        node->SetChild(dir, x->GetChild(!dir));
+        if (node->GetChild(dir)) {
+            node->GetChild(dir)->SetParent(node);
+        }
+
+        x->SetChild(!dir, node);
+        node->SetParent(x);
+    }
+
+    /** Re-balance the tree after insertion. This function can be called
+     * recursively. It must be called only if there is RB balancing rules
+     * violations. In particular only one violation must be present upon this
+     * function calling - provided node is red and its parent is also red.
+     *
+     * @param root Root node.
+     * @param node Inserted or lastly balanced node. Its parent should not be
+     *      root and should be red.
+     */
+    void
+    _RebalanceInsertion(NodePtr &root, NodePtr node)
+    {
+        /* Validate entrance conditions. */
+        ASSERT(node->IsRed());
+        ASSERT(node->GetParent());
+        ASSERT(node->GetParent()->IsRed());
+        ASSERT(node->GetParent()->GetParent());
+
+        /* We have two symmetric scenarios - new node is either in left or right
+         * subtree of its grandparent.
+         */
+        ASSERT(node->GetParent()->GetChild(DIR_LEFT) == node ||
+               node->GetParent()->GetChild(DIR_RIGHT) == node);
+
+        ASSERT(node->GetParent()->GetParent()->GetChild(DIR_LEFT) == node->GetParent() ||
+               node->GetParent()->GetParent()->GetChild(DIR_RIGHT) == node->GetParent());
+
+        Dir dir = node->GetParent()->GetParent()->GetChild(DIR_RIGHT) == node->GetParent();
+
+        /* Node uncle. */
+        NodePtr y = node->GetParent()->GetParent()->GetChild(!dir);
+        if (y && y->IsRed()) {
+            /* Case 1: uncle is red - just re-color nodes. */
+            y->SetColor(false);
+            node->GetParent()->SetColor(false);
+            node->GetParent()->GetParent()->SetColor(true);
+            /* Grandparent became red so re-balancing could be required again. */
+            _CheckRebalanceInsertion(node->GetParent()->GetParent());
+        } else {
+            Dir nodeDir = node->GetParent()->GetChild(DIR_RIGHT) == node;
+            if (nodeDir == dir) {
+                y = node->GetParent();
+            } else {
+                /* Case 3 - rotate parent and transform to case 2. */
+                _Rotate(root, node->GetParent(), !dir);
+                y = node;
+            }
+            /* Case 2 - perform grandparent rotation. */
+            NodePtr x = y->GetParent();
+
+            x->SetColor(true);
+            y->SetColor(false);
+
+            _Rotate(root, x, dir);
+        }
+    }
+
+    /** Check if re-balancing after insertion is required for the provided node.
+     * Call @ref _RebalanceInsertion method if required.
+     *
+     * @param root Root node.
+     * @param node Node to check. Node should be red.
+     */
+    void
+    _CheckRebalanceInsertion(NodePtr &root, NodePtr node)
+    {
+        ASSERT(node->IsRed());
+        if (node->GetParent() && node->GetParent()->IsRed() &&
+            node->GetParent()->GetParent()) {
+
+            _RebalanceInsertion(root, node);
+        }
+    }
+
+    /** Re-balance the tree after deletion and detach replacement entry.
+     *
+     * @param root Root node.
+     * @param node Replacement node which must be detached.
+     */
+    void
+    _RebalanceDeletion(NodePtr &root, NodePtr node)
+    {
+        NodePtr replNode = node, tmpNode;
+
+        if (!node->GetParent()) {
+            ASSERT(node == root);
+            root = nullptr;
+            return;
+        }
+
+        do {
+            /* Current is red leaf. */
+            if (node->IsRed() && !node->GetChild(DIR_LEFT) && !node->GetChild(DIR_RIGHT)) {
+                /* Done */
+                break;
+            }
+
+            Dir nodeDir;
+            if (node->GetParent()->GetChild(DIR_LEFT) == node) {
+                nodeDir = DIR_LEFT;
+            } else {
+                ASSERT(node->GetParent()->GetChild(DIR_RIGHT) == node);
+                nodeDir = DIR_RIGHT;
+            }
+
+            /* Current is black with one red child. Detach current node and make its
+             * child node black to keep the tree balanced.
+             */
+            if (!node->IsRed() &&
+                (((tmpNode = node->GetChild(DIR_LEFT)) &&
+                  tmpNode->IsRed() && !node->GetChild(DIR_RIGHT)) ||
+
+                 ((tmpNode = node->GetChild(DIR_RIGHT)) &&
+                  tmpNode->IsRed() && !node->GetChild(DIR_LEFT)))) {
+
+                tmpNode->SetParent(node->GetParent());
+                node->GetParent()->SetChild(nodeDir, tmpNode);
+                tmpNode->SetColor(false);
+                /* Node detached, all done. */
+                return;
+            }
+
+            do {
+                NodePtr siblNode = node->GetParent()->GetChild(!nodeDir);
+                /* Current sibling is red. */
+                if (siblNode->IsRed()) {
+                    /* Exchange colors of parent and sibling nodes. */
+                    node->GetParent()->SetColor(true);
+                    siblNode->SetColor(false);
+
+                    /* Rotate around the parent. */
+                    _Rotate(root, node->GetParent(), !nodeDir);
+                    continue;
+                }
+
+                /* Current sibling is black with two black children */
+                if ((!siblNode->GetChild(DIR_LEFT) ||
+                     !siblNode->GetChild(DIR_LEFT)->IsRed()) &&
+
+                    (!siblNode->GetChild(DIR_RIGHT) ||
+                     !siblNode->GetChild(DIR_RIGHT)->IsRed())) {
+
+                    /* Make sibling red. */
+                    siblNode->SetColor(true);
+                    /* Make parent new current node. */
+                    node = node->GetParent();
+                    if (!node->IsRed() && node->GetParent()) {
+                        if (node->GetParent()->GetChild(DIR_LEFT) == node) {
+                            nodeDir = DIR_LEFT;
+                        } else {
+                            ASSERT(node->GetParent()->GetChild(DIR_RIGHT) == node);
+                            nodeDir = DIR_RIGHT;
+                        }
+                        continue;
+                    }
+                    /* Current is red - make it black and we are done. */
+                    node->SetColor(false);
+                    break;
+                }
+
+                /* Current sibling is black with one or two red children (can be
+                 * one red and one black).
+                 */
+                NodePtr farNephewNode = siblNode->GetChild(!nodeDir);
+
+                if (!farNephewNode || !farNephewNode->IsRed()) {
+                    /* Far nephew is black (null leaf counted as black also),
+                     * rotate around the sibling.
+                     */
+                    _Rotate(root, siblNode, nodeDir);
+                    siblNode = node->GetParent()->GetChild(!nodeDir);
+                    farNephewNode = siblNode->GetChild(!nodeDir);
+                }
+
+                /* Color the far nephew black, make the sibling color the same
+                 * as the color of its parent, color the parent black.
+                 */
+                farNephewNode->SetColor(false);
+                siblNode->SetColor(node->GetParent()->IsRed());
+                node->GetParent()->SetColor(false);
+
+                /* Rotate around the parent. */
+                _Rotate(node->parent, !nodeDir);
+                break;
+            } while (node);
+        } while(false);
+
+        /* Detach replacement node. */
+        if (replNode->GetParent()->GetChild(DIR_LEFT) == replNode) {
+            replNode->GetParent()->SetChild(DIR_LEFT, nullptr);
+        } else {
+            ASSERT(replNode->GetParent()->GetChild(DIR_RIGHT) == replNode);
+            replNode->GetParent()->SetChild(DIR_RIGHT, nullptr);
+        }
+    }
+
+
+public:
+
     /** Delete node from the tree.
      * @param root Root node.
      * @param node Node to delete.
@@ -110,19 +333,136 @@ public:
     static void
     DeleteNode(NodePtr &root, NodePtr node)
     {
+        ASSERT(node->IsWired());
+        /* Firstly find successor or predecessor of the provided. It will be
+         * detached from the tree instead of the provided node and after that it
+         * will replace the target node.
+         */
+        NodePtr targetNode = node;
+        NodePtr replNode = node; /* Replacement node. */
+        Dir dir; /* Initial direction. */
+        if (replNode->GetChild(DIR_LEFT) || replNode->GetChild(DIR_RIGHT)) {
+            /* If there are children select direction. If there is a right item
+             * which is red or there are no left item, then find predecessor.
+             * Otherwise find successor.
+             */
+            if ((replNode->GetChild(DIR_LEFT) &&
+                 replNode->GetChild(DIR_LEFT)->IsRed()) ||
+                !replNode->GetChild(DIR_RIGHT)) {
 
+                dir = DIR_LEFT;
+            } else {
+                dir = DIR_RIGHT;
+            }
+            replNode = replNode->GetChild(dir);
+            while (replNode->GetChild(!dir)) {
+                replNode = replNode->GetChild(!dir);
+            }
+        }
+
+        /* Re-balance the tree and detach replacement entry. */
+        _RebalanceDeletion(root, replNode);
+
+        /* Replace target entry with detached replacement entry. */
+        if (replNode == targetNode) {
+            /* The replacement entry which is also target entry was already
+             * detached by the previous call, so we are done.
+             */
+            targetNode->SetWired(false);
+            return;
+        }
+        /* Move all links and color from target entry to the replacement one. */
+        replNode->SetColor(targetNode->IsRed());
+        targetNode->SetWired(false);
+        replNode->SetParent(targetNode->GetParent());
+        if (targetNode->GetParent()) {
+            if (targetNode->GetParent()->GetChild(DIR_LEFT) == targetNode) {
+                targetNode->GetParent()->SetChild(DIR_LEFT, replNode);
+            } else {
+                ASSERT(targetNode->GetParent()->GetChild(DIR_RIGHT) == targetNode);
+                targetNode->GetParent()->SetChild(DIR_RIGHT, replNode);
+            }
+        } else {
+            ASSERT(targetNode == root);
+            root = replNode;
+            root->SetColor(false);
+        }
+        replNode->SetChild(DIR_LEFT, targetNode->GetChild(DIR_LEFT));
+        if (replNode->GetChild(DIR_LEFT)) {
+            ASSERT(replNode->GetChild(DIR_LEFT)->GetParent() == targetNode);
+            replNode->GetChild(DIR_LEFT)->GetParent() = replNode;
+        }
+        replNode->SetChild(DIR_RIGHT, targetNode->GetChild(DIR_RIGHT));
+        if (replNode->GetChild(DIR_RIGHT)) {
+            ASSERT(replNode->GetChild(DIR_RIGHT)->GetParent() == targetNode);
+            replNode->GetChild(DIR_RIGHT)->SetParent(replNode);
+        }
     }
 
     /** Insert node to the tree.
+     *
+     * @a NodeCmp class is a comparator for nodes. Function call semantic is
+     * used its invocation, using the following prototype:
+     * @code
+     * int
+     * Compare(NodePtr node1, NodePtr node2);
+     * @endcode
+     * It should return positive value if this @a node1 is greater than @a node2,
+     * negative value if @a node1 is less than @a node2, zero if both nodes are
+     * equal.
+     *
      * @param root Root node.
      * @param node Node to insert.
+     * @param comparator Nodes comparator.
+     * @return Either @a node if it was inserted or existing node with the
+     *      same key (@a node is not inserted in the tree in such case).
      */
-    static void
-    InsertNode(NodePtr &root, NodePtr node)
+    template <class NodeCmp>
+    static NodePtr
+    InsertNode(NodePtr &root, NodePtr node, const NodeCmp &comparator)
     {
+        ASSERT(!node->IsWired());
 
+        node->SetChild(DIR_LEFT, nullptr);
+        node->SetChild(DIR_RIGHT, nullptr);
+
+        /* Special case - empty tree, insert root. */
+        if (UNLIKELY(!root)) {
+            root = node;
+            node->SetParent(nullptr);
+            node->SetColor(false);
+            node->SetWired(true);
+            return node;
+        }
+
+        /* Firstly search for insertion point and insert the node. */
+        NodePtr parent = root;
+        while (true) {
+            int cmp = comparator(node, parent);
+            if (!cmp) {
+                /* The same node found, do not insert the new one. */
+                return parent;
+            }
+            if (parent->GetChild(cmp > 0)) {
+                parent = parent->GetChild(cmp > 0);
+            } else {
+                parent->SetChild(cmp > 0, node);
+                node->SetParent(parent);
+                node->SetColor(true);
+                node->SetWired(true);
+                break;
+            }
+        }
+
+        /* Re-balance the tree if necessary. */
+        if (node->GetParent()->IsRed()) {
+            _RebalanceInsertion(root, node);
+        }
+
+        /* Set root black if it was re-colored during re-balancing. */
+        root->SetColor(false);
+        return node;
     }
-
 };
 
 } /* namespace adk */

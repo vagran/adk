@@ -60,6 +60,7 @@
 #include <adk/utils.h>
 #include <adk/bitmap.h>
 #include <adk/hash.h>
+#include <adk/rb_tree.h>
 
 #ifdef ADK_USE_GUI
 #include <adk/glade.h>
