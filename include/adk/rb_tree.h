@@ -84,7 +84,7 @@ namespace adk {
  * its invocation, using the following prototype:
  * @code
  * int
- * Compare(NodePtr node1, NodePtr node2);
+ * Compare(const NodePtr node1, const NodePtr node2) [const];
  * @endcode
  * It should return positive value if this @a node1 is greater than @a node2,
  * negative value if @a node1 is less than @a node2, zero if both nodes are
@@ -94,11 +94,40 @@ template <class NodePtr, class NodeCmp>
 class RBTree {
 public:
     /** Tree node direction relatively to its parent node. */
-    enum Dir {
+    enum DirValue {
         /** Left node. */
         DIR_LEFT,
         /** Right node. */
         DIR_RIGHT
+    };
+
+    /** Helper class for direction value manipulations. */
+    class Dir {
+    public:
+        DirValue value;
+
+        Dir(): value(DIR_LEFT) {}
+
+        Dir(DirValue value): value(value) {}
+
+        operator DirValue()
+        {
+            return value;
+        }
+
+        /** Return opposite direction. */
+        DirValue
+        operator !()
+        {
+            return static_cast<DirValue>(!value);
+        }
+
+        Dir &
+        operator =(DirValue value)
+        {
+            this->value = value;
+            return *this;
+        }
     };
 
 private:
@@ -164,7 +193,9 @@ private:
         ASSERT(node->GetParent()->GetParent()->GetChild(DIR_LEFT) == node->GetParent() ||
                node->GetParent()->GetParent()->GetChild(DIR_RIGHT) == node->GetParent());
 
-        Dir dir = node->GetParent()->GetParent()->GetChild(DIR_RIGHT) == node->GetParent();
+        Dir dir =
+            node->GetParent()->GetParent()->GetChild(DIR_RIGHT) == node->GetParent() ?
+                DIR_RIGHT : DIR_LEFT;
 
         /* Node uncle. */
         NodePtr y = node->GetParent()->GetParent()->GetChild(!dir);
@@ -174,9 +205,10 @@ private:
             node->GetParent()->SetColor(false);
             node->GetParent()->GetParent()->SetColor(true);
             /* Grandparent became red so re-balancing could be required again. */
-            _CheckRebalanceInsertion(node->GetParent()->GetParent());
+            _CheckRebalanceInsertion(root, node->GetParent()->GetParent());
         } else {
-            Dir nodeDir = node->GetParent()->GetChild(DIR_RIGHT) == node;
+            Dir nodeDir = node->GetParent()->GetChild(DIR_RIGHT) == node ?
+                DIR_RIGHT : DIR_LEFT;
             if (nodeDir == dir) {
                 y = node->GetParent();
             } else {
@@ -319,7 +351,7 @@ private:
                 node->GetParent()->SetColor(false);
 
                 /* Rotate around the parent. */
-                _Rotate(node->parent, !nodeDir);
+                _Rotate(root, node->parent, !nodeDir);
                 break;
             } while (node);
         } while(false);
@@ -400,7 +432,7 @@ public:
         replNode->SetChild(DIR_LEFT, targetNode->GetChild(DIR_LEFT));
         if (replNode->GetChild(DIR_LEFT)) {
             ASSERT(replNode->GetChild(DIR_LEFT)->GetParent() == targetNode);
-            replNode->GetChild(DIR_LEFT)->GetParent() = replNode;
+            replNode->GetChild(DIR_LEFT)->SetParent(replNode);
         }
         replNode->SetChild(DIR_RIGHT, targetNode->GetChild(DIR_RIGHT));
         if (replNode->GetChild(DIR_RIGHT)) {
@@ -441,10 +473,11 @@ public:
                 /* The same node found, do not insert the new one. */
                 return parent;
             }
-            if (parent->GetChild(cmp > 0)) {
-                parent = parent->GetChild(cmp > 0);
+            Dir dir = cmp > 0 ? DIR_RIGHT : DIR_LEFT;
+            if (parent->GetChild(dir)) {
+                parent = parent->GetChild(dir);
             } else {
-                parent->SetChild(cmp > 0, node);
+                parent->SetChild(dir, node);
                 node->SetParent(parent);
                 node->SetColor(true);
                 node->SetWired(true);
@@ -469,7 +502,7 @@ public:
      * @return Next node. NULL if all nodes traversed.
      */
     static NodePtr
-    GetNextNode(NodePtr &root, NodePtr node = nullptr)
+    GetNextNode(const NodePtr &root, NodePtr node = nullptr)
     {
         if (!node) {
             return root;
@@ -501,7 +534,7 @@ public:
      *      are some rules violations or dis-integrity.
      */
     static bool
-    Validate(NodePtr &root, const NodeCmp &comparator)
+    Validate(const NodePtr &root, const NodeCmp &comparator)
     {
         /* Iterate all nodes and check balancing rules validity for each node. */
         NodePtr node = nullptr;
