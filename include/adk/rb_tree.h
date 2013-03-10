@@ -122,11 +122,10 @@ public:
             return static_cast<DirValue>(!value);
         }
 
-        Dir &
+        void
         operator =(DirValue value)
         {
             this->value = value;
-            return *this;
         }
     };
 
