@@ -35,6 +35,9 @@
 
 #ifdef DEBUG
 
+/** Verify that expression is true in debug build. In release build the
+ * expression is not evaluated.
+ */
 #define ASSERT(x) do { \
     if (UNLIKELY(!(x))) { \
         ADK_CRITICAL("Assert failed: '%s'", # x); \
@@ -42,9 +45,21 @@
     } \
 } while (false)
 
+/** Verify that expression is equal to the expected value in debug build. In
+ * release build the expression is evaluated but not verified.
+ */
+#define VERIFY(x, expected) do { \
+    if (UNLIKELY((x) != (expected))) { \
+        ADK_CRITICAL("Verification failed: '%s'", # x " == " # expected); \
+        ASSERT_IMPL(# x " == " # expected); \
+    } \
+} while (false)
+
 #else /* DEBUG */
 
 #define ASSERT(x)
+
+#define VERIFY(x, expected)       x
 
 #endif /* DEBUG */
 

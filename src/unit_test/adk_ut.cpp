@@ -357,7 +357,7 @@ ut::__ut_cmp_double(double v1, double v2)
         return 0;
     }
 
-    if (fabs(delta) < fabs(v1 / 10e10)) {
+    if (fabs(delta) < fabs(v1 / 1e10)) {
         return 0;
     }
     if (delta > 0) {
@@ -375,7 +375,7 @@ ut::__ut_cmp_float(float v1, float v2)
         return 0;
     }
 
-    if (fabs(delta) < fabs(v1 / 10e6)) {
+    if (fabs(delta) < fabs(v1 / 1e6)) {
         return 0;
     }
     if (delta > 0) {
