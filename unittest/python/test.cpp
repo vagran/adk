@@ -49,7 +49,6 @@ UT_TEST("Variables")
         CheckValueInt(res, 27);
     }
 }
-UT_TEST_END
 
 /* Exposed function test. */
 static py::Object
@@ -171,4 +170,3 @@ UT_TEST("Extension by C++")
     res = locals["obj"](py::Object(30), py::Object(40));
     CheckValueInt(res, 370);
 }
-UT_TEST_END

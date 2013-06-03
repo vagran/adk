@@ -22,4 +22,3 @@ UT_TEST("Sample test")
 
     UT(SampleMult(5, 3)) == UT(15);
 }
-UT_TEST_END

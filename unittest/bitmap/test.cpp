@@ -98,11 +98,9 @@ UT_TEST("Static bitmap")
     Bitmap<numBits> bm;
     TestBitmap(bm);
 }
-UT_TEST_END
 
 UT_TEST("Dynamic bitmap")
 {
     Bitmap<-1> bm(numBits);
     TestBitmap(bm);
 }
-UT_TEST_END

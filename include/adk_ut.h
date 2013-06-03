@@ -43,7 +43,6 @@
  * {
  *      <test code here>
  * }
- * UT_TEST_END
  * @endcode
  *
  * @param name Arbitrary name of the test.
@@ -54,12 +53,10 @@
     public: \
         __UT_TEST_DESC() : TestDesc(__FILE__, __LINE__, name) { } \
         \
-        virtual void TestBody()
-
-/** Macro for test definition termination. See @ref UT_TEST. */
-#define UT_TEST_END \
+        virtual void TestBody(); \
     } __UT_UID(utTestDesc_); \
-    } /* anonymous namespace */
+    } /* anonymous namespace */ \
+    void __UT_TEST_DESC::TestBody()
 
 /** Wrapper for all values which are participating in asserts.
  *
