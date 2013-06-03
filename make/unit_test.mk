@@ -80,4 +80,4 @@ $(AUTO_SRC): $(ADK_OBJS) $(ADK_TEST_OBJS)
 
 # Target for launching the tests
 test: $(BINARY_NAME)
-	(export LD_LIBRARY_PATH=$(call JOIN,:,$(LIB_DIRS)) && $(BINARY_NAME))
+	(export LD_LIBRARY_PATH=$(call JOIN,:,$(LIB_DIRS)) && export PATH=$(TOOLS_BIN) && $(BINARY_NAME))
