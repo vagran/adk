@@ -133,6 +133,9 @@ def BuildPackage(pkg, target = 'default'):
     
     env = CreateBuildEnv(pkg, target, srcDir, objDir)
     
+    if buildOpts is not None and 'pre-build-cmd' in buildOpts:
+        RunCmd(ExpandBuildParams(buildOpts['pre-build-cmd'], env))
+    
     # Configure the package
     confArgs = ['--prefix ' + opts.prefix]
     if buildOpts is not None:
@@ -181,6 +184,11 @@ def Main():
     optParser.add_option('-j', '--jobs', dest = 'jobs',
                          metavar = 'NUM_JOBS', type = 'int',
                          help = 'Number of jobs to run compilation by (number of CPUs should be the best choice)')
+    optParser.add_option('-f', '--from', dest = 'fromPkg',
+                         metavar = 'PACKAGE',
+                         help = 'Start from the specified package, i.e. skip all preceding ones')
+    optParser.add_option('-l', '--list', dest = 'doList', action = 'store_true',
+                         help = 'Do not build, just list the packages to be built')
     
     (opts, args) = optParser.parse_args()
     
@@ -210,6 +218,16 @@ def Main():
         for pkg in excludeList:
             if pkg in pkgList:
                 pkgList.remove(pkg)
+                
+    if opts.fromPkg is not None:
+        if not ':' in opts.fromPkg:
+            opts.fromPkg += ':default'
+        fromIdx = conf.packages.index(opts.fromPkg)
+        idx = 0
+        for pkg in list(pkgList):
+            if idx < fromIdx:
+                pkgList.remove(pkg)
+            idx += 1
 
     if not os.path.exists(opts.buildDir):
         os.makedirs(opts.buildDir)
@@ -223,14 +241,22 @@ def Main():
     print('Destination directory: ' + opts.prefix)
     
     installPkgs = FindPackages(pkgList)
+
     print('These packages will be installed:')
     for pkg in pkgList:
         pkgName, pkgTarget = pkg.split(':')
         print('{0}-{1}:{2}'.format(pkgName, installPkgs[pkgName]['version'], pkgTarget))
+        
+    if opts.doList:
+        return 0
     
     for pkg in pkgList:
         pkgName, pkgTarget = pkg.split(':')
-        BuildPackage(installPkgs[pkgName], pkgTarget)
+        try:
+            BuildPackage(installPkgs[pkgName], pkgTarget)
+        except:
+            print('Exception occurred during package "{}" building'.format(pkg))
+            raise
     
     return 0
 

@@ -12,8 +12,11 @@ packages = [
     'gmp',
     'mpfr',
     'mpc',
+    'isl',
+    'cloog',
     'flex',
     'bison',
+    'automake',
     'binutils:avr',
     'gcc:avr',
     'avr-libc',
@@ -28,6 +31,7 @@ packages = [
     # Run-time components
     'freetype',
     'libffi',
+    'fontconfig',
     'glib',
     'pixman',
     'cairo',
@@ -55,6 +59,7 @@ packages = [
 # Valid options:
 # 'config-params' - additional arguments to 'configure' script.
 # 'no-obj-dir' - do not use separate directory for object files when True
+# 'pre-build-cmd' - execute command before package building is started
 # 'post-install-cmd' - execute command after installation
 opts = {
     'Python': {
@@ -77,6 +82,12 @@ opts = {
             'config-params': '--with-gmp=${PREFIX} --with-mpfr=${PREFIX}'
         }
     },
+    'isl': {
+        'default': {
+            'pre-build-cmd': '${SRC_DIR}/autogen.sh',
+            'config-params': '--with-gmp-prefix=${PREFIX} --without-piplib --disable-shared'
+        }
+    },
     'binutils': {
         'native': {
             'config-params': '--program-prefix=adk-'
@@ -88,7 +99,7 @@ opts = {
     'gcc': {
         'native': {
             'config-params': '--program-prefix=adk- --disable-bootstrap --disable-libada ' +
-                '--disable-libssp --disable-libquadmath --disable-libgomp ' +
+                '--disable-libssp --disable-libquadmath --disable-libgomp --disable-multilib ' +
                 '--enable-languages=c,c++ --with-gmp=${PREFIX} --with-mpfr=${PREFIX} --with-mpc=${PREFIX}'
         },
         'avr': {
