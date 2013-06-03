@@ -15,7 +15,7 @@
 
 using namespace adk;
 
-const size_t numBits = 110;
+const size_t numBits = 33;
 
 /* Check first n bits are set. */
 template <class BitmapT>

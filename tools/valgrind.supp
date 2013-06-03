@@ -1,3 +1,5 @@
+# Suppressions for buggy 3rd party components.
+
 # Suppressions for GTK+ and its satelites.
 
 {
@@ -138,4 +140,77 @@
    Memcheck:Leak
    ...
    fun:g_cond_impl_new
+}
+
+# Python library
+
+{
+   Python
+   Memcheck:Addr4
+   fun:Py_Finalize
+}
+
+{
+   Python
+   Memcheck:Addr4
+   fun:PyObject_Free
+}
+
+{
+   Python
+   Memcheck:Cond
+   fun:PyObject_Free
+}
+
+{
+   Python
+   Memcheck:Value8
+   fun:PyObject_Free
+}
+
+{
+   Python
+   Memcheck:Addr4
+   fun:PyObject_Realloc
+}
+
+{
+   Python
+   Memcheck:Cond
+   fun:PyObject_Realloc
+}
+
+{
+   Python
+   Memcheck:Value8
+   fun:PyObject_Realloc
+}
+
+{
+   Python
+   Memcheck:Addr8
+   fun:wcschr
+   fun:PySys_SetPath
+}
+
+{
+   Python
+   Memcheck:Leak
+   ...
+   fun:_PyObject_GC_Malloc
+}
+
+{
+   Python
+   Memcheck:Leak
+   ...
+   fun:_PyObject_GC_Resize
+}
+
+{
+   Python
+   Memcheck:Addr8
+   fun:wcschr
+   fun:calculate_path
+   fun:Py_GetProgramFullPath
 }

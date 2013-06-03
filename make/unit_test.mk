@@ -46,6 +46,8 @@ const char *__ut_test_description = "$(ADK_TEST_DESC)";
 
 endef
 
+VALGRIND = valgrind -q --suppressions=$(ADK_ROOT)/tools/valgrind.supp --error-exitcode=255 --leak-check=full
+
 ################################################################################
 
 all: $(BINARY_NAME)
@@ -80,4 +82,4 @@ $(AUTO_SRC): $(ADK_OBJS) $(ADK_TEST_OBJS)
 
 # Target for launching the tests
 test: $(BINARY_NAME)
-	(export LD_LIBRARY_PATH=$(call JOIN,:,$(LIB_DIRS)) && export PATH=$(TOOLS_BIN) && $(BINARY_NAME))
+	(export LD_LIBRARY_PATH=$(call JOIN,:,$(LIB_DIRS)) && export PATH=$(TOOLS_BIN) && $(VALGRIND) $(BINARY_NAME))
