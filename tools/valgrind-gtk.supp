@@ -1,0 +1,141 @@
+# Suppressions for GTK+ and its satelites.
+
+{
+   GTK+ allocations
+   Memcheck:Leak
+   ...
+   fun:g_malloc
+}
+
+{
+   GTK+ allocations (zero)
+   Memcheck:Leak
+   ...
+   fun:g_malloc0
+}
+
+{
+   GTK+ reallocations
+   Memcheck:Leak
+   ...
+   fun:g_realloc
+}
+
+{
+   GTK+ slice allocations
+   Memcheck:Leak
+   ...
+   fun:g_slice_alloc
+}
+
+{
+   GTK+
+   Memcheck:Leak
+   ...
+   fun:g_object_new
+}
+
+{
+   GTK+
+   Memcheck:Leak
+   ...
+   fun:FcPatternObjectInsertElt
+}
+
+{
+   GTK+
+   Memcheck:Leak
+   ...
+   fun:pixman_rect_alloc
+}
+
+{
+   GTK+
+   Memcheck:Leak
+   ...
+   fun:g_object_newv
+}
+
+{
+   GTK+
+   Memcheck:Leak
+   ...
+   fun:g_system_thread_new
+}
+
+{
+   GTK+
+   Memcheck:Leak
+   ...
+   fun:gtk_init
+}
+
+{
+   GTK+
+   Memcheck:Leak
+   ...
+   fun:gail_focus_idle_handler
+}
+
+{
+   GTK+
+   Memcheck:Leak
+   ...
+   fun:FcValueSave
+}
+
+{
+   GTK+
+   Memcheck:Leak
+   ...
+   fun:g_signal_emit
+}
+
+{
+   GTK+
+   Memcheck:Leak
+   ...
+   fun:FT_Init_FreeType
+}
+
+{
+   GTK+
+   Memcheck:Leak
+   ...
+   fun:g_mutex_impl_new
+}
+
+{
+   GTK+
+   Memcheck:Leak
+   ...
+   fun:cairo_font_options_copy
+}
+
+{
+   GTK+
+   Memcheck:Leak
+   ...
+   fun:FcPatternCreate
+}
+
+{
+   GTK+
+   Memcheck:Leak
+   ...
+   fun:cairo_region_create
+}
+
+{
+   GTK+
+   Memcheck:Leak
+   ...
+   fun:gdk_pixbuf_new
+}
+
+{
+   GTK+
+   Memcheck:Leak
+   ...
+   fun:g_cond_impl_new
+}

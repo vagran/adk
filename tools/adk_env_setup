@@ -12,7 +12,7 @@ if [ -z "$ADK_PROJECT_PATH" ]; then
 fi
  
 cd $ADK_PROJECT_PATH
- 
+
 export ADK_PREFIX=$ADK_PROJECT_PATH/usr/local
 export PATH=$ADK_PREFIX/bin:$ADK_PREFIX/sbin:$PATH
 export LD_LIBRARY_PATH=$ADK_PREFIX/lib:$ADK_PREFIX/lib64
