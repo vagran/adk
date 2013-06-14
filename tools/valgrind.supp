@@ -142,6 +142,13 @@
    fun:g_cond_impl_new
 }
 
+{
+   GTK+
+   Memcheck:Leak
+   ...
+   fun:gdk_x11_keymap_key_is_modifier
+}
+
 # Python library
 
 {
