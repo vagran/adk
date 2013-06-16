@@ -23,6 +23,9 @@ export MKPATH = mkdir -p
 export RSYNC = rsync
 export PYTHON = $(ADK_PREFIX)/bin/python3
 
+# ADK Tools
+export ADK_ENV_SETUP = $(ADK_ROOT)/tools/adk_env_setup
+
 # Default native platform
 ADK_NAT_PLATFORM ?= linux64
 export ADK_NAT_PLATFORM
