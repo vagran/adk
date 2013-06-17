@@ -533,7 +533,7 @@ public:
      *      are some rules violations or dis-integrity.
      */
     static bool
-    Validate(const NodePtr &root, const NodeCmp &comparator)
+    Validate(const NodePtr &root __UNUSED, const NodeCmp &comparator)
     {
         /* Iterate all nodes and check balancing rules validity for each node. */
         NodePtr node = nullptr;
