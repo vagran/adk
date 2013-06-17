@@ -149,6 +149,13 @@
    fun:gdk_x11_keymap_key_is_modifier
 }
 
+{
+   GTK+
+   Memcheck:Leak
+   ...
+   fun:XkbGetMap
+}
+
 # Python library
 
 {
