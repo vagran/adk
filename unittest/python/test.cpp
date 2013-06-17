@@ -52,7 +52,7 @@ UT_TEST("Variables")
 
 /* Exposed function test. */
 static py::Object
-TestFuncSum(py::Object self, py::Object args)
+TestFuncSum(py::Object self __UNUSED, py::Object args)
 {
     std::vector<py::Object> argsObj = ADK_PY_PARSE_ARGUMENTS(args, 2, 2);
     if (PyErr_Occurred()) {
@@ -67,7 +67,7 @@ private:
 public:
     long base;
 
-    TestClass(py::Object args, py::Object kwArgs): base(0)
+    TestClass(py::Object args __UNUSED, py::Object kwArgs __UNUSED): base(0)
     {
     }
 
@@ -79,7 +79,7 @@ public:
     /* Some overridden standard methods. */
 
     int
-    Init(py::Object args, py::Object kwArgs)
+    Init(py::Object args, py::Object kwArgs __UNUSED)
     {
         std::vector<py::Object> argsObj = ADK_PY_PARSE_ARGUMENTS(args, 1, 1);
         if (PyErr_Occurred()) {
@@ -113,7 +113,7 @@ public:
 
     /* Calling operator automatically exposed to Python as '__call__' method. */
     py::Object
-    operator()(py::Object args, py::Object kwArgs)
+    operator()(py::Object args, py::Object kwArgs __UNUSED)
     {
         std::vector<py::Object> argsObj = ADK_PY_PARSE_ARGUMENTS(args, 2, 2);
         if (PyErr_Occurred()) {

@@ -78,7 +78,7 @@ export AVR_SIZE = $(TOOLS_BIN)/$(AVR_TOOLS_PREFIX)size
 
 export AVRDUDE = $(TOOLS_BIN)/avrdude
 
-export WARN_COMP_FLAGS = -Wall -Werror
+export WARN_COMP_FLAGS = -Wall -Werror -Wextra
 # C++ standard
 export CPP_STD = c++11
 # C standard

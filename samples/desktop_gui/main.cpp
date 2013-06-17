@@ -64,7 +64,7 @@ private:
         }
 
     public:
-        CDrawingArea(BaseObjectType* cobject, const Glib::RefPtr<Gtk::Builder>& builder):
+        CDrawingArea(BaseObjectType* cobject, const Glib::RefPtr<Gtk::Builder>& builder __UNUSED):
             Gtk::DrawingArea(cobject)
         {
         }

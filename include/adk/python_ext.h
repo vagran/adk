@@ -18,6 +18,9 @@ namespace adk {
 
 namespace py {
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+
 /** Base class for all user classes exposed from C++ to Python. Template is
  * used to make static members different for derived classes.
  */
@@ -53,7 +56,7 @@ public:
     }
 
     void *
-    operator new(size_t size, void *ptr)
+    operator new(size_t size __UNUSED, void *ptr)
     {
         return ptr;
     }
@@ -81,7 +84,7 @@ public:
 
     /** Exposed as Python __init__ method. */
     int
-    Init(Object args, Object kwArgs)
+    Init(Object args __UNUSED, Object kwArgs __UNUSED)
     {
         return 0;
     }
@@ -109,26 +112,26 @@ public:
 
     /** Calling operator automatically exposed to Python as '__call__' method. */
     Object
-    operator()(Object args, Object kwArgs)
+    operator()(Object args __UNUSED, Object kwArgs __UNUSED)
     {
         return Object();
     }
 
     /** Print object to file. */
     int
-    Print(FILE *fp, int flags)
+    Print(FILE *fp __UNUSED, int flags __UNUSED)
     {
         return 0;
     }
 
     Object
-    GetAttr(Object attrName)
+    GetAttr(Object attrName __UNUSED)
     {
         return Object();
     }
 
     int
-    SetAttr(Object attrName, Object attrValue)
+    SetAttr(Object attrName __UNUSED, Object attrValue __UNUSED)
     {
         return 0;
     }
@@ -582,6 +585,8 @@ protected:
     void __ADK_PYTHON_MODULE_REG_CLASS(moduleName)::Build()
 
 } /* namespace internal */
+
+#pragma GCC diagnostic pop
 
 } /* namespace py */
 

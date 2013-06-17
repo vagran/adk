@@ -108,8 +108,8 @@
  * int SomeFunction(int UNUSED someParam) { ... }
  * @endcode
  */
-#ifndef UNUSED
-#define UNUSED                      __attribute__((unused))
+#ifndef __UNUSED
+#define __UNUSED                    __attribute__((unused))
 #endif
 
 /* Shortcuts for various compiler attributes */

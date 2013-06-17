@@ -59,7 +59,7 @@ public:
 
     const_pointer *address(const_reference x) const { return &x; }
 
-    pointer allocate(size_t n, const void *hint = 0) {
+    pointer allocate(size_t n, const void *hint __UNUSED = 0) {
         T *ptr = static_cast<T *>(malloc(n * sizeof(T)));
         if (!ptr) {
             throw std::bad_alloc();
@@ -67,7 +67,7 @@ public:
         return ptr;
     }
 
-    void deallocate(pointer p, size_t n) {
+    void deallocate(pointer p, size_t n __UNUSED) {
         free(p);
     }
 

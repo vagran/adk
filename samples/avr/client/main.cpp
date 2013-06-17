@@ -72,7 +72,7 @@ TestPattern(LibusbDevice::Handle device, size_t size)
 }
 
 int
-main(int argc, char **argv)
+main(int argc __UNUSED, char **argv __UNUSED)
 {
     ADK_INFO("AVR USB client sample");
     LibusbCtx ctx;
