@@ -156,6 +156,13 @@
    fun:XkbGetMap
 }
 
+{
+   GTK+
+   Memcheck:Leak
+   ...
+   fun:XkbGetNames
+}
+
 # Python library
 
 {
