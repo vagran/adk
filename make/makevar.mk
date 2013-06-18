@@ -116,6 +116,7 @@ export DESKTOP_LIBS = \
 
 # Desktop GUI libraries
 export DESKTOP_GUI_LIBS = \
+	gdkmm-$(GDKMM_VERSION) \
     gtkmm-$(GTKMM_VERSION) \
     atkmm-$(ATKMM_VERSION) \
     cairomm-$(CAIROMM_VERSION)
