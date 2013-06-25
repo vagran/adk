@@ -519,6 +519,10 @@ void __ut_user_fault(const char *file, int line, const char *desc, ...);
 /** Description provided in the test makefile. */
 extern const char *__ut_test_description;
 
-}
+/** Get current test descriptor. */
+TestDesc *
+UtCurTest();
+
+} /* namespace ut */
 
 #endif /* ADK_UT_H_ */

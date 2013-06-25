@@ -82,6 +82,9 @@ public:
     }
 };
 
+/** Test which is currently being executed. */
+TestDesc *g_curTest;
+
 typedef std::basic_string<char, std::char_traits<char>, UtAllocator<char>> ut_string;
 typedef std::basic_stringstream<char, std::char_traits<char>, UtAllocator<char>> ut_stringstream;
 
@@ -173,6 +176,7 @@ TestMan::Run()
     size_t numPassed = 0;
 
     for (TestDesc *t: _tests) {
+        g_curTest = t;
         printf("==== Running test '%s' (%zu of %zu) ====\n(defined at %s:%d)\n\n",
                t->GetName(), testIdx + 1, numTests, t->GetFile(), t->GetLine());
 
@@ -199,6 +203,7 @@ TestMan::Run()
             numPassed++;
         }
         __ut_testCheckpoint.Invalidate();
+        g_curTest = nullptr;
     }
 
     printf("======== Testing complete [%s] ========\n"
@@ -592,6 +597,12 @@ UT_STR_INSTANTIATE(double);
 UT_STR_INSTANTIATE(char *);
 UT_STR_INSTANTIATE(const char *);
 UT_STR_INSTANTIATE(void *);
+
+TestDesc *
+ut::UtCurTest()
+{
+    return g_curTest;
+}
 
 /* Main function. It will run all tests. Returns zero if all tests succeeded,
  * non-zero if any failures occurred.

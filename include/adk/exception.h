@@ -243,6 +243,11 @@ __ADK_PARAM_EXC_DECL_STR_METHOD(unsigned long long);
         __ADK_DEFINE_PARAM_EXC_DBG_CONSTR(__clsName, __paramType) \
     };
 
+/** Generic exception thrown when invalid parameter is specified. */
+ADK_DEFINE_EXCEPTION(InvalidParamException);
+/** Generic exception thrown when operation is executed in invalid state. */
+ADK_DEFINE_EXCEPTION(InvalidOpException);
+
 } /* namespace adk */
 
 #endif /* ADK_EXCEPTION_H_ */
