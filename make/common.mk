@@ -102,6 +102,9 @@ ifdef ADK_APP_NAME
 
 endif
 
+# Use secondary expansion feature
+.SECONDEXPANSION:
+
 # Ensure default goal is the first declared one.
 $(DEF_GOAL):
 
@@ -285,11 +288,9 @@ endif
 ################################################################################
 # Raw resources embedded into the executable binary
 
-ifneq ($(RES_FILES), )
-
 # Create object files from resource files
-RES_OBJ_FILES = $(foreach file, $(RES_FILES), $(ADK_OBJ_DIR)/$(notdir $(file).res.o))
-RES_HDR_FILES = $(foreach file, $(RES_FILES), $(ADK_OBJ_DIR)/$(notdir $(file).res.h))
+RES_OBJ_FILES = $(foreach file, $(sort $(RES_FILES)), $(ADK_OBJ_DIR)/$(notdir $(file).res.o))
+RES_HDR_FILES = $(foreach file, $(sort $(RES_FILES)), $(ADK_OBJ_DIR)/$(notdir $(file).res.h))
 ADK_OBJS += $(RES_OBJ_FILES)
 
 # Header file with definition of resources location in data section
@@ -305,9 +306,6 @@ $(ADK_OBJ_DIR)/%.res.h: % $(ADK_BUILD_DIR)
 $(ADK_OBJ_DIR)/%.res.o: % $(ADK_BUILD_DIR)
 	$(call EMBED_BINARY, $<, $@)
 
-# RES_FILES
-endif
-
 RES_AUTO_HDR = $(ADK_OBJ_DIR)/auto_adk_res.h
 
 $(ADK_OBJS): $(RES_AUTO_HDR)
@@ -317,7 +315,7 @@ $(ADK_OBJS): $(RES_AUTO_HDR)
 $(ADK_ROOT)/include/adk.h: $(RES_AUTO_HDR)
 
 # Header file which includes all automatic resource header files
-$(RES_AUTO_HDR): $(RES_HDR_FILES) $(ADK_BUILD_DIR)
+$(RES_AUTO_HDR): $$(RES_HDR_FILES) $(ADK_BUILD_DIR)
 	echo "/* This file is generated automatically. */" > $@
 	$(foreach file, $(RES_HDR_FILES), echo "#include <$(notdir $(file))>" >> $@;)
 
@@ -328,4 +326,4 @@ ifdef ADK_PLATFORM_MAKEFILE
     include $(ADK_ROOT)/make/$(ADK_PLATFORM_MAKEFILE)
 endif
 
-$(ADK_OBJS): $(ADK_PCHS) $(ADK_BUILD_DIR)
+$(ADK_OBJS): $$(ADK_PCHS) $(ADK_BUILD_DIR)

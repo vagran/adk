@@ -53,7 +53,7 @@ endif
 
 all: $(BINARY)
 
-$(BINARY): $(ADK_OBJS)
+$(BINARY): $$(ADK_OBJS)
 	$(CC) $(LDFLAGS) $(LIB_FLAGS) -o $@ $^
 
 $(ADK_OBJ_DIR)/%.o: %.cpp

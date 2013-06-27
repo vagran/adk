@@ -61,7 +61,7 @@ BINARY = $(ADK_OBJ_DIR)/$(ADK_APP_NAME).elf
 
 all: $(BINARY)
 
-$(BINARY): $(ADK_OBJS)
+$(BINARY): $$(ADK_OBJS)
 	$(CC) $(LDFLAGS) $(LIB_FLAGS) -o $@ $^ $(LIBS)
 	@echo
 	@echo =========================== Image size ===========================

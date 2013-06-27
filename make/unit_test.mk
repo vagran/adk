@@ -55,7 +55,7 @@ all: $(BINARY_NAME)
 
 $(ADK_TEST_OBJS) $(AUTO_OBJ): $(ADK_PCHS) $(ADK_BUILD_DIR)
 
-$(BINARY_NAME): $(ADK_OBJS) $(ADK_TEST_OBJS) $(AUTO_OBJ)
+$(BINARY_NAME): $(ADK_OBJS) $$(ADK_TEST_OBJS) $$(AUTO_OBJ)
 	$(CC) $(LIB_FLAGS) $^ -o $@
 
 define ADK_GCH_RECIPE
@@ -67,11 +67,11 @@ $(ADK_OBJ_DIR)/%.o: %.cpp
 	$(CC) -c $(COMMON_COMP_FLAGS) $(COMMON_CPP_FLAGS) $(CFLAGS) -o $@ $<
 	$(CC) -c $(COMMON_COMP_FLAGS) $(COMMON_CPP_FLAGS) $(CFLAGS) -MM -MT '$@' -o $(@:.o=.d) $<
 
-$(AUTO_OBJ): $(AUTO_SRC) $(ADK_BUILD_DIR)
+$(AUTO_OBJ): $$(AUTO_SRC) $(ADK_BUILD_DIR)
 	$(CC) -c $(COMMON_COMP_FLAGS) $(COMMON_CPP_FLAGS) $(CFLAGS) -o $@ $<
 
 export AUTO_CHUNK
-$(AUTO_SRC): $(ADK_OBJS) $(ADK_TEST_OBJS)
+$(AUTO_SRC): $$(ADK_OBJS) $$(ADK_TEST_OBJS)
 	$(STUBS_GEN) --nm $(NM) --cppfilt $(CPPFILT) \
 	--result $@ \
 	$(foreach src, $(ADK_TEST_OBJS), --test-src $(src)) \

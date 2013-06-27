@@ -18,9 +18,7 @@ INCLUDE_DIRS += $(DESKTOP_LIBS_INC_DIRS)
 ifeq ($(ADK_USE_GUI),yes)
 
 # Get glade files
-GLADE_FILES += $(foreach src_dir, $(SRC_DIRS), $(call SCAN_PATH, $(src_dir), *.glade))
-
-RES_FILES += $(GLADE_FILES)
+RES_FILES += $(foreach src_dir, $(SRC_DIRS), $(call SCAN_PATH, $(src_dir), *.glade))
 
 # ADK_USE_GUI
 endif
