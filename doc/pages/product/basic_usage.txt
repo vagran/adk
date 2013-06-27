@@ -49,8 +49,8 @@ Optional variables in the makefile:
   * ''PCHS'' -- full paths to headers for which pre-compiled headers should be generated.
   * ''ADK_INSTALL_DIR'' -- directory to install compiled binary to.
   * ''ADK_INSTALL_MODE'' -- octal number for file mode for installed binary.
-  * ''GLADE_FILES'' -- additional "*.glade" XML files to embed into the executable binary.
-  * ''PY_FILES'' -- additional "*.py" script files to embed into the executable binary.
+  * ''GLADE_FILES'' -- additional "*.glade" XML files to embed into the executable binary. By default all "*.glade" files in current directory are added.
+  * ''RES_FILES'' -- additional raw resource files to embed into the executable binary.
 
 Optional flag variables -- they can have values "yes" or "no" to enable or disable corresponding feature:
   * ''ADK_USE_GUI'' -- use GUI components (based on Gtk+ library). "yes" by default for desktop targets.

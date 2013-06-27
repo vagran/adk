@@ -15,13 +15,6 @@
 
 namespace adk {
 
-/* Automatically generated files for corresponding .glade files. */
-#include <auto_adk_glade.h>
-
-/** Start of embedded Glade XML. */
-#define ADK_GLADE_XML_START(__fileName) &adk::_binary_ ## __fileName ## _glade_start
-/** End of embedded Glade XML. */
-#define ADK_GLADE_XML_END(__fileName) &adk::_binary_ ## __fileName ## _glade_end
 /** Create UTF-8 glib string with Glade XML.
  * @param __fileName Name of .glade file.
  * For example, if file was named "main_window.glade" then this macro should be
@@ -31,9 +24,10 @@ namespace adk {
  *      Gtk::Builder::create_from_string(ADK_GLADE_XML(main_window));
  * @endcode
  */
-#define ADK_GLADE_XML(__fileName) \
-    Glib::ustring(ADK_GLADE_XML_START(__fileName), \
-                  ADK_GLADE_XML_END(__fileName) - ADK_GLADE_XML_START(__fileName))
+#define ADK_GLADE_XML(__fileName) ({ \
+    adk::ResourceDesc res = adk::GetResource(__STR(__fileName) ".glade"); \
+    Glib::ustring(static_cast<const char *>(res.GetData()), res.GetSize()); \
+})
 
 } /* namespace adk */
 

@@ -11,7 +11,7 @@ ADK_TEST_NAME = python
 ADK_TEST_DESC = Embedded Python functionality
 
 ADK_USE_PYTHON = yes
-PY_FILES = test_embedding.py test_extending.py
+RES_FILES = test_embedding.py test_extending.py
 
 ADK_TEST_SRCS = $(wildcard $(ADK_ROOT)/src/lib/*.cpp)
 

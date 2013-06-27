@@ -297,7 +297,7 @@ $(ADK_OBJ_DIR)/%.res.h: % $(ADK_BUILD_DIR)
 	echo "/* This file is generated automatically from \"$<\" file. */" > $@
 	echo "extern \"C\" const char _binary_$(notdir $(subst .,_,$<))_start;" >> $@
 	echo "extern \"C\" const char _binary_$(notdir $(subst .,_,$<))_end;" >> $@
-	echo "ADK_DECL_RESOURCE(\"$(notdir $<)\", \
+	echo "ADK_DECL_RESOURCE($(notdir $(subst .,_,$<)), \"$(notdir $<)\", \
 &_binary_$(notdir $(subst .,_,$<))_start, \
 &_binary_$(notdir $(subst .,_,$<))_end)" >> $@
 

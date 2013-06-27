@@ -15,9 +15,6 @@
 
 namespace adk {
 
-/* Automatically generated files for corresponding .py files. */
-#include <auto_adk_py.h>
-
 /** Start of embedded Python file. */
 #define ADK_PY_FILE_START(__fileName) &adk::_binary_ ## __fileName ## _py_start
 /** End of embedded Python file. */
@@ -31,9 +28,10 @@ namespace adk {
  * py::Run(ADK_PY_FILE(example));
  * @endcode
  */
-#define ADK_PY_FILE(__fileName) \
-    std::string(ADK_PY_FILE_START(__fileName), \
-                ADK_PY_FILE_END(__fileName) - ADK_PY_FILE_START(__fileName))
+#define ADK_PY_FILE(__fileName) ({ \
+    adk::ResourceDesc res = adk::GetResource(__STR(__fileName) ".py"); \
+    res.GetString(); \
+})
 
 namespace py {
 

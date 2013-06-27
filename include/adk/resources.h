@@ -36,6 +36,15 @@ public:
     {
         return _size;
     }
+
+#   ifndef ADK_PLATFORM_AVR
+    std::string
+    GetString() const
+    {
+        return std::string(static_cast<const char *>(_data), _size);
+    }
+#   endif /* ADK_PLATFORM_AVR */
+
 private:
     const void *_data;
     size_t _size;
@@ -60,12 +69,13 @@ public:
 } /* namespace internal */
 
 /** Internal macro for declaring attached resources.
+ * @param __id Internal symbolic name.
  * @param __name File name of the resource.
  * @param __start Start address of the resource data.
  * @param __end End address of the resource data.
  */
-#define ADK_DECL_RESOURCE(__name, __start, __end) \
-    static internal::ResourceDeclarator __CONCAT(__res_decl_, __LINE__) \
+#define ADK_DECL_RESOURCE(__id, __name, __start, __end) \
+    static internal::ResourceDeclarator __CONCAT(__res_decl_, __id) \
         (__name, __start, __end);
 
 #else /* ADK_PLATFORM_AVR */

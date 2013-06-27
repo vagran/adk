@@ -5,8 +5,6 @@
 # All rights reserved.
 # See COPYING file for copyright details.
 
-LIBS += adk
-
 # Compiler optimization flags for debug build
 DEBUG_OPT_FLAGS ?= -O0
 
