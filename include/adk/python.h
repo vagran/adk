@@ -13,13 +13,15 @@
 #ifndef ADK_PYTHON_H_
 #define ADK_PYTHON_H_
 
+namespace adk {
+
 /* Automatically generated files for corresponding .py files. */
 #include <auto_adk_py.h>
 
 /** Start of embedded Python file. */
-#define ADK_PY_FILE_START(__fileName) &_binary_ ## __fileName ## _py_start
+#define ADK_PY_FILE_START(__fileName) &adk::_binary_ ## __fileName ## _py_start
 /** End of embedded Python file. */
-#define ADK_PY_FILE_END(__fileName) &_binary_ ## __fileName ## _py_end
+#define ADK_PY_FILE_END(__fileName) &adk::_binary_ ## __fileName ## _py_end
 
 /** Create string with embedded Python file content.
  * @param __fileName Name of .py file.
@@ -32,8 +34,6 @@
 #define ADK_PY_FILE(__fileName) \
     std::string(ADK_PY_FILE_START(__fileName), \
                 ADK_PY_FILE_END(__fileName) - ADK_PY_FILE_START(__fileName))
-
-namespace adk {
 
 namespace py {
 

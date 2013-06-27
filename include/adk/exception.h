@@ -17,28 +17,6 @@ namespace adk {
 
 /** Base class for all ADK and its client code exceptions. */
 class Exception: public std::exception {
-protected:
-#   ifdef DEBUG
-    /** Source file where the exception occurred. */
-    const char *_file;
-    /** Line number in the source file where the exception occurred. */
-    int _line;
-#   endif /* DEBUG */
-    /** Exception message. */
-    std::string _msg;
-private:
-
-#   ifdef DEBUG
-    void
-    _StrFileLine()
-    {
-        std::stringstream ss;
-        ss << "[" << _file << ":" << _line << "]: ";
-        ss << _msg;
-        _msg = ss.str();
-    }
-#   endif /* DEBUG */
-
 public:
     Exception(const char *msg): _msg(msg) {}
 
@@ -67,6 +45,27 @@ public:
     {
         return _msg.c_str();
     }
+protected:
+#   ifdef DEBUG
+    /** Source file where the exception occurred. */
+    const char *_file;
+    /** Line number in the source file where the exception occurred. */
+    int _line;
+#   endif /* DEBUG */
+    /** Exception message. */
+    std::string _msg;
+private:
+
+#   ifdef DEBUG
+    void
+    _StrFileLine()
+    {
+        std::stringstream ss;
+        ss << "[" << _file << ":" << _line << "]: ";
+        ss << _msg;
+        _msg = ss.str();
+    }
+#   endif /* DEBUG */
 };
 
 #ifdef DEBUG
@@ -112,18 +111,6 @@ public:
  */
 template <typename TParam>
 class ParamException: public Exception {
-protected:
-    TParam _param;
-private:
-    void
-    _AppendParamStr()
-    {
-        std::stringstream ss;
-        ss << ": " << '[';
-        _param.ToString(ss);
-        ss << ']';
-        _msg += ss.str();
-    }
 public:
     template<class TParamArg>
     ParamException(const char *msg, TParamArg &&param):
@@ -167,6 +154,18 @@ public:
     GetParam()
     {
         return _param;
+    }
+protected:
+    TParam _param;
+private:
+    void
+    _AppendParamStr()
+    {
+        std::stringstream ss;
+        ss << ": " << '[';
+        _param.ToString(ss);
+        ss << ']';
+        _msg += ss.str();
     }
 };
 

@@ -19,9 +19,6 @@ namespace adk {
 
 /** Parameter for libusb exception which wraps the error code. */
 class LibusbExceptionParam {
-private:
-    /** Libusb error code. */
-    int _code;
 public:
     LibusbExceptionParam(int code): _code(code) {}
 
@@ -35,6 +32,10 @@ public:
     {
         return _code;
     }
+
+private:
+    /** Libusb error code. */
+    int _code;
 };
 
 /** Libusb exception which is thrown when libusb API returns error code. */
@@ -51,17 +52,6 @@ ADK_DEFINE_PARAM_EXCEPTION(LibusbException, LibusbExceptionParam)
 class LibusbCtx;
 
 class LibusbDevice {
-private:
-    friend class LibusbCtx;
-
-    libusb_device_handle *_hDevice;
-    libusb_device *_device;
-
-    LibusbDevice(libusb_device_handle *hDevice): _hDevice(hDevice)
-    {
-        _device = libusb_get_device(hDevice);
-    }
-
 public:
     typedef std::shared_ptr<LibusbDevice> Handle;
 
@@ -122,12 +112,21 @@ public:
         }
         return ec;
     }
+
+private:
+    friend class LibusbCtx;
+
+    libusb_device_handle *_hDevice;
+    libusb_device *_device;
+
+    LibusbDevice(libusb_device_handle *hDevice): _hDevice(hDevice)
+    {
+        _device = libusb_get_device(hDevice);
+    }
 };
 
 /** Wrapper class for libusb context. Should be used for all USB operations. */
 class LibusbCtx {
-private:
-    libusb_context *_ctx = nullptr;
 public:
     LibusbCtx()
     {
@@ -160,6 +159,9 @@ public:
         }
         return LibusbDevice::Handle(new LibusbDevice(hDevice));
     }
+
+private:
+    libusb_context *_ctx = nullptr;
 };
 
 } /* namespace adk */

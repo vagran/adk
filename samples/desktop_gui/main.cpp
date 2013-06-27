@@ -81,8 +81,8 @@ private:
     };
 
     Glib::RefPtr<Gtk::Builder> _builder;
-    Gtk::RadioButton *_rbRect, *_rbEllipse, *_rbTriangle;
-    CDrawingArea *_drawingArea;
+    Glib::RefPtr<Gtk::RadioButton> _rbRect, _rbEllipse, _rbTriangle;
+    Glib::RefPtr<CDrawingArea> _drawingArea;
 public:
     /** Signal handler which is called when any radio button is clicked. */
     void
@@ -108,10 +108,16 @@ public:
         Gtk::Window(cobject), _builder(builder)
     {
         /* Retrieve all widgets. */
-        _builder->get_widget("rbRectangle", _rbRect);
-        _builder->get_widget("rbEllipse", _rbEllipse);
-        _builder->get_widget("rbTriangle", _rbTriangle);
-        _builder->get_widget_derived("drawing_area", _drawingArea);
+        Gtk::RadioButton *rb;
+        _builder->get_widget("rbRectangle", rb);
+        _rbRect = Glib::RefPtr<Gtk::RadioButton>(rb);
+        _builder->get_widget("rbEllipse", rb);
+        _rbEllipse = Glib::RefPtr<Gtk::RadioButton>(rb);
+        _builder->get_widget("rbTriangle", rb);
+        _rbTriangle = Glib::RefPtr<Gtk::RadioButton>(rb);
+        CDrawingArea *da;
+        _builder->get_widget_derived("drawing_area", da);
+        _drawingArea = Glib::RefPtr<CDrawingArea>(da);
         /* Connect signals. */
         _rbRect->signal_clicked().connect(sigc::mem_fun(*this, &MainWindow::OnRadiobuttonClick));
         _rbEllipse->signal_clicked().connect(sigc::mem_fun(*this, &MainWindow::OnRadiobuttonClick));

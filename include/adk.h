@@ -62,6 +62,8 @@
 #include <adk/hash.h>
 #include <adk/rb_tree.h>
 
+#include <adk/resources.h>
+
 #ifdef ADK_USE_GUI
 #include <adk/glade.h>
 #endif /* ADK_USE_GUI */

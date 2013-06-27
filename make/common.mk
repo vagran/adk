@@ -246,7 +246,7 @@ DESKTOP_LIBS_INC_DIRS += $(PYTHON_INC_DIR)
 endif
 
 ################################################################################
-# Common compilaion rules
+# Common compilation rules
 
 ifdef ADK_APP_NAME
 
@@ -281,6 +281,45 @@ VPATH += $(ADK_SRC_DIRS)
 
 # ADK_APP_NAME
 endif
+
+################################################################################
+# Raw resources embedded into the executable binary
+
+ifneq ($(RES_FILES), )
+
+# Create object files from resource files
+RES_OBJ_FILES = $(foreach file, $(RES_FILES), $(ADK_OBJ_DIR)/$(notdir $(file).res.o))
+RES_HDR_FILES = $(foreach file, $(RES_FILES), $(ADK_OBJ_DIR)/$(notdir $(file).res.h))
+ADK_OBJS += $(RES_OBJ_FILES)
+
+# Header file with definition of resources location in data section
+$(ADK_OBJ_DIR)/%.res.h: % $(ADK_BUILD_DIR)
+	echo "/* This file is generated automatically from \"$<\" file. */" > $@
+	echo "extern \"C\" const char _binary_$(notdir $(subst .,_,$<))_start;" >> $@
+	echo "extern \"C\" const char _binary_$(notdir $(subst .,_,$<))_end;" >> $@
+	echo "ADK_DECL_RESOURCE(\"$(notdir $<)\", \
+&_binary_$(notdir $(subst .,_,$<))_start, \
+&_binary_$(notdir $(subst .,_,$<))_end)" >> $@
+
+# Object file from resource file
+$(ADK_OBJ_DIR)/%.res.o: % $(ADK_BUILD_DIR)
+	$(call EMBED_BINARY, $<, $@)
+
+# RES_FILES
+endif
+
+RES_AUTO_HDR = $(ADK_OBJ_DIR)/auto_adk_res.h
+
+$(ADK_OBJS): $(RES_AUTO_HDR)
+
+# Main ADK include file should depend on resources automatic header in order to
+# make pre-compiled header.
+$(ADK_ROOT)/include/adk.h: $(RES_AUTO_HDR)
+
+# Header file which includes all automatic resource header files
+$(RES_AUTO_HDR): $(RES_HDR_FILES) $(ADK_BUILD_DIR)
+	echo "/* This file is generated automatically. */" > $@
+	$(foreach file, $(RES_HDR_FILES), echo "#include <$(notdir $(file))>" >> $@;)
 
 ################################################################################
 # Include platform specific makefile

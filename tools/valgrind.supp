@@ -163,6 +163,14 @@
    fun:XkbGetNames
 }
 
+{
+   Cairo
+   Memcheck:Cond
+   fun:sse2_combine_over_u
+   fun:general_composite_rect
+   fun:pixman_image_composite32
+}
+
 # Python library
 
 {

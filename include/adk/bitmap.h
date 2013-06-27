@@ -15,7 +15,7 @@
 
 namespace adk {
 
-namespace adk_internal {
+namespace internal {
 
 /** Base class for bitmap implementation. Depending on template parameters it
  * provides either static or dynamically allocated bitmap storage.
@@ -123,7 +123,7 @@ public:
     }
 };
 
-} /* namespace adk_internal */
+} /* namespace internal */
 
 /** Class representing bitmap - set of bits.
  * @param numBits Number of bits in a bitmap. Use -1 to create dynamic bitmap
@@ -133,10 +133,10 @@ public:
  * @param word_t Native word type to use for optimized bits operations.
  */
 template <size_t numBits = -1, class Allocator = std::allocator<int>, typename word_t = long>
-class Bitmap: public adk_internal::BitmapBase<numBits, Allocator, word_t> {
+class Bitmap: public internal::BitmapBase<numBits, Allocator, word_t> {
 private:
     /** Base class type. */
-    typedef adk_internal::BitmapBase<numBits, Allocator, word_t> BaseT;
+    typedef internal::BitmapBase<numBits, Allocator, word_t> BaseT;
 
     /** Get index of word containing the specified bit. */
     static constexpr size_t

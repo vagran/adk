@@ -19,7 +19,7 @@ DEFS += UNITTEST
 
 CFLAGS += -ggdb3 -DDEBUG -O0
 
-LIBS += c
+LIBS += c adk
 
 # Directories with detached libraries debug symbols
 ifeq ($(ADK_PLATFORM),linux64)
@@ -46,7 +46,8 @@ const char *__ut_test_description = "$(ADK_TEST_DESC)";
 
 endef
 
-VALGRIND = valgrind -q --suppressions=$(ADK_ROOT)/tools/valgrind.supp --error-exitcode=255 --leak-check=full
+VALGRIND = valgrind -q --suppressions=$(ADK_ROOT)/tools/valgrind.supp \
+	--error-exitcode=255 --leak-check=full --gen-suppressions=all
 
 ################################################################################
 

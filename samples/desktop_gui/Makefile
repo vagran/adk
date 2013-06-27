@@ -14,4 +14,6 @@ ADK_APP_NAME = desktop_sample_gui
 LIBS += desktop_sample_gui
 LIB_DIRS += lib/build/$(ADK_PLATFORM)-$(ADK_BUILD_TYPE)
 
+RES_FILES += props.xml
+
 include $(ADK_ROOT)/make/make.mk
