@@ -1,10 +1,17 @@
-# /ADK/unittest/Makefile
+# /ADK/unittest/python/Makefile
 #
 # This file is a part of ADK library.
 # Copyright (c) 2012-2013, Artyom Lebedev <artyom.lebedev@gmail.com>
 # All rights reserved.
 # See COPYING file for copyright details.
 
-SUBDIRS = bitmap python xml
+ADK_APP_TYPE = unit_test
+
+ADK_TEST_NAME = xml
+ADK_TEST_DESC = XML manipulation functionality
+
+ADK_TEST_SRCS = $(wildcard $(ADK_ROOT)/src/lib/*.cpp)
+
+RES_FILES += test.xml
 
 include $(ADK_ROOT)/make/make.mk

@@ -1,0 +1,10 @@
+<?xml version="1.0" ?>
+<test>
+<item attr="attr 1 value">value 1</item>
+<item attr="attr 2 value">value 2</item>
+<item attr="attr 3 value">value 3</item>
+<parent>
+<child>value 1</child>
+<child attr="attr value">value</child>
+</parent>
+</test>

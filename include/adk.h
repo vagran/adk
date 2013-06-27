@@ -63,6 +63,7 @@
 #include <adk/rb_tree.h>
 
 #include <adk/resources.h>
+#include <adk/xml.h>
 
 #ifdef ADK_USE_GUI
 #include <adk/glade.h>

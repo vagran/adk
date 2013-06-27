@@ -49,7 +49,8 @@ packages = [
     'gdb:native',
     'gdb:avr',
     'avrdude',
-    'libusb'
+    'libusb',
+    'expat'
 ]
 
 # Build/install options for each package. Each entry key is package name, payload

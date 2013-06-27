@@ -209,6 +209,12 @@ __ADK_PARAM_EXC_DECL_STR_METHOD(unsigned long long);
         __ADK_DEFINE_EXC_DBG_CONSTR(__clsName) \
     };
 
+/** Define custom exception derived from another exception class. */
+#define ADK_DEFINE_DERIVED_EXCEPTION(__clsName, __baseCls) \
+    class __clsName: public __baseCls { \
+    public: \
+        using __baseCls::__baseCls; \
+    };
 
 #ifdef DEBUG
 #define __ADK_DEFINE_PARAM_EXC_DBG_CONSTR(__clsName, __paramType) \

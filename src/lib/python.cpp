@@ -10,6 +10,8 @@
  * Embedded Python support implementation.
  */
 
+#ifdef ADK_USE_PYTHON
+
 #include <adk.h>
 
 using namespace adk;
@@ -101,3 +103,5 @@ py::internal::ModuleRegistrator::_AddMethod(const char *name, PyCFunction func,
     def->ml_flags = flags;
     def->ml_doc = doc;
 }
+
+#endif /* ADK_USE_PYTHON */

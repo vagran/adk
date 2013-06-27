@@ -8,7 +8,7 @@
 # Definitions common for both desktop and unit tests targets (unit tests are
 # assumed to be hosted on desktop platform).
 
-LIBS += adk stdc++ $(DESKTOP_LIBS)
+LIBS += adk stdc++ $(DESKTOP_LIBS) expat
 
 INCLUDE_DIRS += $(DESKTOP_LIBS_INC_DIRS)
 
