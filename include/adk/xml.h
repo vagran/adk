@@ -54,6 +54,28 @@ public:
     Clear();
 private:
     XML_Parser _parser = nullptr;
+    /** Numerical name ID. */
+    typedef u32 NameId;
+    /** Next free name ID. */
+    NameId _curNameId = 1;
+    /** All defined elements and attribute names stored here. */
+    std::map<const std::string, NameId> _names;
+    /** Index for mapping numerical IDs to symbolic names. */
+    std::map<NameId, const std::string &> _namesIndex;
+
+    /** Either find existing or add a new name to the names index.
+     * @return Numerical identifier for the name.
+     */
+    NameId
+    _AddName(const std::string &name);
+
+    /** Get symbolic name by its ID. */
+    std::string
+    _GetName(NameId id) const;
+
+    /** Get ID for the specified name. Returns zero if no such name. */
+    NameId
+    _GetNameId(const std::string name) const;
 
     void
     _StartElementHandler(const XML_Char *name, const XML_Char **attrs);

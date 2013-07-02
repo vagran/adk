@@ -58,15 +58,15 @@ _XmlBinderType(Result (adk::Xml::*)(Args...))
 }
 
 template <typename Method, Method method>
-auto
-XmlBind(Method _method) -> typename decltype(_XmlBinderType(_method))::Handler_type
+typename decltype(_XmlBinderType(method))::Handler_type
+XmlBind()
 {
-    typedef decltype(_XmlBinderType(_method)) Binder_type;
+    typedef decltype(_XmlBinderType(method)) Binder_type;
     return Binder_type::template Handler<method>;
 }
 
 /** Bind method of Xml class object as parser handler. */
-#define XML_BIND(__method) XmlBind<decltype(__method), __method>(__method)
+#define XML_BIND(__method) XmlBind<decltype(__method), __method>()
 
 } /* anonymous namespace */
 
@@ -108,7 +108,9 @@ Xml::Clear()
         XML_ParserFree(_parser);
         _parser = nullptr;
     }
-    //XXX
+    _namesIndex.clear();
+    _names.clear();
+    _curNameId = 1;
 }
 
 void
@@ -119,6 +121,39 @@ Xml::_CreateParser()
     XML_SetStartElementHandler(_parser, XML_BIND(&Xml::_StartElementHandler));
     XML_SetEndElementHandler(_parser, XML_BIND(&Xml::_EndElementHandler));
     XML_SetCharacterDataHandler(_parser, XML_BIND(&Xml::_CharDataHandler));
+}
+
+Xml::NameId
+Xml::_AddName(const std::string &name)
+{
+    auto it = _names.find(name);
+    if (it != _names.end()) {
+        return it->second;
+    }
+    it = _names.emplace(name, _curNameId++).first;
+    _namesIndex.emplace(it->second, it->first);
+    return it->second;
+}
+
+std::string
+Xml::_GetName(NameId id) const
+{
+    if (!id || id >= _curNameId) {
+        ADK_EXCEPTION(Exception, "Invalid id");
+    }
+    auto it = _namesIndex.find(id);
+    ASSERT(it != _namesIndex.end());
+    return it->second;
+}
+
+Xml::NameId
+Xml::_GetNameId(const std::string name) const
+{
+    auto it = _names.find(name);
+    if (it == _names.end()) {
+        return 0;
+    }
+    return it->second;
 }
 
 void
