@@ -19,19 +19,95 @@ namespace adk {
 
 /** Represents XML document manipulator. */
 class Xml {
+private:
+    /** Numerical name ID. */
+    typedef u32 NameId;
 public:
     /** Base class for all XML exceptions. */
     ADK_DEFINE_EXCEPTION(Exception);
     /** Parsing error exception. */
     ADK_DEFINE_DERIVED_EXCEPTION(ParseException, Exception);
+    /** Element or attribute with the specified name not found. */
+    ADK_DEFINE_DERIVED_EXCEPTION(NotFoundException, Exception);
 
     class Element {
     public:
+        typedef std::unique_ptr<Element> Ptr;
 
+        std::string
+        Value() const
+        {
+            return _value;
+        }
+
+        std::string
+        Name() const
+        {
+            return _doc._GetName(_nameId);
+        }
+
+        /** Get value of the specified attribute.
+         *
+         * @param name Attribute name.
+         * @return Attribute value.
+         * @throws NotFoundException If attribute with the specified name is not
+         *      found.
+         */
+        std::string
+        Attribute(const std::string &name) const;
+
+        /** Check if the element has attribute with the specified name. */
+        bool
+        HasAttribute(const std::string &name) const;
+
+        Element &
+        Parent() const
+        {
+            if (!_parent) {
+                ADK_EXCEPTION(Exception, "Parent element requested for root");
+            }
+            return *_parent;
+        }
+
+        bool
+        IsRoot() const
+        {
+            return _parent == nullptr;
+        }
 
     private:
-        std::string _name, _value;
-        std::map<std::string, std::string> _attrs;
+        friend class Xml;
+
+        /** Reference to document. */
+        Xml &_doc;
+        /** Element name ID. */
+        NameId _nameId;
+        /** Element content. */
+        std::string _value;
+        /** Attributes map. */
+        std::map<NameId, std::string> _attrs;
+        /** Parent element, nullptr for root. */
+        Element *_parent = nullptr;
+        /** List of sibling children with the same name. */
+        class SiblingList {
+        public:
+            std::list<Ptr> list;
+        };
+        /** Child elements. */
+        std::map<NameId, SiblingList> _children;
+
+        Element(Xml &doc, NameId nameId):
+            _doc(doc), _nameId(nameId)
+        {}
+
+        void
+        _SetAttribute(NameId nameId, const std::string &value);
+
+        void
+        _AddCharData(const std::string &data);
+
+        void
+        _AddChild(Element::Ptr &&e);
     };
 
     Xml();
@@ -54,14 +130,16 @@ public:
     Clear();
 private:
     XML_Parser _parser = nullptr;
-    /** Numerical name ID. */
-    typedef u32 NameId;
     /** Next free name ID. */
     NameId _curNameId = 1;
     /** All defined elements and attribute names stored here. */
     std::map<const std::string, NameId> _names;
     /** Index for mapping numerical IDs to symbolic names. */
     std::map<NameId, const std::string &> _namesIndex;
+    /** Root element. */
+    Element::Ptr _root = nullptr;
+    /** Current element during parsing. */
+    Element *_curElement = nullptr;
 
     /** Either find existing or add a new name to the names index.
      * @return Numerical identifier for the name.
@@ -92,6 +170,10 @@ private:
 
     void
     _CreateParseException();
+
+    /** Create a new element with the specified attributes. */
+    Element::Ptr
+    _CreateElement(NameId nameId, const XML_Char **attrs);
 };
 
 } /* namespace adk */

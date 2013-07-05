@@ -70,6 +70,59 @@ XmlBind()
 
 } /* anonymous namespace */
 
+/* Xml::Element class. */
+
+void
+Xml::Element::_SetAttribute(NameId nameId, const std::string &value)
+{
+    _attrs[nameId] = value;
+}
+
+void
+Xml::Element::_AddCharData(const std::string &data)
+{
+    _value += data;
+}
+
+std::string
+Xml::Element::Attribute(const std::string &name) const
+{
+    Xml::NameId nid = _doc._GetNameId(name);
+    if (!nid) {
+        ADK_EXCEPTION(Xml::NotFoundException, "Attribute not found");
+    }
+    auto it = _attrs.find(nid);
+    if (it == _attrs.end()) {
+        ADK_EXCEPTION(Xml::NotFoundException, "Attribute not found");
+    }
+    return it->second;
+}
+
+bool
+Xml::Element::HasAttribute(const std::string &name) const
+{
+    Xml::NameId nid = _doc._GetNameId(name);
+    if (!nid) {
+        return false;
+    }
+    auto it = _attrs.find(nid);
+    return it != _attrs.end();
+}
+
+void
+Xml::Element::_AddChild(Element::Ptr &&e)
+{
+    auto it = _children.find(e->_nameId);
+    if (it == _children.end()) {
+        it = _children.emplace(e->_nameId, SiblingList()).first;
+    }
+    e->_parent = this;
+    SiblingList &sl = it->second;
+    sl.list.push_back(std::move(e));
+}
+
+/* Xml class. */
+
 Xml::Xml()
 {
 }
@@ -104,6 +157,10 @@ Xml::_CreateParseException()
 void
 Xml::Clear()
 {
+    if (_root) {
+        _root = nullptr;
+    }
+    _curElement = nullptr;
     if (_parser) {
         XML_ParserFree(_parser);
         _parser = nullptr;
@@ -157,19 +214,46 @@ Xml::_GetNameId(const std::string name) const
 }
 
 void
-Xml::_StartElementHandler(const XML_Char *name, const XML_Char **attrs __UNUSED)
+Xml::_StartElementHandler(const XML_Char *name, const XML_Char **attrs)
 {
-    ADK_INFO("start name = %s", name);//XXX
+    NameId nid = _AddName(name);
+    if (!_root) {
+        _root = _CreateElement(nid, attrs);
+        _curElement = _root.get();
+    } else {
+        Element::Ptr e = _CreateElement(nid, attrs);
+        Element *ePtr = e.get();
+        _curElement->_AddChild(std::move(e));
+        _curElement = ePtr;
+    }
 }
 
 void
 Xml::_EndElementHandler(const XML_Char *name)
 {
-    ADK_INFO("end name = %s", name);//XXX
+    ASSERT(_GetNameId(name) == _curElement->_nameId);
+    if (_curElement->IsRoot()) {
+        ASSERT(_root.get() == _curElement);
+        _curElement = nullptr;
+    } else {
+        _curElement = &_curElement->Parent();
+    }
+}
+
+Xml::Element::Ptr
+Xml::_CreateElement(NameId nameId, const XML_Char **attrs)
+{
+    Element::Ptr e = Element::Ptr(new Element(*this, nameId));
+    while (*attrs) {
+        NameId nid = _AddName(attrs[0]);
+        e->_SetAttribute(nid, attrs[1]);
+        attrs += 2;
+    }
+    return e;
 }
 
 void
 Xml::_CharDataHandler(const XML_Char *s, int len)
 {
-    ADK_INFO("data = %s", std::string(s, len).c_str());//XXX
+    _curElement->_AddCharData(std::string(s, len));
 }
