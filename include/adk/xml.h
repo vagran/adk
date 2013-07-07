@@ -22,24 +22,62 @@ class Xml {
 private:
     /** Numerical name ID. */
     typedef u32 NameId;
-public:
-    /** Base class for all XML exceptions. */
-    ADK_DEFINE_EXCEPTION(Exception);
-    /** Parsing error exception. */
-    ADK_DEFINE_DERIVED_EXCEPTION(ParseException, Exception);
-    /** Element or attribute with the specified name not found. */
-    ADK_DEFINE_DERIVED_EXCEPTION(NotFoundException, Exception);
 
-    class Element {
+    class ElementNode;
+
+    /** Represents attribute node in the document. */
+    class AttributeNode {
     public:
-        typedef std::unique_ptr<Element> Ptr;
+        typedef std::unique_ptr<AttributeNode> Ptr;
 
+        AttributeNode(ElementNode &e, NameId nameId = 0,
+                      const std::string &value = std::string());
+
+        operator bool() const
+        {
+            return _nameId;
+        }
+
+        /** Get attribute value. */
         std::string
         Value() const
         {
             return _value;
         }
 
+        /** Get attribute name. */
+        std::string
+        Name() const;
+
+        void
+        SetValue(const std::string &value);
+
+    private:
+        /** Related element. */
+        ElementNode &_element;
+        /** Name ID. */
+        NameId _nameId;
+        /** Value string. */
+        std::string _value;
+    };
+
+    /** Represents element node in the document. */
+    class ElementNode {
+    public:
+        typedef std::unique_ptr<ElementNode> Ptr;
+
+        ElementNode(Xml &doc, NameId nameId = 0):
+            _doc(doc), _nameId(nameId)
+        {}
+
+        /** Get element content. */
+        std::string
+        Value() const
+        {
+            return _value;
+        }
+
+        /** Get element name. */
         std::string
         Name() const
         {
@@ -49,34 +87,20 @@ public:
         /** Get value of the specified attribute.
          *
          * @param name Attribute name.
-         * @return Attribute value.
-         * @throws NotFoundException If attribute with the specified name is not
-         *      found.
+         * @return Attribute, nullptr if no such attribute found.
          */
-        std::string
+        AttributeNode *
         Attribute(const std::string &name) const;
 
-        /** Check if the element has attribute with the specified name. */
-        bool
-        HasAttribute(const std::string &name) const;
-
-        Element &
+        ElementNode *
         Parent() const
         {
-            if (!_parent) {
-                ADK_EXCEPTION(Exception, "Parent element requested for root");
-            }
-            return *_parent;
-        }
-
-        bool
-        IsRoot() const
-        {
-            return _parent == nullptr;
+            return _parent;
         }
 
     private:
         friend class Xml;
+        friend class AttributeNode;
 
         /** Reference to document. */
         Xml &_doc;
@@ -84,10 +108,8 @@ public:
         NameId _nameId;
         /** Element content. */
         std::string _value;
-        /** Attributes map. */
-        std::map<NameId, std::string> _attrs;
         /** Parent element, nullptr for root. */
-        Element *_parent = nullptr;
+        ElementNode *_parent = nullptr;
         /** List of sibling children with the same name. */
         class SiblingList {
         public:
@@ -95,19 +117,52 @@ public:
         };
         /** Child elements. */
         std::map<NameId, SiblingList> _children;
+        /** Attributes. */
+        std::map<NameId, AttributeNode::Ptr> _attrs;
 
-        Element(Xml &doc, NameId nameId):
-            _doc(doc), _nameId(nameId)
-        {}
-
-        void
+        AttributeNode *
         _SetAttribute(NameId nameId, const std::string &value);
 
         void
         _AddCharData(const std::string &data);
 
         void
-        _AddChild(Element::Ptr &&e);
+        _AddChild(ElementNode::Ptr &&e);
+    };
+public:
+    /** Base class for all XML exceptions. */
+    ADK_DEFINE_EXCEPTION(Exception);
+    /** Parsing error exception. */
+    ADK_DEFINE_DERIVED_EXCEPTION(ParseException, Exception);
+
+    /** Attribute node handle. */
+    class Attribute {
+    public:
+        Attribute(AttributeNode *node = nullptr):
+            _node(node)
+        {}
+
+        operator bool() const
+        {
+            return _node != nullptr;
+        }
+    private:
+        AttrbuteNode *_node;
+    };
+
+    /** Element node handle. */
+    class Element {
+        public:
+            Element(ElementNode *node = nullptr):
+                _node(node)
+            {}
+
+            operator bool() const
+            {
+                return _node != nullptr;
+            }
+        private:
+            ElementNode *_node;
     };
 
     Xml();
@@ -128,6 +183,7 @@ public:
     /** Clear all the content. */
     void
     Clear();
+
 private:
     XML_Parser _parser = nullptr;
     /** Next free name ID. */
@@ -137,9 +193,9 @@ private:
     /** Index for mapping numerical IDs to symbolic names. */
     std::map<NameId, const std::string &> _namesIndex;
     /** Root element. */
-    Element::Ptr _root = nullptr;
+    ElementNode::Ptr _root = nullptr;
     /** Current element during parsing. */
-    Element *_curElement = nullptr;
+    ElementNode *_curElement = nullptr;
 
     /** Either find existing or add a new name to the names index.
      * @return Numerical identifier for the name.
@@ -172,7 +228,7 @@ private:
     _CreateParseException();
 
     /** Create a new element with the specified attributes. */
-    Element::Ptr
+    ElementNode::Ptr
     _CreateElement(NameId nameId, const XML_Char **attrs);
 };
 

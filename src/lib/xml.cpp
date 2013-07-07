@@ -70,47 +70,63 @@ XmlBind()
 
 } /* anonymous namespace */
 
-/* Xml::Element class. */
+/* Xml::AttributeNode class. */
 
-void
-Xml::Element::_SetAttribute(NameId nameId, const std::string &value)
+Xml::AttributeNode::AttributeNode(ElementNode &e, NameId nameId,
+                                  const std::string &value):
+    _element(e), _nameId(nameId), _value(value)
+{}
+
+std::string
+Xml::AttributeNode::Name() const
 {
-    _attrs[nameId] = value;
+    return _element._doc._GetName(_nameId);
 }
 
 void
-Xml::Element::_AddCharData(const std::string &data)
+Xml::AttributeNode::SetValue(const std::string &value)
+{
+    ASSERT(_nameId);
+    _value = value;
+}
+
+/* Xml::ElementNode class. */
+
+Xml::AttributeNode *
+Xml::ElementNode::_SetAttribute(NameId nameId, const std::string &value)
+{
+    auto it = _attrs.find(nameId);
+    if (it == _attrs.end()) {
+        it = _attrs.emplace(nameId,
+                            AttributeNode::Ptr(new AttributeNode(*this, nameId, value))).first;
+    } else {
+        it->second->SetValue(value);
+    }
+    return it->second.get();
+}
+
+void
+Xml::ElementNode::_AddCharData(const std::string &data)
 {
     _value += data;
 }
 
-std::string
-Xml::Element::Attribute(const std::string &name) const
+Xml::AttributeNode *
+Xml::ElementNode::Attribute(const std::string &name) const
 {
     Xml::NameId nid = _doc._GetNameId(name);
     if (!nid) {
-        ADK_EXCEPTION(Xml::NotFoundException, "Attribute not found");
+        return nullptr;
     }
     auto it = _attrs.find(nid);
     if (it == _attrs.end()) {
-        ADK_EXCEPTION(Xml::NotFoundException, "Attribute not found");
+        return nullptr;
     }
-    return it->second;
-}
-
-bool
-Xml::Element::HasAttribute(const std::string &name) const
-{
-    Xml::NameId nid = _doc._GetNameId(name);
-    if (!nid) {
-        return false;
-    }
-    auto it = _attrs.find(nid);
-    return it != _attrs.end();
+    return it->second.get();
 }
 
 void
-Xml::Element::_AddChild(Element::Ptr &&e)
+Xml::ElementNode::_AddChild(ElementNode::Ptr &&e)
 {
     auto it = _children.find(e->_nameId);
     if (it == _children.end()) {
@@ -196,7 +212,7 @@ std::string
 Xml::_GetName(NameId id) const
 {
     if (!id || id >= _curNameId) {
-        ADK_EXCEPTION(Exception, "Invalid id");
+        ADK_EXCEPTION(Exception, "Invalid ID");
     }
     auto it = _namesIndex.find(id);
     ASSERT(it != _namesIndex.end());
@@ -221,29 +237,24 @@ Xml::_StartElementHandler(const XML_Char *name, const XML_Char **attrs)
         _root = _CreateElement(nid, attrs);
         _curElement = _root.get();
     } else {
-        Element::Ptr e = _CreateElement(nid, attrs);
-        Element *ePtr = e.get();
+        ElementNode::Ptr e = _CreateElement(nid, attrs);
+        ElementNode *ePtr = e.get();
         _curElement->_AddChild(std::move(e));
         _curElement = ePtr;
     }
 }
 
 void
-Xml::_EndElementHandler(const XML_Char *name)
+Xml::_EndElementHandler(const XML_Char *name __UNUSED)
 {
     ASSERT(_GetNameId(name) == _curElement->_nameId);
-    if (_curElement->IsRoot()) {
-        ASSERT(_root.get() == _curElement);
-        _curElement = nullptr;
-    } else {
-        _curElement = &_curElement->Parent();
-    }
+    _curElement = _curElement->Parent();
 }
 
-Xml::Element::Ptr
+Xml::ElementNode::Ptr
 Xml::_CreateElement(NameId nameId, const XML_Char **attrs)
 {
-    Element::Ptr e = Element::Ptr(new Element(*this, nameId));
+    ElementNode::Ptr e = ElementNode::Ptr(new ElementNode(*this, nameId));
     while (*attrs) {
         NameId nid = _AddName(attrs[0]);
         e->_SetAttribute(nid, attrs[1]);
