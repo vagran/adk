@@ -277,7 +277,7 @@ Xml::ElementNode *
 Xml::ElementNode::AddChild(const std::string &name)
 {
     NameId nid = _doc._AddName(name);
-    char *attrs = nullptr;
+    const char *attrs = nullptr;
     ElementNode::Ptr e = _doc._CreateElement(nid, &attrs);
     ElementNode *ePtr = e.get();
     _AddChild(std::move(e));
