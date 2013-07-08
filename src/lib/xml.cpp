@@ -104,6 +104,16 @@ Xml::AttributeNode::Next() const
     return it->second.get();
 }
 
+void
+Xml::AttributeNode::Remove()
+{
+    auto it = _element._attrs.find(_nameId);
+    if (it == _element._attrs.end()) {
+        return;
+    }
+    _element._attrs.erase(it);
+}
+
 /* Xml::ElementNode class. */
 
 Xml::AttributeNode *
@@ -122,11 +132,7 @@ Xml::ElementNode::_SetAttribute(NameId nameId, const std::string &value)
 Xml::AttributeNode *
 Xml::ElementNode::SetAttribute(const std::string &name, const std::string &value)
 {
-    Xml::NameId nid = _doc._GetNameId(name);
-    if (!nid) {
-        nid = _doc._AddName(name);
-    }
-    return _SetAttribute(nid, value);
+    return _SetAttribute(_doc._AddName(name), value);
 }
 
 Xml::AttributeNode *
@@ -252,6 +258,30 @@ Xml::ElementNode::NextSibling(const std::string &name) const
         return nullptr;
     }
     return siblIt->get();
+}
+
+void
+Xml::ElementNode::Remove()
+{
+    if (!_parent) {
+        return;
+    }
+    auto it = _parent->_children.find(_nameId);
+    if (it == _parent->_children.end()) {
+        return;
+    }
+    it->second.list.remove_if([this](ElementNode::Ptr &e){ return e.get() == this; });
+}
+
+Xml::ElementNode *
+Xml::ElementNode::AddChild(const std::string &name)
+{
+    NameId nid = _doc._AddName(name);
+    char *attrs = nullptr;
+    ElementNode::Ptr e = _doc._CreateElement(nid, &attrs);
+    ElementNode *ePtr = e.get();
+    _AddChild(std::move(e));
+    return ePtr;
 }
 
 /* Xml class. */

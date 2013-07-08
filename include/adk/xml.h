@@ -61,6 +61,9 @@ private:
         /** Get next attribute when iterating. */
         AttributeNode *
         Next() const;
+
+        void
+        Remove();
     private:
         /** Related element. */
         ElementNode &_element;
@@ -131,6 +134,12 @@ private:
         /** Get next sibling node with the specified name. */
         ElementNode *
         NextSibling(const std::string &name = std::string()) const;
+
+        void
+        Remove();
+
+        ElementNode *
+        AddChild(const std::string &name);
 
     private:
         friend class Xml;
@@ -269,6 +278,12 @@ public:
             _node->SetValue(value);
         }
 
+        void
+        Remove()
+        {
+            _node->Remove();
+            _node = nullptr;
+        }
     private:
         AttributeNode *_node;
     };
@@ -418,6 +433,19 @@ public:
         Attributes() const
         {
             return Attribute::Iterable(_node);
+        }
+
+        void
+        Remove()
+        {
+            _node->Remove();
+            _node = nullptr;
+        }
+
+        Element
+        AddChild(const std::string &name)
+        {
+            return _node->AddChild(name);
         }
     private:
         ElementNode *_node;
