@@ -147,7 +147,7 @@ public:
             return _node != nullptr;
         }
     private:
-        AttrbuteNode *_node;
+        AttributeNode *_node;
     };
 
     /** Element node handle. */
