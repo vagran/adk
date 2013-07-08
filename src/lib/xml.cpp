@@ -137,6 +137,89 @@ Xml::ElementNode::_AddChild(ElementNode::Ptr &&e)
     sl.list.push_back(std::move(e));
 }
 
+Xml::ElementNode *
+Xml::ElementNode::Child(const std::string &name) const
+{
+    decltype(_children.begin()) it;
+    if (name.empty()) {
+        it = _children.begin();
+    } else {
+        Xml::NameId nid = _doc._GetNameId(name);
+        if (!nid) {
+            return nullptr;
+        }
+        it = _children.find(nid);
+    }
+    if (it == _children.end()) {
+        return nullptr;
+    }
+    if (it->second.list.size() == 0) {
+        return nullptr;
+    }
+    return it->second.list.front().get();
+}
+
+Xml::ElementNode *
+Xml::ElementNode::NextSibling(const std::string &name) const
+{
+    if (!_parent) {
+        return nullptr;
+    }
+    NameId nid;
+    if (name.empty()) {
+        nid = 0;
+    } else {
+        nid = _doc._GetNameId(name);
+        if (!nid) {
+            return nullptr;
+        }
+    }
+    auto it = _parent->_children.find(_nameId);
+    if (it == _parent->_children.end()) {
+        return nullptr;
+    }
+    if (!nid || nid == _nameId) {
+        auto siblIt = it->second.list.begin();
+        while (siblIt->get() != this) {
+            siblIt++;
+            if (siblIt == it->second.list.end()) {
+                return nullptr;
+            }
+        }
+        siblIt++;
+        if (siblIt != it->second.list.end()) {
+            return siblIt->get();
+        }
+        if (nid) {
+            return nullptr;
+        }
+        /* Any next sibling element. */
+        while (true) {
+            it++;
+            if (it == _parent->_children.end()) {
+                return nullptr;
+            }
+            auto siblIt = it->second.list.begin();
+            if (siblIt == it->second.list.end()) {
+                continue;
+            }
+            return siblIt->get();
+        }
+    }
+    if (nid < _nameId) {
+        return nullptr;
+    }
+    it = _parent->_children.find(_nameId);
+    if (it == _parent->_children.end()) {
+        return nullptr;
+    }
+    auto siblIt = it->second.list.begin();
+    if (siblIt == it->second.list.end()) {
+        return nullptr;
+    }
+    return siblIt->get();
+}
+
 /* Xml class. */
 
 Xml::Xml()

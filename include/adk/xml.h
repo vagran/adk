@@ -84,6 +84,12 @@ private:
             return _doc._GetName(_nameId);
         }
 
+        void
+        SetValue(const std::string &value)
+        {
+            _value = value;
+        }
+
         /** Get value of the specified attribute.
          *
          * @param name Attribute name.
@@ -97,6 +103,17 @@ private:
         {
             return _parent;
         }
+
+        /** Get first child element with the specified name. Keep in mind that
+         * for efficiency reasons items are not stored in the same order they
+         * appears in the document but are alphabetically sorted.
+         */
+        ElementNode *
+        Child(const std::string &name = std::string()) const;
+
+        /** Get next sibling node with the specified name. */
+        ElementNode *
+        NextSibling(const std::string &name = std::string()) const;
 
     private:
         friend class Xml;
@@ -146,6 +163,28 @@ public:
         {
             return _node != nullptr;
         }
+
+        std::string
+        Value() const
+        {
+            ASSERT(_node);
+            return _node->Value();
+        }
+
+        std::string
+        Name() const
+        {
+            ASSERT(_node);
+            return _node->Name();
+        }
+
+        void
+        SetValue(const std::string &value)
+        {
+            ASSERT(_node);
+            _node->SetValue(value);
+        }
+
     private:
         AttributeNode *_node;
     };
@@ -160,6 +199,55 @@ public:
             operator bool() const
             {
                 return _node != nullptr;
+            }
+
+            std::string
+            Value() const
+            {
+                ASSERT(_node);
+                return _node->Value();
+            }
+
+            std::string
+            Name() const
+            {
+                ASSERT(_node);
+                return _node->Name();
+            }
+
+            void
+            SetValue(const std::string &value)
+            {
+                ASSERT(_node);
+                _node->SetValue(value);
+            }
+
+            Element
+            Parent() const
+            {
+                ASSERT(_node);
+                return _node->Parent();
+            }
+
+            Element
+            Child(const std::string &name = std::string()) const
+            {
+                ASSERT(_node);
+                return _node->Child(name);
+            }
+
+            Element
+            NextSibling(const std::string &name = std::string()) const
+            {
+                ASSERT(_node);
+                return _node->NextSibling(name);
+            }
+
+            Attribute
+            Attr(const std::string &name) const
+            {
+                ASSERT(_node);
+                return _node->Attribute(name);
             }
         private:
             ElementNode *_node;
@@ -183,6 +271,22 @@ public:
     /** Clear all the content. */
     void
     Clear();
+
+    /** Get root element. */
+    Element
+    Root() const
+    {
+        return _root.get();
+    }
+
+    /** Get first child of root element with the specified name. Empty element
+     * if not found.
+     */
+    Element
+    Child(const std::string &name = std::string()) const
+    {
+        return _root->Child(name);
+    }
 
 private:
     XML_Parser _parser = nullptr;
