@@ -52,6 +52,15 @@ private:
         void
         SetValue(const std::string &value);
 
+        ElementNode *
+        Element() const
+        {
+            return &_element;
+        }
+
+        /** Get next attribute when iterating. */
+        AttributeNode *
+        Next() const;
     private:
         /** Related element. */
         ElementNode &_element;
@@ -97,6 +106,14 @@ private:
          */
         AttributeNode *
         Attribute(const std::string &name) const;
+
+        /** Either modify existing or add new attribute. */
+        AttributeNode *
+        SetAttribute(const std::string &name, const std::string &value);
+
+        /** Get first attribute for iteration. */
+        AttributeNode *
+        FirstAttribute() const;
 
         ElementNode *
         Parent() const
@@ -155,6 +172,73 @@ public:
     /** Attribute node handle. */
     class Attribute {
     public:
+        class Iterator {
+        public:
+            Iterator(ElementNode *element, bool end = false):
+                _element(element)
+            {
+                if (end) {
+                    _attr = nullptr;
+                } else {
+                    _attr = _element->FirstAttribute();
+                }
+            }
+
+            bool
+            operator ==(const Iterator &it) const
+            {
+                return _element == it._element && _attr == it._attr;
+            }
+
+            bool
+            operator !=(const Iterator &it) const
+            {
+                return _element != it._element || _attr != it._attr;
+            }
+
+            void
+            operator ++()
+            {
+                _attr = _attr->Next();
+            }
+
+            void
+            operator ++(int)
+            {
+                _attr = _attr->Next();
+            }
+
+            Attribute
+            operator *() const
+            {
+                return _attr;
+            }
+        private:
+            ElementNode *_element;
+            AttributeNode *_attr;
+        };
+
+        class Iterable {
+        public:
+            Iterable(ElementNode *element):
+                _element(element)
+            {}
+
+            Iterator
+            begin() const
+            {
+                return Iterator(_element);
+            }
+
+            Iterator
+            end() const
+            {
+                return Iterator(_element, true);
+            }
+        private:
+            ElementNode *_element;
+        };
+
         Attribute(AttributeNode *node = nullptr):
             _node(node)
         {}
@@ -191,66 +275,152 @@ public:
 
     /** Element node handle. */
     class Element {
+    public:
+        class Iterator {
         public:
-            Element(ElementNode *node = nullptr):
-                _node(node)
+            Iterator(ElementNode *node, const std::string &name = std::string()):
+                _node(node), _name(name)
             {}
 
-            operator bool() const
+            bool
+            operator ==(const Iterator &it) const
             {
-                return _node != nullptr;
+                return _node == it._node;
             }
 
-            std::string
-            Value() const
+            bool
+            operator !=(const Iterator &it) const
             {
-                ASSERT(_node);
-                return _node->Value();
-            }
-
-            std::string
-            Name() const
-            {
-                ASSERT(_node);
-                return _node->Name();
+                return _node != it._node;
             }
 
             void
-            SetValue(const std::string &value)
+            operator ++()
             {
-                ASSERT(_node);
-                _node->SetValue(value);
+                _node = _node->NextSibling(_name);
+            }
+
+            void
+            operator ++(int)
+            {
+                _node = _node->NextSibling(_name);
             }
 
             Element
-            Parent() const
+            operator *() const
             {
-                ASSERT(_node);
-                return _node->Parent();
-            }
-
-            Element
-            Child(const std::string &name = std::string()) const
-            {
-                ASSERT(_node);
-                return _node->Child(name);
-            }
-
-            Element
-            NextSibling(const std::string &name = std::string()) const
-            {
-                ASSERT(_node);
-                return _node->NextSibling(name);
-            }
-
-            Attribute
-            Attr(const std::string &name) const
-            {
-                ASSERT(_node);
-                return _node->Attribute(name);
+                return Element(_node);
             }
         private:
             ElementNode *_node;
+            std::string _name;
+        };
+
+        class Iterable {
+        public:
+            Iterable(ElementNode *node, const std::string &name = std::string()):
+                _node(node), _name(name)
+            {}
+
+            Iterator
+            begin() const
+            {
+                return Iterator(_node->Child(_name), _name);
+            }
+
+            Iterator
+            end() const
+            {
+                return Iterator(nullptr);
+            }
+        private:
+            ElementNode *_node;
+            std::string _name;
+        };
+
+
+        Element(ElementNode *node = nullptr):
+            _node(node)
+        {}
+
+        operator bool() const
+        {
+            return _node != nullptr;
+        }
+
+        std::string
+        Value() const
+        {
+            ASSERT(_node);
+            return _node->Value();
+        }
+
+        std::string
+        Name() const
+        {
+            ASSERT(_node);
+            return _node->Name();
+        }
+
+        void
+        SetValue(const std::string &value)
+        {
+            ASSERT(_node);
+            _node->SetValue(value);
+        }
+
+        Element
+        Parent() const
+        {
+            ASSERT(_node);
+            return _node->Parent();
+        }
+
+        Element
+        Child(const std::string &name = std::string()) const
+        {
+            ASSERT(_node);
+            return _node->Child(name);
+        }
+
+        Element
+        NextSibling(const std::string &name = std::string()) const
+        {
+            ASSERT(_node);
+            return _node->NextSibling(name);
+        }
+
+        Attribute
+        Attr(const std::string &name) const
+        {
+            ASSERT(_node);
+            return _node->Attribute(name);
+        }
+
+        Attribute
+        SetAttribute(const std::string &name, const std::string &value)
+        {
+            ASSERT(_node);
+            return _node->SetAttribute(name, value);
+        }
+
+        /** Iterate over child elements, either all or ones with the
+         * specified name.
+         */
+        Iterable
+        Children(const std::string &name) const
+        {
+            return Iterable(_node, name);
+        }
+
+        /** Iterate over attributes. */
+        Attribute::Iterable
+        Attributes() const
+        {
+            return Attribute::Iterable(_node);
+        }
+    private:
+        ElementNode *_node;
     };
 
     Xml();
@@ -285,7 +455,31 @@ public:
     Element
     Child(const std::string &name = std::string()) const
     {
-        return _root->Child(name);
+        return Root().Child(name);
+    }
+
+    Attribute
+    Attr(const std::string &name) const
+    {
+        return Root().Attr(name);
+    }
+
+    Attribute
+    SetAttribute(const std::string &name, const std::string &value)
+    {
+        return Root().SetAttribute(name, value);
+    }
+
+    Element::Iterable
+    Children(const std::string &name = std::string()) const
+    {
+        return Root().Children(name);
+    }
+
+    Attribute::Iterable
+    Attributes() const
+    {
+        return Root().Attributes();
     }
 
 private:

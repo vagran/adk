@@ -90,6 +90,20 @@ Xml::AttributeNode::SetValue(const std::string &value)
     _value = value;
 }
 
+Xml::AttributeNode *
+Xml::AttributeNode::Next() const
+{
+    auto it = _element._attrs.find(_nameId);
+    if (it == _element._attrs.end()) {
+        return nullptr;
+    }
+    it++;
+    if (it == _element._attrs.end()) {
+        return nullptr;
+    }
+    return it->second.get();
+}
+
 /* Xml::ElementNode class. */
 
 Xml::AttributeNode *
@@ -101,6 +115,26 @@ Xml::ElementNode::_SetAttribute(NameId nameId, const std::string &value)
                             AttributeNode::Ptr(new AttributeNode(*this, nameId, value))).first;
     } else {
         it->second->SetValue(value);
+    }
+    return it->second.get();
+}
+
+Xml::AttributeNode *
+Xml::ElementNode::SetAttribute(const std::string &name, const std::string &value)
+{
+    Xml::NameId nid = _doc._GetNameId(name);
+    if (!nid) {
+        nid = _doc._AddName(name);
+    }
+    return _SetAttribute(nid, value);
+}
+
+Xml::AttributeNode *
+Xml::ElementNode::FirstAttribute() const
+{
+    auto it = _attrs.begin();
+    if (it == _attrs.end()) {
+        return nullptr;
     }
     return it->second.get();
 }

@@ -83,3 +83,43 @@ UT_TEST("Basic functionality")
         UT(e.Value().c_str()) == UT_CSTR("value 1");
     }
 }
+
+void
+CheckElementSequence(const Xml::Element::Iterable &seq,
+                     const std::list<std::string> &expected)
+{
+    auto expected_it = expected.begin();
+    for (Xml::Element e: seq) {
+        UT(e.Name().c_str()) == UT(expected_it->c_str());
+        expected_it++;
+    }
+    UT(expected_it == expected.end()) == UT_TRUE;
+}
+
+void
+CheckAttributesSequence(const Xml::Attribute::Iterable &seq,
+                        const std::list<std::string> &expected)
+{
+    auto expected_it = expected.begin();
+    for (Xml::Attribute attr: seq) {
+        std::string value = attr.Name() + '=' + attr.Value();
+        UT(value.c_str()) == UT(expected_it->c_str());
+        expected_it++;
+    }
+    UT(expected_it == expected.end()) == UT_TRUE;
+}
+
+UT_TEST("Iteration")
+{
+    Xml xml;
+    xml.Load(GetResource("test.xml").GetString());
+
+    CheckElementSequence(xml.Children("item"),
+                         std::list<std::string> {"item", "item", "item"});
+    CheckElementSequence(xml.Children(),
+                         std::list<std::string> {"item", "item", "item", "parent"});
+
+    auto e = xml.Child("item");
+    CheckAttributesSequence(e.Attributes(),
+                            std::list<std::string> {"attr=attr 1 value", "attr2=test attr"});
+}
