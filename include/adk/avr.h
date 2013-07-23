@@ -26,6 +26,7 @@ typedef __WCHAR_TYPE__ wchar_t;
 #include <avr/pgmspace.h>
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
+#include <avr/eeprom.h>
 #include <util/delay.h>
 #include <util/atomic.h>
 
