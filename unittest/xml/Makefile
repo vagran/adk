@@ -1,4 +1,4 @@
-# /ADK/unittest/python/Makefile
+# /ADK/unittest/xml/Makefile
 #
 # This file is a part of ADK library.
 # Copyright (c) 2012-2013, Artyom Lebedev <artyom.lebedev@gmail.com>

@@ -62,6 +62,7 @@
 #include <adk/hash.h>
 #include <adk/rb_tree.h>
 
+#include <adk/signal.h>
 #include <adk/resources.h>
 #include <adk/xml.h>
 
