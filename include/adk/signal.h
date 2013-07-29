@@ -119,7 +119,7 @@ struct SlotTargetGetter<Method, SlotTargetType,
     static constexpr SlotTarget *
     Get(SlotTargetType &&slotTarget)
     {
-        return std::forward<SlotTargetType>(slotTarget);
+        return slotTarget;
     }
 };
 
