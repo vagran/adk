@@ -75,12 +75,20 @@ UT_TEST("Basic functionality")
 
     std::unique_ptr<NonTarget> nt(new NonTarget);
     std::unique_ptr<Target> t(new Target);
+    std::unique_ptr<NonTarget> nt2(new NonTarget);
+
+    UT((adk_internal::SlotTargetGetter<decltype(&Target::Method), Target *>::Get(t.get()))) == UT(t.get());
+    UT((adk_internal::SlotTargetGetter<decltype(&NonTarget::Method), NonTarget *>::Get(nt.get()))) == UT_NULL;
+
+    UT(adk_internal::GetSlotTarget(&Target::Method, t.get())) == UT(t.get());
+    UT(adk_internal::GetSlotTarget(&NonTarget::Method, nt.get())) == UT_NULL;
 
     UT_BOOL(slot1) == UT_FALSE;
     UT_BOOL(slot2) == UT_FALSE;
 
     slot1 = Slot<int(int)>::Make(&NonTarget::Method, nt.get(), 10, std::placeholders::_1);
     slot2 = Slot<int(int)>::Make(&Target::Method, t.get(), 10, std::placeholders::_1);
+    slot3 = Slot<int(int)>::Make(&Target::Method, nt2, 10, std::placeholders::_1);
 
     UT(slot1.GetTarget()) == UT_NULL;
     UT(slot2.GetTarget()) != UT_NULL;

@@ -102,6 +102,28 @@ IsSlotTargetMethod()
 }
 
 
+template <typename Method, class SlotTargetType, typename = void>
+struct SlotTargetGetter {
+
+    static constexpr SlotTarget *
+    Get(SlotTargetType &&)
+    {
+        return nullptr;
+    }
+};
+
+template <typename Method, class SlotTargetType>
+struct SlotTargetGetter<Method, SlotTargetType,
+                        typename std::enable_if<IsSlotTargetMethod<Method>()>::type> {
+
+    static constexpr SlotTarget *
+    Get(SlotTargetType &&slotTarget)
+    {
+        return std::forward<SlotTargetType>(slotTarget);
+    }
+};
+
+
 template <typename... Args>
 struct GetSlotTargetImpl {
 
@@ -116,15 +138,10 @@ template <typename Method, class SlotTargetType, typename... Args>
 struct GetSlotTargetImpl<Method, SlotTargetType, Args...> {
 
     static constexpr SlotTarget *
-    Get(Method &&, SlotTargetType &&, Args &&...)
+    Get(Method &&, SlotTargetType &&slotTarget, Args &&...)
     {
-        return nullptr;
-    }
-
-    static constexpr SlotTarget *
-    Get(Method &&, SlotTarget *target, Args &&...)
-    {
-        return target;
+        return SlotTargetGetter<Method, SlotTargetType>::Get
+            (std::forward<SlotTargetType>(slotTarget));
     }
 };
 
@@ -265,8 +282,9 @@ public:
     static Slot
     Make(Args &&... args)
     {
-        return Slot(std::bind(std::forward<Args>(args)...),
-                    adk_internal::GetSlotTarget(args...));
+        SlotTarget *slotTarget = adk_internal::GetSlotTarget(std::forward<Args>(args)...);
+        ADK_INFO("st %p", slotTarget);//XXX
+        return Slot(std::bind(std::forward<Args>(args)...), slotTarget);
     }
 
     /** Check if slot is bound. */
