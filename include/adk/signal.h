@@ -155,6 +155,24 @@ GetSlotTarget(Args &&... args)
     return GetSlotTargetImpl<Args...>::Get(std::forward<Args>(args)...);
 }
 
+/** Helper class for casting to classes derived from SlotTarget. */
+template <class TargetType>
+struct SlotTargetCast {
+    static TargetType *
+    Cast(SlotTarget *target)
+    {
+        return dynamic_cast<TargetType *>(target);
+    }
+};
+
+template <>
+struct SlotTargetCast<SlotTarget *> {
+    static SlotTarget *
+    Cast(SlotTarget *target)
+    {
+        return target;
+    }
+};
 
 /** Base class for slot. */
 class SlotBase {
@@ -166,10 +184,11 @@ public:
      *      method of class derived from SlotTarget class. Otherwise nullptr
      *      is returned.
      */
-    SlotTarget *
+    template <class TargetType = SlotTarget>
+    TargetType *
     GetTarget() const
     {
-        return _target;
+        return SlotTargetCast<TargetType>::Cast(_target);
     }
 
 protected:
@@ -283,7 +302,6 @@ public:
     Make(Args &&... args)
     {
         SlotTarget *slotTarget = adk_internal::GetSlotTarget(std::forward<Args>(args)...);
-        ADK_INFO("st %p", slotTarget);//XXX
         return Slot(std::bind(std::forward<Args>(args)...), slotTarget);
     }
 

@@ -57,6 +57,18 @@ public:
     }
 };
 
+class Callable {
+public:
+    int x;
+    Callable(int x): x(x) {}
+
+    int
+    operator()(int a, int b)
+    {
+        return a + b + x;
+    }
+};
+
 int
 Function(int a, int b)
 {
@@ -102,4 +114,14 @@ UT_TEST("Basic functionality")
     t = nullptr;
     UT_BOOL(slot1) == UT_TRUE;
     UT_BOOL(slot2) == UT_FALSE;
+
+    /* Lambda target. */
+    auto target = [](int a, int b) { return a + b + 10; };
+    slot1 = Slot<int(int)>::Make(target, 10, std::placeholders::_1);
+    UT(slot1(20)) == UT(40);
+
+    /* Callable object. */
+    Callable c(15);
+    slot1 = Slot<int(int)>::Make(c, 10, std::placeholders::_1);
+    UT(slot1(20)) == UT(45);
 }
