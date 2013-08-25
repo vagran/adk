@@ -150,7 +150,7 @@ struct GetSlotTargetImpl<Method, SlotTargetType, Args...> {
  */
 template <typename... Args>
 constexpr SlotTarget *
-GetSlotTarget(Args &&... args)
+GetSlotTarget(Args &&...args)
 {
     return GetSlotTargetImpl<Args...>::Get(std::forward<Args>(args)...);
 }
@@ -299,7 +299,7 @@ public:
      */
     template <typename... Args>
     static Slot
-    Make(Args &&... args)
+    Make(Args &&...args)
     {
         SlotTarget *slotTarget = adk_internal::GetSlotTarget(std::forward<Args>(args)...);
         return Slot(std::bind(std::forward<Args>(args)...), slotTarget);
@@ -314,7 +314,7 @@ public:
     /** Invoke the slot. */
     template <typename... Args>
     ResultType
-    operator ()(Args &&... args)
+    operator ()(Args &&...args)
     {
         return _func(std::forward<Args>(args)...);
     }
@@ -351,11 +351,142 @@ public:
     /** Emission result type. */
     typedef typename SlotType::ResultType ResultType;
 
+private:
+    friend class Connection;
+
+    class SlotEntry {
+    public:
+        SlotType slot;
+        /** Nullptr when removed. */
+        SignalBaseSpec *signal;
+        std::mutex mutex;
+
+        SlotEntry(SignalBaseSpec *signal, SlotType slot):
+            slot(slot), signal(signal)
+        {}
+    };
+
+    typedef std::list<std::shared_ptr<SlotEntry>> SlotList;
+    typedef typename SlotList::iterator SlotListIterator;
+
+public:
+    class Connection {
+    public:
+        void
+        Disconnect()
+        {
+            std::shared_ptr<SlotEntry> e = this->e.lock();
+            if (!e) {
+                return;
+            }
+            std::unique_lock<std::mutex> lock(e->mutex);
+            if (!e->signal) {
+                return;class C {
+                    int x = 0;
+
+                    int
+                    Method()
+                    {
+                        x = this->x * 2;
+                        return x;
+                    }
+                };
+            }
+            e->signal->_Disconnect(e);
+        }
+
+        /** Check whether the connection is still valid. */
+        operator bool()
+        {
+            std::shared_ptr<SlotEntry> e = this->e.lock();
+            if (!e) {
+                return false;
+            }
+            std::unique_lock<std::mutex> lock(e->mutex);
+            return e->signal;
+        }
+
+    private:
+        friend class SignalBaseSpec;
+
+        std::weak_ptr<SlotEntry> e;
+
+        /** Should be called with list lock acquired. */
+        Connection(const std::shared_ptr<SlotEntry> &e):
+            e(e)
+        {}
+    };
+
+    Connection
+    Connect(SlotType slot)
+    {
+        std::unique_lock<std::mutex> lock(_mutex);
+        _slots.emplace_front(std::make_shared<SlotEntry>(this, slot));
+        return Connection(_slots.front());
+    }
+
     ~SignalBaseSpec()
-    {}
+    {
+        /* Entry lock should be acquired before list lock so use this algorithm. */
+        while (true) {
+            std::unique_lock<std::mutex> lock(_mutex);
+            if (_slots.empty()) {
+                break;
+            }
+            auto e = _slots.front();
+            lock.unlock();
+            std::unique_lock<std::mutex> entryLock(e->mutex);
+            if (!e->signal) {
+                /* Already removed. */
+                continue;
+            }
+            lock.lock();
+            _slots.remove(e);
+            e->signal = nullptr;
+        }
+    }
+
+protected:
+    /** Get list of slots for signal emission. */
+    std::list<SlotType>
+    _GetEmitSlots()
+    {
+        std::list<std::shared_ptr<SlotEntry>> entries;
+        {
+            std::unique_lock<std::mutex> lock(_mutex);
+            for (const std::shared_ptr<SlotEntry> &e: _slots) {
+                entries.emplace_back(e);
+            }
+        }
+        std::list<SlotType> slots;
+        for (const std::shared_ptr<SlotEntry> &e: entries) {
+            std::unique_lock<std::mutex> lock(e->mutex);
+            if (!e->signal) {
+                continue;
+            }
+            if (!e->slot) {
+                std::unique_lock<std::mutex> listLock(_mutex);
+                _slots.remove(e);
+                e->signal = nullptr;
+                continue;
+            }
+            slots.emplace_back(e->slot);
+        }
+        return slots;
+    }
 
 private:
-    std::list<SlotType *> _slots;
+    SlotList _slots;
+    std::mutex _mutex;
+
+    /** For use from connection object. Entry object should be locked. */
+    void
+    _Disconnect(std::shared_ptr<SlotEntry> e)
+    {
+        std::unique_lock<std::mutex> lock(_mutex);
+        _slots.remove(e);
+        e->signal = nullptr;
+    }
 };
 
 } /* namespace adk_internal */
@@ -368,12 +499,91 @@ class Signal: public adk_internal::SignalBaseSpec<Signature> {
 public:
     typedef adk_internal::SignalBaseSpec<Signature> BaseType;
 
+    /** Default result mapper.
+     * Result mapper can be used to map slots returned values to some final
+     * result value. It also can stop slots invocation if necessary.
+     * Default implementation never stops slot invocations and returns result
+     * from the last slot invocation.
+     */
+    class DefResultMapper {
+    public:
+        DefResultMapper():
+            _lastResult()
+        {}
+
+        /** This method should return true to continue slots invocations, and
+         * false to stop them.
+         * @param result Result from last invocation.
+         */
+        bool
+        ProcessResult(typename BaseType::ResultType &&result)
+        {
+            _lastResult = result;
+            return true;
+        }
+
+        /** Get final result to return from Emit() method. */
+        typename BaseType::ResultType
+        GetResult()
+        {
+            return _lastResult;
+        }
+
+    private:
+        typename BaseType::ResultType _lastResult;
+    };
+
+    /** Result mapper for ignoring result value. */
+    class VoidResultMapper {
+    public:
+        bool
+        ProcessResult(typename BaseType::ResultType &&)
+        {
+            return true;
+        }
+
+        void
+        GetResult()
+        {}
+    };
+
+    /** Emit the signal and map result values to the final result.
+     *
+     * @param resultMapper Mapper object.
+     * @param args Arguments for connected slots.
+     * @return Final result from mapper object.
+     */
+    template <typename ResultMapper, typename... Args>
+    decltype(std::declval<ResultMapper>().GetResult())
+    EmitMap(ResultMapper &&resultMapper, Args &&...args)
+    {
+        auto slots = BaseType::_GetEmitSlots();
+        for (auto &slot: slots) {
+            if (!resultMapper.ProcessResult(slot(std::forward<Args>(args)...))) {
+                break;
+            }
+        }
+        return resultMapper.GetResult();
+    }
+
+    /** Emit the signal.
+     *
+     * @param args Arguments for connected slots.
+     * @return Last slot result.
+     */
     template <typename... Args>
     typename BaseType::ResultType
-    Emit(Args &&... args)
+    Emit(Args &&...args)
     {
-        //XXX
-        return BaseType::ResultType();
+        return EmitMap(DefResultMapper(), std::forward<Args>(args)...);
+    }
+
+    /** Emit the signal and ignore results from slots. */
+    template <typename... Args>
+    void
+    EmitNoResult(Args &&...args)
+    {
+        return EmitMap(VoidResultMapper(), std::forward<Args>(args)...);
     }
 };
 
@@ -382,13 +592,22 @@ class Signal<Signature,
              typename std::enable_if<adk_internal::SignatureResultIsVoid<Signature>()>::type>:
     public adk_internal::SignalBaseSpec<Signature> {
 public:
+    typedef adk_internal::SignalBaseSpec<Signature> BaseType;
+
     template <typename... Args>
     void
     Emit(Args &&... args)
     {
-        //XXX
+        auto slots = BaseType::_GetEmitSlots();
+        for (auto &slot: slots) {
+            slot(std::forward<Args>(args)...);
+        }
     }
 };
+
+/** Signal connection represents connected slot. */
+template <typename Signature>
+using SignalConnection = typename adk_internal::SignalBaseSpec<Signature>::Connection;
 
 } /* namespace adk */
 
