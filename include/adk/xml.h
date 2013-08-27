@@ -486,24 +486,30 @@ public:
         return Root().Child(name);
     }
 
+    /** Get root element attribute with the specified name. */
     Attribute
     Attr(const std::string &name) const
     {
         return Root().Attr(name);
     }
 
+    /** Modify or create a new root element attribute with the specified name
+     * and value.
+     */
     Attribute
     SetAttribute(const std::string &name, const std::string &value)
     {
         return Root().SetAttribute(name, value);
     }
 
+    /** Get set of root element children elements - either or with the specified name. */
     Element::Iterable
     Children(const std::string &name = std::string()) const
     {
         return Root().Children(name);
     }
 
+    /** Get set of root element attributes. */
     Attribute::Iterable
     Attributes() const
     {

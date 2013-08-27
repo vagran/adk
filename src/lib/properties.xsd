@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+        targetNamespace="http://www.ast.com/adk/properties" 
+        xmlns:adk ="http://www.ast.com/adk/properties" 
+        elementFormDefault="qualified">
+
+    <element name="properties">
+        <annotation>
+            <documentation>
+                All items and categories should be described here
+            </documentation>
+        </annotation>
+        
+        <complexType>
+            <sequence minOccurs="0" maxOccurs="unbounded">
+                <group ref="adk:ItemOrCategory"></group>
+            </sequence>
+        </complexType>
+        
+    </element>
+    
+    <group name="ItemOrCategory" id="ItemOrCategory">
+        <choice>
+            <element name="item" type="adk:ItemType">
+            </element>
+            <element name="category" type="adk:CategoryType">
+            </element>
+        </choice>
+    </group>
+    
+    <complexType name="ItemType">
+        <sequence>
+            <element name="description">
+            </element>
+        </sequence>
+    </complexType>
+    
+    <complexType name="CategoryType">
+        <sequence>
+            <element name="description">
+            </element>
+            <group ref="adk:ItemOrCategory"></group>
+        </sequence>
+    </complexType>
+</schema>

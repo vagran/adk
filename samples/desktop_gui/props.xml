@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<properties>
+<properties xmlns="http://www.ast.com/adk/properties">
+    
     <item name="Item1" type="integer">
         <description>
             Optional long description.
@@ -16,5 +17,6 @@
         </description>
         <item name="Item3" type="string">Test string</item>
         <item name="Item4" type="boolean">true</item>
+        <item name="Item5" type="boolean" value="true" />
     </category>
 </properties>
