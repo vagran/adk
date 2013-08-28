@@ -8,7 +8,7 @@
         20
     </item>
     <item name="Item2" dispname="Item 2" type="float" units="mA*h">120.3</item>
-    <category name="Sample category">
+    <category name="sample" dispname="Sample category">
         <description>
             Place long description here. It is automatically
             re-formatted.
@@ -16,7 +16,7 @@
             Empty line before new paragraph.
         </description>
         <item name="Item3" type="string">Test string</item>
-        <item name="Item4" type="boolean">true</item>
+        <item name="Item4" type="boolean"><value>true</value></item>
         <item name="Item5" type="boolean" value="true" />
     </category>
 </properties>

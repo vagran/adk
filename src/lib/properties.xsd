@@ -13,33 +13,167 @@
         
         <complexType>
             <sequence minOccurs="0" maxOccurs="unbounded">
-                <group ref="adk:ItemOrCategory"></group>
+                <group ref="adk:ItemOrCategory" />
             </sequence>
         </complexType>
-        
     </element>
     
     <group name="ItemOrCategory" id="ItemOrCategory">
         <choice>
-            <element name="item" type="adk:ItemType">
-            </element>
-            <element name="category" type="adk:CategoryType">
-            </element>
+            <element name="item" type="adk:ItemType" />
+            <element name="category" type="adk:CategoryType" />
         </choice>
     </group>
     
-    <complexType name="ItemType">
+    <complexType name="ItemType" mixed="true">
+        <annotation>
+            <documentation>
+                Describes particular properties item
+            </documentation>
+        </annotation>
+        
         <sequence>
-            <element name="description">
+            <element name="description" minOccurs="0">
+                <annotation>
+                    <documentation>
+                        Human readable description of the item
+                    </documentation>
+                </annotation>
+            </element>
+            <element name="value" minOccurs="0">
+                <annotation>
+                    <documentation>
+                        Item value if not specified via attribute or text content
+                    </documentation>
+                </annotation>
             </element>
         </sequence>
+        
+        <attribute name="name" type="string" use="required">
+            <annotation>
+                <documentation>
+                    Internal name for the item. It is used in the code as item
+                    path component. Also it may be used as display name if such
+                    is not provided.
+                </documentation>
+            </annotation>
+        </attribute>
+        
+        <attribute name="dispname" type="string" use="optional">
+            <annotation>
+                <documentation>
+                    Human readable display name. Internal name is used if the
+                    display name is not provided.
+                </documentation>
+            </annotation>
+        </attribute>
+        
+        <attribute name="type" type="adk:ItemTypeType" use="required">
+            <annotation>
+                <documentation>
+                    Item content type
+                </documentation>
+            </annotation>
+        </attribute>
+        
+        <attribute name="units" type="string" use="optional">
+            <annotation>
+                <documentation>
+                    Value units. Displayed right after the value.
+                </documentation>
+            </annotation>
+        </attribute>
+        
+        <attribute name="value" type="string" use="optional">
+            <annotation>
+                <documentation>
+                    Item value. It is either taken from element text content,
+                    child "value" tag or this attribute, whatever is specified.
+                </documentation>
+            </annotation>
+        </attribute>
+        
     </complexType>
     
     <complexType name="CategoryType">
+        <annotation>
+            <documentation>
+                Category may contain other categories or items
+            </documentation>
+        </annotation>
+        
         <sequence>
-            <element name="description">
+            <element name="description" minOccurs="0">
+                <annotation>
+                    <documentation>
+                        Human readable description of the category
+                    </documentation>
+                </annotation>
             </element>
-            <group ref="adk:ItemOrCategory"></group>
+            <group ref="adk:ItemOrCategory" minOccurs="0" maxOccurs="unbounded" />
         </sequence>
+        
+        <attribute name="name" type="string" use="required">
+            <annotation>
+                <documentation>
+                    Internal name for the category. It is used in the code as 
+                    path component. Also it may be used as display name if such
+                    is not provided.
+                </documentation>
+            </annotation>
+        </attribute>
+        
+        <attribute name="dispname" type="string" use="optional">
+            <annotation>
+                <documentation>
+                    Human readable display name. Internal name is used if the
+                    display name is not provided.
+                </documentation>
+            </annotation>
+        </attribute>
     </complexType>
+    
+    <simpleType name="ItemTypeType">
+        <annotation>
+            <documentation>
+                Supported element types
+            </documentation>
+        </annotation>
+        <restriction base="string">
+        
+            <enumeration value="integer">
+	            <annotation>
+		            <documentation>
+		                Generic numerical integer type. Represented as maximal 
+		                size integer value.
+		            </documentation>
+	            </annotation>
+            </enumeration>
+            
+            <enumeration value="float">
+                <annotation>
+                    <documentation>
+                        Generic numerical floating point type. Represented as
+                        double type.
+                    </documentation>
+                </annotation>
+            </enumeration>
+            
+            <enumeration value="boolean">
+                <annotation>
+                    <documentation>
+                        Boolean value. Content should be "true" or "false" string.
+                    </documentation>
+                </annotation>
+            </enumeration>
+            
+            <enumeration value="string">
+                <annotation>
+                    <documentation>
+                        String value. Content can be any arbitrary string.
+                    </documentation>
+                </annotation>
+            </enumeration>
+        </restriction>
+    </simpleType>
 </schema>
