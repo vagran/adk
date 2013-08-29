@@ -25,7 +25,7 @@ UT_TEST("Basic functionality")
     {
         auto e = xml.Child("item");
         UT(static_cast<bool>(e)) == UT_TRUE;
-        UT(e.Value().c_str()) == UT_CSTR("value 1");
+        UT(e.Value().c_str()) == UT_CSTR("value 1 <>\"&'");
         UT(e.Attr("attr").Value().c_str()) == UT_CSTR("attr 1 value");
 
         e = e.NextSibling("item");
@@ -49,7 +49,7 @@ UT_TEST("Basic functionality")
     {
         auto e = xml.Child();
         UT(static_cast<bool>(e)) == UT_TRUE;
-        UT(e.Value().c_str()) == UT_CSTR("value 1");
+        UT(e.Value().c_str()) == UT_CSTR("value 1 <>\"&'");
         UT(e.Attr("attr").Value().c_str()) == UT_CSTR("attr 1 value");
 
         e = e.NextSibling();
@@ -80,8 +80,24 @@ UT_TEST("Basic functionality")
 
     {
         auto e = xml.Child();
-        UT(e.Value().c_str()) == UT_CSTR("value 1");
+        UT(e.Value().c_str()) == UT_CSTR("value 1 <>\"&'");
     }
+
+    std::string s;
+    xml.Save(s);
+    const char *expected =
+"<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n\
+<test>\n\
+  <item attr=\"attr 1 value\" attr2=\"test attr &lt;&gt;&quot;&amp;&apos;\">value 1 &lt;&gt;&quot;&amp;&apos;</item>\n\
+  <item attr=\"attr 2 value\">value 2</item>\n\
+  <item attr=\"attr 3 value\">value 3</item>\n\
+  <parent>\n\
+    <child>value 1</child>\n\
+    <child attr=\"attr value\">value</child>\n\
+  </parent>\n\
+</test>\n\
+";
+    UT(s.c_str()) == UT(expected);
 }
 
 void
@@ -121,5 +137,5 @@ UT_TEST("Iteration")
 
     auto e = xml.Child("item");
     CheckAttributesSequence(e.Attributes(),
-                            std::list<std::string> {"attr=attr 1 value", "attr2=test attr"});
+                            std::list<std::string> {"attr=attr 1 value", "attr2=test attr <>\"&'"});
 }

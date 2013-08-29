@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <test>
-<item attr="attr 1 value" attr2="test attr">value 1</item>
+<item attr="attr 1 value" attr2="test attr &lt;&gt;&quot;&amp;&apos;">value 1 &lt;&gt;&quot;&amp;&apos;</item>
 <item attr="attr 2 value">value 2</item>
 <item attr="attr 3 value">value 3</item>
 <parent>

@@ -96,6 +96,12 @@ private:
             return _doc._GetName(_nameId);
         }
 
+        bool
+        ValueEmpty() const
+        {
+            return _value.empty();
+        }
+
         void
         SetValue(const std::string &value)
         {
@@ -244,6 +250,12 @@ public:
             {
                 return Iterator(_element, true);
             }
+
+            /** Check if there is something to iterate. */
+            operator bool()
+            {
+                return begin() != end();
+            }
         private:
             ElementNode *_element;
         };
@@ -348,6 +360,12 @@ public:
             {
                 return Iterator(nullptr);
             }
+
+            /** Check if there is something to iterate. */
+            operator bool()
+            {
+                return begin() != end();
+            }
         private:
             ElementNode *_node;
             std::string _name;
@@ -382,6 +400,14 @@ public:
         {
             ASSERT(_node);
             _node->SetValue(value);
+        }
+
+        /** Check if the element value is empty. */
+        bool
+        ValueEmpty() const
+        {
+            ASSERT(_node);
+            return _node->ValueEmpty();
         }
 
         Element
@@ -423,7 +449,7 @@ public:
          * specified name.
          */
         Iterable
-        Children(const std::string &name) const
+        Children(const std::string &name = std::string()) const
         {
             return Iterable(_node, name);
         }
@@ -457,14 +483,23 @@ public:
 
     /** Load document from the buffer. */
     void
-    Load(const char *buf, size_t size);
+    Load(const char *buf, size_t size = std::string::npos);
 
     /** Load document from the string. */
     void
-    Load(const std::string &buf)
-    {
-        Load(buf.c_str(), buf.size());
-    }
+    Load(const std::string &buf);
+
+    /** Load document from the stream. */
+    void
+    Load(std::istream &stream);
+
+    /** Save document to the provided stream. */
+    void
+    Save(std::ostream &stream);
+
+    /** Save document into the provided string. */
+    void
+    Save(std::string &str);
 
     /** Clear all the content. */
     void
@@ -516,6 +551,13 @@ public:
         return Root().Attributes();
     }
 
+    /** Escape all XML entities in the string.
+     * @param trimWhitespaces Trim whitespace characters at the beginning and
+     *      end of the string if true.
+     */
+    static std::string
+    EscapeEntities(const std::string &s, bool trimWhitespaces = false);
+
 private:
     XML_Parser _parser = nullptr;
     /** Next free name ID. */
@@ -562,6 +604,12 @@ private:
     /** Create a new element with the specified attributes. */
     ElementNode::Ptr
     _CreateElement(NameId nameId, const XML_Char **attrs);
+
+    void
+    _SaveElement(Element e, int indentation, std::ostream &stream);
+
+    void
+    _SaveIndentation(int indentation, std::ostream &stream);
 };
 
 } /* namespace adk */
