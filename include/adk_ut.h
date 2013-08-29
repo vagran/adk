@@ -69,7 +69,8 @@
  *
  * @param value Value of any supported type to participate in assert condition.
  */
-#define UT(value)   ut::TestValue<decltype(value)>(value, __UT_STR(value), __FILE__, __LINE__)
+#define UT(value)       ut::TestValue<decltype(value)> \
+                            (value, __UT_STR(value), __FILE__, __LINE__)
 
 /** Wrapper which interprets value as boolean. */
 #define UT_BOOL(value)  ut::TestValue<bool>(static_cast<bool>(value), __UT_STR(value), __FILE__, __LINE__)
@@ -92,7 +93,7 @@
 #define UT_DOUBLE(value) UT(static_cast<double>(value))
 
 /** Wrapper for null pointer value. */
-#define UT_NULL     ut::TestValue<void *>(nullptr, "NULL", __FILE__, __LINE__)
+#define UT_NULL         ut::TestValue<void *>(nullptr, "NULL", __FILE__, __LINE__)
 
 /** Wrapper which interprets value as pointer to constant data. Can be useful
  * to force comparing strings by pointers instead of comparing by content.
@@ -115,15 +116,29 @@
 /** User requested failure.
  * @param desc Description of the fault.
  */
-#define UT_FAIL(desc, ...)   ut::__ut_user_fault(__FILE__, __LINE__, desc, ## __VA_ARGS__)
+#define UT_FAIL(desc, ...)  ut::__ut_user_fault(__FILE__, __LINE__, desc, ## __VA_ARGS__)
 
 /** Indicate successful milestone passing. Can be used to affect assertions
  * statistics while checking conditions manually.
  */
-#define UT_PASS()       ut::__ut_hit_assert()
+#define UT_PASS()           ut::__ut_hit_assert()
 
 /** Output message to the test log. */
 #define UT_TRACE(msg, ...) ut::__ut_trace(__FILE__, __LINE__, msg, ## __VA_ARGS__)
+
+/** Verify that expression @a expr throws exception of type @a excType. */
+#define UT_THROWS(expr, excType) do { \
+    bool __caught = false; \
+    try { \
+        expr; \
+    } catch (excType &) { \
+        __caught = true; \
+    } \
+    if (!__caught) { \
+        UT_FAIL("Expected exception of type '%s' was not caught in expression '%s'", \
+                __UT_STR(excType), # expr); \
+    } \
+} while(false)
 
 typedef __builtin_va_list       __ut_va_list;
 

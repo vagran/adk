@@ -252,6 +252,8 @@ __ADK_PARAM_EXC_DECL_STR_METHOD(unsigned long long);
 ADK_DEFINE_EXCEPTION(InvalidParamException);
 /** Generic exception thrown when operation is executed in invalid state. */
 ADK_DEFINE_EXCEPTION(InvalidOpException);
+/** Generic exception thrown when operation is executed in invalid state. */
+ADK_DEFINE_EXCEPTION(InternalErrorException);
 
 } /* namespace adk */
 

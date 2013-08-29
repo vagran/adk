@@ -24,6 +24,42 @@
 
 namespace adk {
 
+namespace internal {
+
+/** Helper for finding nearest matching type for properties value. */
+template <typename T>
+struct PropValueNearestType {
+    /* Integer by default. */
+    typedef long Type;
+};
+
+template <>
+struct PropValueNearestType<double> {
+    typedef double Type;
+};
+
+template <>
+struct PropValueNearestType<float> {
+    typedef double Type;
+};
+
+template <>
+struct PropValueNearestType<bool> {
+    typedef bool Type;
+};
+
+template <>
+struct PropValueNearestType<std::string> {
+    typedef std::string Type;
+};
+
+template <>
+struct PropValueNearestType<const char *> {
+    typedef std::string &&Type;
+};
+
+} /* namespace internal */
+
 class Properties {
 public:
     /** Base exception class for all properties exceptions. */
@@ -49,25 +85,68 @@ public:
             STRING
         };
 
-        Value(Type type);
+        Value(Type type = Type::NONE);
 
         Value(long i);
         Value(double f);
         Value(bool b);
         Value(const std::string &s);
+        Value(std::string &&s);
+
+        template <typename T>
+        Value(T value):
+            Value(static_cast<typename internal::PropValueNearestType<T>::Type>(value))
+        {}
+
+        Value(const Value &value);
+        Value(Value &&value);
 
         ~Value();
 
         Type
-        Get_type() const;
+        GetType() const
+        {
+            return _type;
+        }
+
+        Value &
+        operator =(long value);
+        Value &
+        operator =(double value);
+        Value &
+        operator =(bool value);
+        Value &
+        operator =(const std::string &value);
+        Value &
+        operator =(std::string &&value);
+
+        template <typename T>
+        T
+        Get() const
+        {
+            return static_cast<typename internal::PropValueNearestType<T>::Type>(*this);
+        }
+
+        operator long() const;
+        operator double() const;
+        operator bool() const;
+        operator std::string() const;
+
+        template <typename T>
+        operator T() const
+        {
+            return Get<T>();
+        }
 
     private:
+        Type _type;
+
         union {
             long i;
             double f;
             bool b;
             std::string *s;
-        } value;
+        } _value;
     };
 
     /** Represents category handle exposed to user. */

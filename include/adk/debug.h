@@ -28,7 +28,7 @@
 #else
 
 #define ASSERT_IMPL(condStr) do { \
-    ADK_EXCEPTION(adk::Exception, "Assert failed: " condStr); \
+    ADK_EXCEPTION(adk::InternalErrorException, "Assert failed: " condStr); \
 } while (false)
 
 #endif /* UNITTEST */
@@ -63,5 +63,11 @@
 
 #endif /* DEBUG */
 
+#define ENSURE(x) do { \
+    if (UNLIKELY(!(x))) { \
+        ADK_CRITICAL("Ensure failed: '%s'", # x); \
+        ADK_EXCEPTION(adk::InternalErrorException, "Ensure failed: " # x); \
+    } \
+} while(false)
 
 #endif /* ADK_DEBUG_H_ */

@@ -180,9 +180,10 @@ TestMan::Run()
         printf("==== Running test '%s' (%zu of %zu) ====\n(defined at %s:%d)\n\n",
                t->GetName(), testIdx + 1, numTests, t->GetFile(), t->GetLine());
 
-        bool failed = false;
+        bool failed = true;
         try {
             t->TestBody();
+            failed = false;
         } catch (TestException &e) {
             printf("\n");
             ut_string desc;
@@ -192,7 +193,16 @@ TestMan::Run()
             }
             TestException_Describe(e, desc);
             printf("%s\n", desc.c_str());
-            failed = true;
+        } catch (std::exception &e) {
+            printf("\n");
+            ut_string desc;
+            if (__ut_testCheckpoint) {
+                TestCheckpoint_Describe(__ut_testCheckpoint, desc);
+                printf("Last checkpoint: %s\n", desc.c_str());
+            }
+            printf("Unexpected exception: %s", e.what());
+        } catch (...) {
+            printf("Unexpected exception during test execution");
         }
 
         printf("\nTest %s\n", failed ? "FAILED" : "PASSED");
