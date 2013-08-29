@@ -25,7 +25,66 @@
 namespace adk {
 
 class Properties {
+public:
+    /** Base exception class for all properties exceptions. */
+    ADK_DEFINE_EXCEPTION(Exception);
+    /** Document parsing exception. Any kind of inconsistency with schema or
+     * data types causes this exception (e.g. string cannot be converted to
+     * number, misplaced tag or attribute).
+     */
+    ADK_DEFINE_DERIVED_EXCEPTION(ParseException, Exception);
+    /** Value validation exception. Raised either by built-in or custom user
+     * validators.
+     */
+    ADK_DEFINE_DERIVED_EXCEPTION(ValidationException, Exception);
 
+    /** Stored value wrapper. */
+    class Value {
+    public:
+        enum class Type {
+            NONE,
+            INTEGER,
+            FLOAT,
+            BOOLEAN,
+            STRING
+        };
+
+        Value(Type type);
+
+        Value(long i);
+        Value(double f);
+        Value(bool b);
+        Value(const std::string &s);
+
+        ~Value();
+
+        Type
+        Get_type() const;
+
+    private:
+        union {
+            long i;
+            double f;
+            bool b;
+            std::string *s;
+        } value;
+    };
+
+    /** Represents category handle exposed to user. */
+    class Category {
+
+    };
+
+    /** Represents item handle exposed to user. */
+    class Item {
+
+    };
+
+    /** Create empty properties. */
+    Properties();
+
+    /** Create properties based on the provided XML document. */
+    Properties(Xml &xml);
 };
 
 } /* namespace adk */

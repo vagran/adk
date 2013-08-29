@@ -295,24 +295,24 @@ Xml::~Xml()
     Clear();
 }
 
-void
+Xml &
 Xml::Load(const char *buf, size_t size)
 {
     if (size == std::string::npos) {
-        Load(std::string(buf));
+        return Load(std::string(buf));
     } else {
-        Load(std::string(buf, size));
+        return Load(std::string(buf, size));
     }
 }
 
-void
+Xml &
 Xml::Load(const std::string &buf)
 {
     std::istringstream ss(buf);
-    Load(ss);
+    return Load(ss);
 }
 
-void
+Xml &
 Xml::Load(std::istream &stream)
 {
     Clear();
@@ -330,6 +330,7 @@ Xml::Load(std::istream &stream)
             _CreateParseException();
         }
     } while (size == sizeof(buf));
+    return *this;
 }
 
 void

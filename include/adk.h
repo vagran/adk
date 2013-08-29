@@ -65,6 +65,7 @@
 #include <adk/signal.h>
 #include <adk/resources.h>
 #include <adk/xml.h>
+#include <adk/properties.h>
 
 #ifdef ADK_USE_GUI
 #include <adk/glade.h>

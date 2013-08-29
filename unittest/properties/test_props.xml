@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!--
-/ADK/samples/desktop_gui/props.xml
+/ADK/unittest/properties/test_props.xml
 
 This file is a part of ADK library.
 Copyright (c) 2012-2013, Artyom Lebedev <artyom.lebedev@gmail.com>
@@ -9,11 +9,11 @@ See COPYING file for copyright details.
 -->
 <properties xmlns="http://www.ast.com/adk/properties">
     
-    <item name="Item1" type="integer">
+    <item name="Item1" type="integer" maxValue="30" minValue="20">
         <description>
             Optional long description.
         </description>
-        20
+        <value>20</value>
     </item>
     <item name="Item2" dispName="Item 2" type="float" units="mA*h">120.3</item>
     <category name="sample" dispName="Sample category">
@@ -23,8 +23,8 @@ See COPYING file for copyright details.
             
             Empty line before new paragraph.
         </description>
-        <item name="Item3" type="string">Test string</item>
-        <item name="Item4" type="boolean"><value>true</value></item>
+        <item name="Item3" type="string" maxLen="200">Test string</item>
+        <item name="Item4" type="boolean">true</item>
         <item name="Item5" type="boolean" value="true" />
     </category>
 </properties>

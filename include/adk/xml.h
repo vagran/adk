@@ -482,15 +482,15 @@ public:
     ~Xml();
 
     /** Load document from the buffer. */
-    void
+    Xml &
     Load(const char *buf, size_t size = std::string::npos);
 
     /** Load document from the string. */
-    void
+    Xml &
     Load(const std::string &buf);
 
     /** Load document from the stream. */
-    void
+    Xml &
     Load(std::istream &stream);
 
     /** Save document to the provided stream. */

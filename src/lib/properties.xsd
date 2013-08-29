@@ -67,7 +67,7 @@ See COPYING file for copyright details.
             </annotation>
         </attribute>
         
-        <attribute name="dispname" type="string" use="optional">
+        <attribute name="dispName" type="string" use="optional">
             <annotation>
                 <documentation>
                     Human readable display name. Internal name is used if the
@@ -97,6 +97,35 @@ See COPYING file for copyright details.
                 <documentation>
                     Item value. It is either taken from element text content,
                     child "value" tag or this attribute, whatever is specified.
+                </documentation>
+            </annotation>
+        </attribute>
+        
+        <attribute name="minValue" type="string" use="optional">
+            <annotation>
+                <documentation>
+                    Optional minimal value limit. Applicable for "integer"
+                    and "float" types only. Value "unbounded" (default) 
+                    indicates no limit.
+                </documentation>
+            </annotation>
+        </attribute>
+        
+        <attribute name="maxValue" type="string" use="optional">
+            <annotation>
+                <documentation>
+                    Optional maximal value limit. Applicable for "integer"
+                    and "float" types only. Value "unbounded" (default) 
+                    indicates no limit.
+                </documentation>
+            </annotation>
+        </attribute>
+        
+        <attribute name="maxLen" type="string" use="optional">
+            <annotation>
+                <documentation>
+                    Optional maximal length limit. Applicable for "string"
+                    type only. Value "unbounded" (default) indicates no limit.
                 </documentation>
             </annotation>
         </attribute>
@@ -131,7 +160,7 @@ See COPYING file for copyright details.
             </annotation>
         </attribute>
         
-        <attribute name="dispname" type="string" use="optional">
+        <attribute name="dispName" type="string" use="optional">
             <annotation>
                 <documentation>
                     Human readable display name. Internal name is used if the
