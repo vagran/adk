@@ -1,4 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+/ADK/src/lib/properties.xsd
+
+This file is a part of ADK library.
+Copyright (c) 2012-2013, Artyom Lebedev <artyom.lebedev@gmail.com>
+All rights reserved.
+See COPYING file for copyright details.
+-->
 <schema xmlns="http://www.w3.org/2001/XMLSchema"
         targetNamespace="http://www.ast.com/adk/properties" 
         xmlns:adk ="http://www.ast.com/adk/properties" 
@@ -59,7 +67,7 @@
             </annotation>
         </attribute>
         
-        <attribute name="dispname" type="string" use="optional">
+        <attribute name="dispName" type="string" use="optional">
             <annotation>
                 <documentation>
                     Human readable display name. Internal name is used if the
@@ -89,6 +97,35 @@
                 <documentation>
                     Item value. It is either taken from element text content,
                     child "value" tag or this attribute, whatever is specified.
+                </documentation>
+            </annotation>
+        </attribute>
+        
+        <attribute name="minValue" type="string" use="optional">
+            <annotation>
+                <documentation>
+                    Optional minimal value limit. Applicable for "integer"
+                    and "float" types only. Value "unbounded" (default) 
+                    indicates no limit.
+                </documentation>
+            </annotation>
+        </attribute>
+        
+        <attribute name="maxValue" type="string" use="optional">
+            <annotation>
+                <documentation>
+                    Optional maximal value limit. Applicable for "integer"
+                    and "float" types only. Value "unbounded" (default) 
+                    indicates no limit.
+                </documentation>
+            </annotation>
+        </attribute>
+        
+        <attribute name="maxLen" type="string" use="optional">
+            <annotation>
+                <documentation>
+                    Optional maximal length limit. Applicable for "string"
+                    type only. Value "unbounded" (default) indicates no limit.
                 </documentation>
             </annotation>
         </attribute>
@@ -123,7 +160,7 @@
             </annotation>
         </attribute>
         
-        <attribute name="dispname" type="string" use="optional">
+        <attribute name="dispName" type="string" use="optional">
             <annotation>
                 <documentation>
                     Human readable display name. Internal name is used if the

@@ -295,15 +295,151 @@ Xml::~Xml()
     Clear();
 }
 
-void
+Xml &
 Xml::Load(const char *buf, size_t size)
+{
+    if (size == std::string::npos) {
+        return Load(std::string(buf));
+    } else {
+        return Load(std::string(buf, size));
+    }
+}
+
+Xml &
+Xml::Load(const std::string &buf)
+{
+    std::istringstream ss(buf);
+    return Load(ss);
+}
+
+Xml &
+Xml::Load(std::istream &stream)
 {
     Clear();
     _CreateParser();
-    XML_Status status = XML_Parse(_parser, buf, size, true);
-    if (status != XML_STATUS_OK) {
-        _CreateParseException();
+    char buf[1024];
+    size_t size;
+    do {
+        stream.read(buf, sizeof(buf));
+        size = stream.gcount();
+        if (!size) {
+            break;
+        }
+        XML_Status status = XML_Parse(_parser, buf, size, size < sizeof(buf));
+        if (status != XML_STATUS_OK) {
+            _CreateParseException();
+        }
+    } while (size == sizeof(buf));
+    return *this;
+}
+
+void
+Xml::_SaveIndentation(int indentation, std::ostream &stream)
+{
+    while (indentation--) {
+        stream << "  ";
     }
+}
+
+void
+Xml::_SaveElement(Element e, int indentation, std::ostream &stream)
+{
+    _SaveIndentation(indentation, stream);
+    stream << "<" << e.Name();
+    for (Attribute attr: e.Attributes()) {
+        stream << ' ' << attr.Name() << "=\"" << EscapeEntities(attr.Value()) << '"';
+    }
+    if (e.Children() || !e.ValueEmpty()) {
+        stream << '>';
+        if (e.Children()) {
+            stream << std::endl;
+        }
+        for (Element child: e.Children()) {
+            _SaveElement(child, indentation + 1, stream);
+        }
+        std::string value;
+        if (!e.ValueEmpty()) {
+            value = EscapeEntities(e.Value(), e.Children());
+        }
+        if (!value.empty()) {
+            stream << value;
+        } else {
+            _SaveIndentation(indentation, stream);
+        }
+        stream << "</" << e.Name() << '>' << std::endl;
+    } else {
+        stream << "/>" << std::endl;
+    }
+}
+
+void
+Xml::Save(std::ostream &stream)
+{
+    stream << "<?xml version=\"1.0\" encoding=\"utf-8\" ?>" << std::endl;
+    _SaveElement(Root(), 0, stream);
+}
+
+void
+Xml::Save(std::string &str)
+{
+    std::ostringstream ss;
+    Save(ss);
+    str = ss.str();
+}
+
+std::string
+Xml::EscapeEntities(const std::string &s, bool trimWhitespaces)
+{
+    bool nonWsSeen = false;
+    size_t firstWsPos = std::string::npos;
+
+    std::string result;
+    for (int c: s) {
+        switch(c) {
+        case '<':
+            result += "&lt;";
+            nonWsSeen = true;
+            firstWsPos = std::string::npos;
+            break;
+        case '>':
+            result += "&gt;";
+            nonWsSeen = true;
+            firstWsPos = std::string::npos;
+            break;
+        case '"':
+            result += "&quot;";
+            nonWsSeen = true;
+            firstWsPos = std::string::npos;
+            break;
+        case '\'':
+            result += "&apos;";
+            nonWsSeen = true;
+            firstWsPos = std::string::npos;
+            break;
+        case '&':
+            result += "&amp;";
+            nonWsSeen = true;
+            firstWsPos = std::string::npos;
+            break;
+        case ' ':
+        case '\t':
+        case '\r':
+        case '\n':
+            if (!trimWhitespaces || nonWsSeen) {
+                result += c;
+            }
+            if (nonWsSeen && firstWsPos == std::string::npos) {
+                firstWsPos = result.size() - 1;
+            }
+            break;
+        default:
+            result += c;
+        }
+    }
+    if (trimWhitespaces && firstWsPos != std::string::npos) {
+        return result.substr(0, firstWsPos);
+    }
+    return result;
 }
 
 void
