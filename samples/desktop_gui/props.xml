@@ -5,7 +5,7 @@
         <description>
             Optional long description.
         </description>
-        20
+        <value>20</value>
     </item>
     <item name="Item2" dispname="Item 2" type="float" units="mA*h">120.3</item>
     <category name="sample" dispname="Sample category">
@@ -16,7 +16,7 @@
             Empty line before new paragraph.
         </description>
         <item name="Item3" type="string">Test string</item>
-        <item name="Item4" type="boolean"><value>true</value></item>
+        <item name="Item4" type="boolean">true</item>
         <item name="Item5" type="boolean" value="true" />
     </category>
 </properties>
