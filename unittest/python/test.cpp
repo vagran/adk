@@ -21,7 +21,7 @@ using namespace adk;
 
 #define CheckValueString(value, expected)   do { \
     std::string s = value.Str(); \
-    UT(s.c_str()) == UT_CSTR(expected); \
+    UT(s.c_str()) == UT(expected); \
 } while (false)
 
 UT_TEST("Variables")

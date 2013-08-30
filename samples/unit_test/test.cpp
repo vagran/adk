@@ -16,7 +16,7 @@
 
 UT_TEST("Sample test")
 {
-    UT(SampleString()) == UT_CSTR("Sample string");
+    UT(SampleString()) == UT("Sample string");
 
     UT_CKPOINT("Multiplication");
 

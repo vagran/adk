@@ -26,36 +26,196 @@ namespace adk {
 
 namespace internal {
 
-/** Helper for finding nearest matching type for properties value. */
+/** Helper for finding nearest matching type for properties value when assigning. */
 template <typename T>
-struct PropValueNearestType {
+struct PropValueNearestTypeSet {
     /* Integer by default. */
     typedef long Type;
 };
 
 template <>
-struct PropValueNearestType<double> {
+struct PropValueNearestTypeSet<double> {
     typedef double Type;
 };
 
 template <>
-struct PropValueNearestType<float> {
+struct PropValueNearestTypeSet<float> {
     typedef double Type;
 };
 
 template <>
-struct PropValueNearestType<bool> {
+struct PropValueNearestTypeSet<bool> {
     typedef bool Type;
 };
 
 template <>
-struct PropValueNearestType<std::string> {
+struct PropValueNearestTypeSet<std::string> {
+    typedef std::string &&Type;
+};
+
+template <>
+struct PropValueNearestTypeSet<std::string &> {
+    typedef const std::string &Type;
+};
+
+template <>
+struct PropValueNearestTypeSet<const char *> {
+    typedef std::string &&Type;
+};
+
+template <size_t size>
+struct PropValueNearestTypeSet<const char (&)[size]> {
+    typedef std::string &&Type;
+};
+
+/** Helper for finding nearest matching type for properties value when getting value. */
+template <typename T>
+struct PropValueNearestTypeGet {
+    /* Integer by default. */
+    typedef long Type;
+};
+
+template <>
+struct PropValueNearestTypeGet<double> {
+    typedef double Type;
+};
+
+template <>
+struct PropValueNearestTypeGet<float> {
+    typedef double Type;
+};
+
+template <>
+struct PropValueNearestTypeGet<bool> {
+    typedef bool Type;
+};
+
+template <>
+struct PropValueNearestTypeGet<std::string> {
     typedef std::string Type;
 };
 
 template <>
-struct PropValueNearestType<const char *> {
-    typedef std::string &&Type;
+struct PropValueNearestTypeGet<const char *> {
+    typedef const char *Type;
+};
+
+/** Helper class for getting value of necessary type. */
+template <typename T>
+class PropValueGet;
+
+template <>
+class PropValueGet<long> {
+public:
+    template <class Props>
+    static long
+    Get(Props &&prop)
+    {
+        return std::forward<Props>(prop).GetInteger();
+    }
+};
+
+template <>
+class PropValueGet<double> {
+public:
+    template <class Props>
+    static double
+    Get(Props &&prop)
+    {
+        return std::forward<Props>(prop).GetFloat();
+    }
+};
+
+template <>
+class PropValueGet<bool> {
+public:
+    template <class Props>
+    static bool
+    Get(Props &&prop)
+    {
+        return std::forward<Props>(prop).GetBoolean();
+    }
+};
+
+template <>
+class PropValueGet<std::string> {
+public:
+    template <class Props>
+    static std::string
+    Get(Props &&prop)
+    {
+        return std::forward<Props>(prop).GetString();
+    }
+};
+
+template <>
+class PropValueGet<const char *> {
+public:
+    template <class Props>
+    static const char *
+    Get(Props &&prop)
+    {
+        return std::forward<Props>(prop).GetString().c_str();
+    }
+};
+
+/** Helper class for setting value of necessary type. */
+template <typename T>
+class PropValueSet;
+
+template <>
+class PropValueSet<long> {
+public:
+    template <class Props>
+    static Props &
+    Set(Props &prop, long value)
+    {
+        return prop.SetInteger(value);
+    }
+};
+
+template <>
+class PropValueSet<double> {
+public:
+    template <class Props>
+    static Props &
+    Set(Props &prop, double value)
+    {
+        return prop.SetFloat(value);
+    }
+};
+
+template <>
+class PropValueSet<bool> {
+public:
+    template <class Props>
+    static Props &
+    Set(Props &prop, bool value)
+    {
+        return prop.SetBoolean(value);
+    }
+};
+
+template <>
+class PropValueSet<const std::string &> {
+public:
+    template <class Props>
+    static Props &
+    Set(Props &prop, const std::string &value)
+    {
+        return prop.SetString(value);
+    }
+};
+
+template <>
+class PropValueSet<std::string &&> {
+public:
+    template <class Props>
+    static Props &
+    Set(Props &prop, std::string &&value)
+    {
+        return prop.SetString(std::move(value));
+    }
 };
 
 } /* namespace internal */
@@ -95,7 +255,7 @@ public:
 
         template <typename T>
         Value(T value):
-            Value(static_cast<typename internal::PropValueNearestType<T>::Type>(value))
+            Value(static_cast<typename internal::PropValueNearestTypeSet<T>::Type>(value))
         {}
 
         Value(const Value &value);
@@ -109,34 +269,93 @@ public:
             return _type;
         }
 
-        Value &
-        operator =(long value);
-        Value &
-        operator =(double value);
-        Value &
-        operator =(bool value);
-        Value &
-        operator =(const std::string &value);
-        Value &
-        operator =(std::string &&value);
+        /* Obtain copy of the value. */
+        long
+        GetInteger() const &;
+        double
+        GetFloat() const &;
+        bool
+        GetBoolean() const &;
+        std::string
+        GetString() const &;
+
+        /* Take value away. The value is none after that. Especially useful for
+         * taking string value - data are not copied in such case.
+         */
+        long
+        GetInteger() &&;
+        double
+        GetFloat() &&;
+        bool
+        GetBoolean() &&;
+        std::string
+        GetString() &&;
 
         template <typename T>
         T
-        Get() const
+        Get() const &
         {
-            return static_cast<typename internal::PropValueNearestType<T>::Type>(*this);
+            return internal::PropValueGet<typename internal::PropValueNearestTypeGet<T>::Type>::Get(*this);
         }
 
-        operator long() const;
-        operator double() const;
-        operator bool() const;
-        operator std::string() const;
+        template <typename T>
+        T
+        Get() &&
+        {
+            return internal::PropValueGet<typename internal::PropValueNearestTypeGet<T>::Type>::
+                Get(std::move(*this));
+        }
 
         template <typename T>
-        operator T() const
+        operator T() const &
         {
             return Get<T>();
         }
+
+        template <typename T>
+        operator T() &&
+        {
+            return std::move(*this).Get<T>();
+        }
+
+        /** Check if value is none. */
+        bool
+        IsNone() const
+        {
+            return _type == Type::NONE;
+        }
+
+        Value &
+        SetInteger(long value);
+        Value &
+        SetFloat(double value);
+        Value &
+        SetBoolean(bool value);
+        Value &
+        SetString(const std::string &value);
+        Value &
+        SetString(std::string &&value);
+
+        template <typename T>
+        Value &
+        Set(T &&value)
+        {
+            return internal::PropValueSet<typename internal::PropValueNearestTypeSet<T>::Type>::
+                Set(*this, std::forward<T>(value));
+        }
+
+        template <typename T>
+        Value &
+        operator =(T &&value)
+        {
+            return internal::PropValueSet<typename internal::PropValueNearestTypeSet<T>::Type>::
+                Set(*this, std::forward<T>(value));
+        }
+
+        Value &
+        operator =(const Value &value);
+        Value &
+        operator =(Value &&value);
 
     private:
         Type _type;

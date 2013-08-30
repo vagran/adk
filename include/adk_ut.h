@@ -58,6 +58,18 @@
     } /* anonymous namespace */ \
     void __UT_TEST_DESC::TestBody()
 
+/** Adapt some common types to suitable templates in TestValue class. */
+template <typename T>
+struct TestValueTypeAdapter {
+    typedef T Type;
+};
+
+/** Treat string literals as "const char *". */
+template <unsigned long size>
+struct TestValueTypeAdapter<char const (&)[size]> {
+    typedef const char *Type;
+};
+
 /** Wrapper for all values which are participating in asserts.
  *
  * Usage example:
@@ -69,7 +81,7 @@
  *
  * @param value Value of any supported type to participate in assert condition.
  */
-#define UT(value)       ut::TestValue<decltype(value)> \
+#define UT(value)       ut::TestValue<typename TestValueTypeAdapter<decltype(value)>::Type> \
                             (value, __UT_STR(value), __FILE__, __LINE__)
 
 /** Wrapper which interprets value as boolean. */

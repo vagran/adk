@@ -20,27 +20,27 @@ UT_TEST("Basic functionality")
     Xml xml;
     xml.Load(GetResource("test.xml").GetString());
 
-    UT(xml.Root().Name().c_str()) == UT_CSTR("test");
+    UT(xml.Root().Name().c_str()) == UT("test");
 
     {
         auto e = xml.Child("item");
         UT(static_cast<bool>(e)) == UT_TRUE;
-        UT(e.Value().c_str()) == UT_CSTR("value 1 <>\"&'");
-        UT(e.Attr("attr").Value().c_str()) == UT_CSTR("attr 1 value");
+        UT(e.Value().c_str()) == UT("value 1 <>\"&'");
+        UT(e.Attr("attr").Value().c_str()) == UT("attr 1 value");
 
         e = e.NextSibling("item");
         UT(static_cast<bool>(e)) == UT_TRUE;
-        UT(e.Value().c_str()) == UT_CSTR("value 2");
-        UT(e.Attr("attr").Value().c_str()) == UT_CSTR("attr 2 value");
+        UT(e.Value().c_str()) == UT("value 2");
+        UT(e.Attr("attr").Value().c_str()) == UT("attr 2 value");
 
         e = e.NextSibling("item");
         UT(static_cast<bool>(e)) == UT_TRUE;
-        UT(e.Value().c_str()) == UT_CSTR("value 3");
-        UT(e.Attr("attr").Value().c_str()) == UT_CSTR("attr 3 value");
+        UT(e.Value().c_str()) == UT("value 3");
+        UT(e.Attr("attr").Value().c_str()) == UT("attr 3 value");
 
         e = e.NextSibling();
         UT(static_cast<bool>(e)) == UT_TRUE;
-        UT(e.Name().c_str()) == UT_CSTR("parent");
+        UT(e.Name().c_str()) == UT("parent");
 
         e = e.NextSibling();
         UT(static_cast<bool>(e)) == UT_FALSE;
@@ -49,22 +49,22 @@ UT_TEST("Basic functionality")
     {
         auto e = xml.Child();
         UT(static_cast<bool>(e)) == UT_TRUE;
-        UT(e.Value().c_str()) == UT_CSTR("value 1 <>\"&'");
-        UT(e.Attr("attr").Value().c_str()) == UT_CSTR("attr 1 value");
+        UT(e.Value().c_str()) == UT("value 1 <>\"&'");
+        UT(e.Attr("attr").Value().c_str()) == UT("attr 1 value");
 
         e = e.NextSibling();
         UT(static_cast<bool>(e)) == UT_TRUE;
-        UT(e.Value().c_str()) == UT_CSTR("value 2");
-        UT(e.Attr("attr").Value().c_str()) == UT_CSTR("attr 2 value");
+        UT(e.Value().c_str()) == UT("value 2");
+        UT(e.Attr("attr").Value().c_str()) == UT("attr 2 value");
 
         e = e.NextSibling();
         UT(static_cast<bool>(e)) == UT_TRUE;
-        UT(e.Value().c_str()) == UT_CSTR("value 3");
-        UT(e.Attr("attr").Value().c_str()) == UT_CSTR("attr 3 value");
+        UT(e.Value().c_str()) == UT("value 3");
+        UT(e.Attr("attr").Value().c_str()) == UT("attr 3 value");
 
         e = e.NextSibling();
         UT(static_cast<bool>(e)) == UT_TRUE;
-        UT(e.Name().c_str()) == UT_CSTR("parent");
+        UT(e.Name().c_str()) == UT("parent");
 
         e = e.NextSibling();
         UT(static_cast<bool>(e)) == UT_FALSE;
@@ -75,12 +75,12 @@ UT_TEST("Basic functionality")
         UT(static_cast<bool>(e)) == UT_TRUE;
         e = e.Child("child");
         UT(static_cast<bool>(e)) == UT_TRUE;
-        UT(e.Value().c_str()) == UT_CSTR("value 1");
+        UT(e.Value().c_str()) == UT("value 1");
     }
 
     {
         auto e = xml.Child();
-        UT(e.Value().c_str()) == UT_CSTR("value 1 <>\"&'");
+        UT(e.Value().c_str()) == UT("value 1 <>\"&'");
     }
 
     std::string s;
