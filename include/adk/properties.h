@@ -368,13 +368,91 @@ public:
         } _value;
     };
 
-    /** Represents category handle exposed to user. */
-    class Category {
+private:
+    class Node {
+    public:
+        typedef std::shared_ptr<Node> Ptr;
 
+        bool isItem;
+
+        virtual ~Node();
+    };
+
+    class ItemNode: public Node {
+
+    private:
+        //XXX min/maxValue, maxLen should attach built-in validators
+
+        /** Current value. */
+        Value _value;
+        /** Internal name. */
+        std::string *_name,
+        /** Display name, empty if not specified. */
+                    _dispName,
+        /** Description text. */
+                    _description,
+        /** Units string, empty if no units specified. */
+                    _units;
+    };
+
+    class CategoryNode: public Node {
+    private:
+        /** Internal name. */
+        std::string *_name,
+        /** Display name, empty if not specified. */
+                    _dispName,
+        /** Description text. */
+                    _description;
+
+        std::map<std::string, Node::Ptr>;
     };
 
     /** Represents item handle exposed to user. */
     class Item {
+    public:
+        /** Get value type. */
+        Value::Type
+        Type() const;
+
+        /** Get value. */
+        Value
+        Val() const;
+
+        /** Get internal name. */
+        std::string
+        Name() const;
+
+        /** Get string to be used as display name. */
+        std::string
+        DispName() const;
+
+        /** Get description string. */
+        std::string
+        Description() const;
+
+        /** Get units string. */
+        std::string
+        Units() const;
+
+    private:
+        ItemNode::Ptr _node;
+    };
+
+    /** Represents category handle exposed to user. */
+    class Category {
+        /** Get internal name. */
+        std::string
+        Name() const;
+
+        /** Get string to be used as display name. */
+        std::string
+        DispName() const;
+
+        /** Get description string. */
+        std::string
+        Description() const;
+
+    private:
 
     };
 

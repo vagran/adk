@@ -240,6 +240,73 @@ Properties::Value::operator =(Value &&value)
 }
 
 /* ****************************************************************************/
+/* Properties::Category class. */
+
+std::string
+Properties::Category::Name() const
+{
+    return *_name;
+}
+
+std::string
+Properties::Category::DispName() const
+{
+    if (_dispName.empty()) {
+        return *_name;
+    }
+    return _dispName;
+}
+
+std::string
+Properties::Category::Description() const
+{
+    return _description;
+}
+
+/* ****************************************************************************/
+/* Properties::Item class. */
+
+Properties::Value::Type
+Properties::Item::Type() const
+{
+    return _value.GetType();
+}
+
+Properties::Value
+Properties::Item::Val() const
+{
+    return _value;
+}
+
+std::string
+Properties::Item::Name() const
+{
+    return *_name;
+}
+
+std::string
+Properties::Item::DispName() const
+{
+    if (_dispName.empty()) {
+        return *_name;
+    }
+    return _dispName;
+}
+
+std::string
+Properties::Item::Description() const
+{
+    return _description;
+}
+
+std::string
+Properties::Item::Units() const
+{
+    return _units;
+}
+
+/* ****************************************************************************/
+/* Properties class. */
 
 Properties::Properties()
 {
