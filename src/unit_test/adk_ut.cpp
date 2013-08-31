@@ -218,7 +218,7 @@ TestMan::Run()
 
     printf("======== Testing complete [%s] ========\n"
            "%zu of %zu tests passed\n",
-           numPassed == numTests ? "SUCCEED" : "FAILED",
+           numPassed == numTests ? "SUCCEEDED" : "FAILED",
            numPassed, numTests);
     PrintStat(true);
     ::__ut_mtrack_enabled = false;

@@ -384,13 +384,31 @@ public:
     /** Parsed node path. */
     class Path {
     public:
-        Path(const std::string &path);
-        Path(const Path &);
-        Path(Path &&);
+        /** Construct path from string representation. Path components are
+         * separated using the specified separator character. The path may be
+         * empty. Empty components (two consequential separator characters) are
+         * discarded. Leading or trailing separator does not affect the path.
+         * Separator character can be escaped by a backslash. A backslash
+         * character itself can be escaped by a backslash. Invalid escape
+         * sequence treated as normal characters sequence (i.e. backslash
+         * character is preserved).
+         */
+        Path(const std::string &path, char separator = '/');
+        Path(const char *path);
+        Path(const Path &) = default;
+        Path(Path &&) = default;
+
+        Path &
+        operator =(const Path &) = default;
+        Path &
+        operator =(Path &&) = default;
 
         /** Number of components. */
         size_t
         Size() const;
+
+        /** Check if path is not empty. */
+        operator bool () const;
 
         /** Get path component with the specified index. */
         std::string
@@ -402,17 +420,26 @@ public:
         Path
         operator+(const Path &path) const &;
         Path
-        operator+(Path &&path) const &;
-        Path
         operator+(const Path &path) &&;
-        Path
-        operator+(Path &&path) &&;
 
         /** Append another path. */
         Path &
         operator +=(const Path &path);
-        Path &
-        operator +=(Path &&path);
+
+        /** Get string representation for the path. */
+        std::string
+        Str(char separator = '/') const;
+
+        /** Check if the provided path has common prefix with this path.
+         * @return number of components in common prefix. Zero if the paths
+         * does not have common prefix.
+         */
+        size_t
+        HasCommonPrefix(const Path &path) const;
+
+        /** Check if this path is prefix for the provided path. */
+        bool
+        IsPrefixFor(const Path &path) const;
 
     private:
         std::vector<std::string> _components;

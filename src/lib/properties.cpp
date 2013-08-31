@@ -240,6 +240,135 @@ Properties::Value::operator =(Value &&value)
 }
 
 /* ****************************************************************************/
+/* Properties::Path class. */
+
+Properties::Path::Path(const std::string &path, char separator)
+{
+    size_t idx = 0;
+    while (idx < path.size()) {
+        std::string component;
+        bool escape = false;
+        for (; idx < path.size(); idx++) {
+            char c = path[idx];
+            if (escape) {
+                if (c != separator && c != '\\') {
+                    /* Invalid escape. */
+                    component += '\\';
+                }
+                component += c;
+                escape = false;
+            } else {
+                if (c == separator) {
+                    idx++;
+                    break;
+                } else if (c == '\\') {
+                    escape = true;
+                } else {
+                    component += c;
+                }
+            }
+        };
+        if (escape) {
+            component += '\\';
+        }
+        if (!component.empty()) {
+            _components.emplace_back(std::move(component));
+        }
+    }
+}
+
+Properties::Path::Path(const char *path):
+    Path(std::string(path))
+{}
+
+size_t
+Properties::Path::Size() const
+{
+    return _components.size();
+}
+
+Properties::Path::operator bool () const
+{
+    return Size() != 0;
+}
+
+std::string
+Properties::Path::operator[](size_t idx) const &
+{
+    ASSERT(idx < _components.size());
+    return _components[idx];
+}
+
+std::string
+Properties::Path::operator[](size_t idx) &&
+{
+    ASSERT(idx < _components.size());
+    return std::move(_components[idx]);
+}
+
+Properties::Path
+Properties::Path::operator+(const Path &path) const &
+{
+    Path result(*this);
+    result += path;
+    return result;
+}
+
+Properties::Path
+Properties::Path::operator+(const Path &path) &&
+{
+    (*this) += path;
+    return std::move(*this);
+}
+
+Properties::Path &
+Properties::Path::operator +=(const Path &path)
+{
+    _components.insert(_components.end(),
+                       path._components.begin(), path._components.end());
+    return *this;
+}
+
+size_t
+Properties::Path::HasCommonPrefix(const Path &path) const
+{
+    size_t idx;
+    for (idx = 0;
+         idx < _components.size() && idx < path._components.size();
+         idx++) {
+
+        if (_components[idx] != path._components[idx]) {
+            break;
+        }
+    }
+    return idx;
+}
+
+bool
+Properties::Path::IsPrefixFor(const Path &path) const
+{
+    return HasCommonPrefix(path) == _components.size();
+}
+
+std::string
+Properties::Path::Str(char separator) const
+{
+    std::string result;
+    for (const std::string &comp: _components) {
+        if (!result.empty()) {
+            result += separator;
+        }
+        for (char c: comp) {
+            if (c == separator || c == '\\') {
+                result += '\\';
+            }
+            result += c;
+        }
+    }
+    return result;
+}
+
+/* ****************************************************************************/
 /* Properties::Node class. */
 
 Properties::Node::Node(std::string *name, bool isItem, Node *parent):

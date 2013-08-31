@@ -163,3 +163,82 @@ UT_TEST("Properties::Value class")
         UT(v1.IsNone()) == UT_TRUE;
     }
 }
+
+UT_TEST("Properties::Path class")
+{
+    {
+        Properties::Path p("");
+        UT_BOOL(p) == UT_FALSE;
+        UT(p.Str().c_str()) == UT("");
+    }
+
+    {
+        Properties::Path p("test");
+        UT_BOOL(p) == UT_TRUE;
+        UT(p.Size()) == UT_SIZE(1);
+        UT(p[0].c_str()) == UT("test");
+    }
+
+    {
+        Properties::Path p("test/1/2/3");
+        UT_BOOL(p) == UT_TRUE;
+        UT(p.Size()) == UT_SIZE(4);
+        UT(p[0].c_str()) == UT("test");
+        UT(p[1].c_str()) == UT("1");
+        UT(p[2].c_str()) == UT("2");
+        UT(p[3].c_str()) == UT("3");
+        UT(p.Str().c_str()) == UT("test/1/2/3");
+    }
+
+    {
+        Properties::Path p("test/1\\/\\\\2/\\3\\");
+        UT_BOOL(p) == UT_TRUE;
+        UT(p.Size()) == UT_SIZE(3);
+        UT(p[0].c_str()) == UT("test");
+        UT(p[1].c_str()) == UT("1/\\2");
+        UT(p[2].c_str()) == UT("\\3\\");
+        UT(p.Str().c_str()) == UT("test/1\\/\\\\2/\\\\3\\\\");
+    }
+
+    {
+        Properties::Path p("test.1.2.3", '.');
+        UT_BOOL(p) == UT_TRUE;
+        UT(p.Size()) == UT_SIZE(4);
+        UT(p[0].c_str()) == UT("test");
+        UT(p[1].c_str()) == UT("1");
+        UT(p[2].c_str()) == UT("2");
+        UT(p[3].c_str()) == UT("3");
+        UT(p.Str('.').c_str()) == UT("test.1.2.3");
+
+        p += Properties::Path("4/5") + Properties::Path("6");
+        UT(p.Str().c_str()) == UT("test/1/2/3/4/5/6");
+
+        Properties::Path p2 = std::move(p);
+        UT(p2.Str().c_str()) == UT("test/1/2/3/4/5/6");
+        UT_BOOL(p) == UT_FALSE;
+    }
+
+    {
+        UT((Properties::Path("1/2") +
+            Properties::Path("3/4") +
+            Properties::Path("5")).Str().c_str()) == UT("1/2/3/4/5");
+    }
+
+    {
+        UT(Properties::Path("1/2/3/4").HasCommonPrefix("1/2/5/6")) == UT_SIZE(2);
+        UT(Properties::Path("1/2/3/4").HasCommonPrefix("0/2/5/6")) == UT_SIZE(0);
+        UT(Properties::Path("1/2/3/4").HasCommonPrefix("1/2")) == UT_SIZE(2);
+        UT(Properties::Path("1/2/3/4").HasCommonPrefix("1")) == UT_SIZE(1);
+        UT(Properties::Path("1/2/3/4").HasCommonPrefix("")) == UT_SIZE(0);
+        UT(Properties::Path("1/2/3/4").HasCommonPrefix("1/2/3/4")) == UT_SIZE(4);
+        UT(Properties::Path("1/2/3/4").HasCommonPrefix("1/2/3/4/5")) == UT_SIZE(4);
+
+        UT(Properties::Path("").HasCommonPrefix("")) == UT_SIZE(0);
+        UT(Properties::Path("").HasCommonPrefix("1")) == UT_SIZE(0);
+
+        UT(Properties::Path("1/2/3/4").IsPrefixFor("1/2/5/6")) == UT_FALSE;
+        UT(Properties::Path("1/2/3/4").IsPrefixFor("1/2/3/4")) == UT_TRUE;
+        UT(Properties::Path("1/2/3/4").IsPrefixFor("1/2/3/4/5")) == UT_TRUE;
+        UT(Properties::Path("1/2/3/4").IsPrefixFor("")) == UT_FALSE;
+    }
+}
