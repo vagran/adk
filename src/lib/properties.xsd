@@ -18,10 +18,27 @@ See COPYING file for copyright details.
                 All items and categories should be described here
             </documentation>
         </annotation>
-        
         <complexType>
-            <sequence minOccurs="0" maxOccurs="unbounded">
-                <group ref="adk:ItemOrCategory" />
+            <sequence>
+                <element name="title" minOccurs="0" type="string">
+	                <annotation>
+			            <documentation>
+			                Optional title for the whole properties sheet
+			            </documentation>
+	                </annotation>
+                </element>
+                
+                <element name="description" minOccurs="0" type="string">
+                    <annotation>
+                        <documentation>
+                            Optional description for the whole properties sheet
+                        </documentation>
+                    </annotation>
+                </element>
+                
+	            <sequence minOccurs="0" maxOccurs="unbounded">
+	                <group ref="adk:ItemOrCategory" />
+	            </sequence>
             </sequence>
         </complexType>
     </element>

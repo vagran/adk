@@ -240,27 +240,65 @@ Properties::Value::operator =(Value &&value)
 }
 
 /* ****************************************************************************/
+/* Properties::Node class. */
+
+Properties::Node::Node(std::string *name, bool isItem, Node *parent):
+    _isItem(isItem), _name(name), _parent(parent)
+{}
+
+Properties::Node::~Node()
+{}
+
+Properties::ItemNode &
+Properties::Node::Item()
+{
+    ASSERT(_isItem);
+    return reinterpret_cast<ItemNode &>(*this);
+}
+
+Properties::CategoryNode &
+Properties::Node::Category()
+{
+    ASSERT(!_isItem);
+    return reinterpret_cast<CategoryNode &>(*this);
+}
+
+std::string &
+Properties::Node::Name() const
+{
+    return *_name;
+}
+
+/* ****************************************************************************/
 /* Properties::Category class. */
 
 std::string
 Properties::Category::Name() const
 {
-    return *_name;
+    ASSERT(_node);
+    return _node->Name();
 }
 
 std::string
 Properties::Category::DispName() const
 {
-    if (_dispName.empty()) {
-        return *_name;
+    ASSERT(_node);
+    if (_node->_dispName.empty()) {
+        return _node->Name();
     }
-    return _dispName;
+    return _node->_dispName;
 }
 
 std::string
 Properties::Category::Description() const
 {
-    return _description;
+    ASSERT(_node);
+    return _node->_description;
+}
+
+Properties::Category::operator bool() const
+{
+    return _node != nullptr;
 }
 
 /* ****************************************************************************/
@@ -269,40 +307,51 @@ Properties::Category::Description() const
 Properties::Value::Type
 Properties::Item::Type() const
 {
-    return _value.GetType();
+    ASSERT(_node);
+    return _node->_value.GetType();
 }
 
 Properties::Value
 Properties::Item::Val() const
 {
-    return _value;
+    ASSERT(_node);
+    return _node->_value;
 }
 
 std::string
 Properties::Item::Name() const
 {
-    return *_name;
+    ASSERT(_node);
+    return _node->Name();
 }
 
 std::string
 Properties::Item::DispName() const
 {
-    if (_dispName.empty()) {
-        return *_name;
+    ASSERT(_node);
+    if (_node->_dispName.empty()) {
+        return _node->Name();
     }
-    return _dispName;
+    return _node->_dispName;
 }
 
 std::string
 Properties::Item::Description() const
 {
-    return _description;
+    ASSERT(_node);
+    return _node->_description;
 }
 
 std::string
 Properties::Item::Units() const
 {
-    return _units;
+    ASSERT(_node);
+    return _node->_units;
+}
+
+Properties::Item::operator bool() const
+{
+    return _node != nullptr;
 }
 
 /* ****************************************************************************/
@@ -313,7 +362,19 @@ Properties::Properties()
 
 }
 
-Properties::Properties(Xml &xml __UNUSED)
+Properties::Properties(const Xml &xml)
 {
+    Load(xml);
+}
 
+void
+Properties::Clear()
+{
+    //XXX
+}
+
+void
+Properties::Load(const Xml &xml __UNUSED)
+{
+    //XXX
 }

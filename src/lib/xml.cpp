@@ -342,7 +342,7 @@ Xml::_SaveIndentation(int indentation, std::ostream &stream)
 }
 
 void
-Xml::_SaveElement(Element e, int indentation, std::ostream &stream)
+Xml::_SaveElement(Element e, int indentation, std::ostream &stream) const
 {
     _SaveIndentation(indentation, stream);
     stream << "<" << e.Name();
@@ -373,14 +373,14 @@ Xml::_SaveElement(Element e, int indentation, std::ostream &stream)
 }
 
 void
-Xml::Save(std::ostream &stream)
+Xml::Save(std::ostream &stream) const
 {
     stream << "<?xml version=\"1.0\" encoding=\"utf-8\" ?>" << std::endl;
     _SaveElement(Root(), 0, stream);
 }
 
 void
-Xml::Save(std::string &str)
+Xml::Save(std::string &str) const
 {
     std::ostringstream ss;
     Save(ss);

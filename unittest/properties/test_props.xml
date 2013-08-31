@@ -8,7 +8,10 @@ All rights reserved.
 See COPYING file for copyright details.
 -->
 <properties xmlns="http://www.ast.com/adk/properties">
-    
+    <title>Test properties</title>
+    <description>
+        Root element description.
+    </description>
     <item name="Item1" type="integer" maxValue="30" minValue="20">
         <description>
             Optional long description.

@@ -8,7 +8,10 @@ All rights reserved.
 See COPYING file for copyright details.
 -->
 <properties xmlns="http://www.ast.com/adk/properties">
-    
+    <title>Sample properties</title>
+    <description>
+        Sample of properties sheet
+    </description>
     <item name="Item1" type="integer">
         <description>
             Optional long description.

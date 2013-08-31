@@ -24,6 +24,9 @@
 
 namespace adk {
 
+/* ****************************************************************************/
+/* Various helpers and utilities. */
+
 namespace internal {
 
 /** Helper for finding nearest matching type for properties value when assigning. */
@@ -220,6 +223,8 @@ public:
 
 } /* namespace internal */
 
+/* ****************************************************************************/
+
 class Properties {
 public:
     /** Base exception class for all properties exceptions. */
@@ -234,7 +239,13 @@ public:
      */
     ADK_DEFINE_DERIVED_EXCEPTION(ValidationException, Exception);
 
-    /** Stored value wrapper. */
+    class Item;
+    class Category;
+
+    /* ************************************************************************/
+    /** Stored value wrapper. The value has dynamic type which is defined when
+     * the value is assigned.
+     */
     class Value {
     public:
         enum class Type {
@@ -295,7 +306,8 @@ public:
         T
         Get() const &
         {
-            return internal::PropValueGet<typename internal::PropValueNearestTypeGet<T>::Type>::Get(*this);
+            return internal::PropValueGet<typename internal::PropValueNearestTypeGet<T>::Type>::
+                Get(*this);
         }
 
         template <typename T>
@@ -367,28 +379,89 @@ public:
             std::string *s;
         } _value;
     };
+    /* ************************************************************************/
+
+    /** Parsed node path. */
+    class Path {
+    public:
+        Path(const std::string &path);
+        Path(const Path &);
+        Path(Path &&);
+
+        /** Number of components. */
+        size_t
+        Size() const;
+
+        /** Get path component with the specified index. */
+        std::string
+        operator[](size_t idx) const &;
+        std::string
+        operator[](size_t idx) &&;
+
+        /** Concatenate two paths. */
+        Path
+        operator+(const Path &path) const &;
+        Path
+        operator+(Path &&path) const &;
+        Path
+        operator+(const Path &path) &&;
+        Path
+        operator+(Path &&path) &&;
+
+        /** Append another path. */
+        Path &
+        operator +=(const Path &path);
+        Path &
+        operator +=(Path &&path);
+
+    private:
+        std::vector<std::string> _components;
+    };
+    /* ************************************************************************/
 
 private:
+    class ItemNode;
+    class CategoryNode;
+
+    /** Represents node in the properties tree. */
     class Node {
     public:
         typedef std::shared_ptr<Node> Ptr;
 
-        bool isItem;
+        virtual
+        ~Node();
 
-        virtual ~Node();
+        ItemNode &
+        Item();
+
+        CategoryNode &
+        Category();
+
+        std::string &
+        Name() const;
+
+    protected:
+        Node(std::string *name, bool isItem, Node *parent = nullptr);
+
+        /** Indicates whether it is item or category. */
+        bool _isItem;
+        /** Internal name. */
+        std::string *_name;
+        /** Parent node, nullptr for root. */
+        Node *_parent;
     };
 
     class ItemNode: public Node {
 
     private:
+        friend class Item;
+
         //XXX min/maxValue, maxLen should attach built-in validators
 
         /** Current value. */
         Value _value;
-        /** Internal name. */
-        std::string *_name,
         /** Display name, empty if not specified. */
-                    _dispName,
+        std::string _dispName,
         /** Description text. */
                     _description,
         /** Units string, empty if no units specified. */
@@ -396,17 +469,23 @@ private:
     };
 
     class CategoryNode: public Node {
+    public:
+        /** Get child node by path. nullptr is returned if the node not found. */
+        virtual Node *
+        Find(const std::string &path);
+
     private:
-        /** Internal name. */
-        std::string *_name,
+        friend class Category;
+
         /** Display name, empty if not specified. */
-                    _dispName,
+        std::string _dispName,
         /** Description text. */
                     _description;
-
-        std::map<std::string, Node::Ptr>;
+        /** Child nodes. */
+        std::map<std::string, Node::Ptr> _children;
     };
 
+public:
     /** Represents item handle exposed to user. */
     class Item {
     public:
@@ -434,8 +513,11 @@ private:
         std::string
         Units() const;
 
+        /** Check if the handle is not empty. */
+        operator bool() const;
+
     private:
-        ItemNode::Ptr _node;
+        ItemNode *_node;
     };
 
     /** Represents category handle exposed to user. */
@@ -452,15 +534,44 @@ private:
         std::string
         Description() const;
 
-    private:
+        /** Check if the handle is not empty. */
+        operator bool() const;
 
+    private:
+        CategoryNode *_node;
+    };
+
+    /** Each sheet modification is done in some transaction context. */
+    class Transaction {
+    public:
+        Transaction(Transaction &&);
+        Transaction(const Transaction &) = delete;
+
+        ~Transaction();
     };
 
     /** Create empty properties. */
     Properties();
 
     /** Create properties based on the provided XML document. */
-    Properties(Xml &xml);
+    Properties(const Xml &xml);
+
+    /** Clear all the content. All handles are invalidated. */
+    void
+    Clear();
+
+    /** Replaces all the content with new content from the specified XML
+      * document.
+      */
+    void
+    Load(const Xml &xml);
+
+private:
+    /** Root category. Its display name contains optional title for the whole
+     * properties sheet. Description corresponds to the whole properties sheet
+     * optional description.
+     */
+    Category _root;
 };
 
 } /* namespace adk */

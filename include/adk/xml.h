@@ -495,11 +495,11 @@ public:
 
     /** Save document to the provided stream. */
     void
-    Save(std::ostream &stream);
+    Save(std::ostream &stream) const;
 
     /** Save document into the provided string. */
     void
-    Save(std::string &str);
+    Save(std::string &str) const;
 
     /** Clear all the content. */
     void
@@ -606,9 +606,9 @@ private:
     _CreateElement(NameId nameId, const XML_Char **attrs);
 
     void
-    _SaveElement(Element e, int indentation, std::ostream &stream);
+    _SaveElement(Element e, int indentation, std::ostream &stream) const;
 
-    void
+    static void
     _SaveIndentation(int indentation, std::ostream &stream);
 };
 
