@@ -241,4 +241,18 @@ UT_TEST("Properties::Path class")
         UT(Properties::Path("1/2/3/4").IsPrefixFor("1/2/3/4/5")) == UT_TRUE;
         UT(Properties::Path("1/2/3/4").IsPrefixFor("")) == UT_FALSE;
     }
+
+    {
+        UT(Properties::Path("1/2/3/4").SubPath(0).Str().c_str()) == UT("1/2/3/4");
+        UT(Properties::Path("1/2/3/4").SubPath(1).Str().c_str()) == UT("2/3/4");
+        UT(Properties::Path("1/2/3/4").SubPath(3).Str().c_str()) == UT("4");
+        UT(Properties::Path("1/2/3/4").SubPath(4).Str().c_str()) == UT("");
+        UT(Properties::Path("1/2/3/4").SubPath(0, 2).Str().c_str()) == UT("1/2");
+        UT(Properties::Path("1/2/3/4").SubPath(0, 0).Str().c_str()) == UT("");
+        UT(Properties::Path("1/2/3/4").SubPath(0, 4).Str().c_str()) == UT("1/2/3/4");
+        UT(Properties::Path("1/2/3/4").SubPath(1, 2).Str().c_str()) == UT("2/3");
+        UT(Properties::Path("1/2/3/4").SubPath(1, 0).Str().c_str()) == UT("");
+        UT(Properties::Path("1/2/3/4").SubPath(4, 0).Str().c_str()) == UT("");
+        UT(Properties::Path("1/2/3/4").SubPath(3, 1).Str().c_str()) == UT("4");
+    }
 }

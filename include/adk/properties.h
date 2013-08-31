@@ -384,6 +384,8 @@ public:
     /** Parsed node path. */
     class Path {
     public:
+        static constexpr size_t npos = static_cast<size_t>(-1);
+
         /** Construct path from string representation. Path components are
          * separated using the specified separator character. The path may be
          * empty. Empty components (two consequential separator characters) are
@@ -395,6 +397,7 @@ public:
          */
         Path(const std::string &path, char separator = '/');
         Path(const char *path);
+        Path() = default;
         Path(const Path &) = default;
         Path(Path &&) = default;
 
@@ -440,6 +443,18 @@ public:
         /** Check if this path is prefix for the provided path. */
         bool
         IsPrefixFor(const Path &path) const;
+
+        /** Get sub path.
+         *
+         * @param start Start position of the subpath.
+         * @param count Number of components to extract. Use npos value to
+         *      specify subpath till the end of the path.
+         * @return Extracted subpath.
+         */
+        Path
+        SubPath(size_t start, size_t count = npos) const &;
+        Path
+        SubPath(size_t start, size_t count = npos) &&;
 
     private:
         std::vector<std::string> _components;

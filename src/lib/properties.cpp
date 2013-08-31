@@ -368,6 +368,33 @@ Properties::Path::Str(char separator) const
     return result;
 }
 
+Properties::Path
+Properties::Path::SubPath(size_t start, size_t count) const &
+{
+    ASSERT(start <= _components.size());
+    ASSERT(count == npos || start + count <= _components.size());
+    Path result;
+    result._components.insert(
+        result._components.begin(),
+        _components.begin() + start,
+        count == npos ? _components.end() : _components.begin() + start + count);
+    return result;
+}
+
+Properties::Path
+Properties::Path::SubPath(size_t start, size_t count) &&
+{
+    ASSERT(start <= _components.size());
+    ASSERT(count == npos || start + count <= _components.size());
+    if (start != 0) {
+        _components.erase(_components.begin(), _components.begin() + start);
+    }
+    if (count != npos) {
+        _components.resize(count);
+    }
+    return std::move(*this);
+}
+
 /* ****************************************************************************/
 /* Properties::Node class. */
 
