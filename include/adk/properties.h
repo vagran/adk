@@ -583,13 +583,29 @@ public:
         CategoryNode *_node;
     };
 
-    /** Each sheet modification is done in some transaction context. */
+    /** Each sheet modification is done in some transaction context. A
+     * transaction accumulates modification operations (node change/add/delete).
+     * */
     class Transaction {
     public:
         Transaction(Transaction &&);
         Transaction(const Transaction &) = delete;
 
         ~Transaction();
+
+        /** Commit all accumulated operations. Validation exception can be
+         * thrown if some change does not pass validation. None of the changes
+         * is applied in such case.
+         * The transaction is cleared after return.
+         */
+        void
+        Commit();
+
+        /** Cancel all accumulated operations. New operations can be accumulated
+         * and committed after that.
+         */
+        void
+        Cancel();
     };
 
     /** Create empty properties. */
