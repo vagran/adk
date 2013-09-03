@@ -473,6 +473,9 @@ private:
         virtual
         ~Node();
 
+        bool
+        IsItem() const;
+
         ItemNode &
         Item();
 
@@ -606,6 +609,32 @@ public:
          */
         void
         Cancel();
+
+    private:
+        /** Represents transaction log record. Each record is either one or set
+         * of aggregated pending operations.
+         */
+        class Record {
+        public:
+            /** Operation type. */
+            enum class Type {
+                MODIFY,
+                ADD,
+                DELETE
+            };
+
+            /** Affected path. */
+            Path path;
+            /** Associated node if any. Content depends on operation:
+             * MODIFY: modified item or category node.
+             * ADD: Added item node or category node with possible subtree.
+             * DELETE: Should be null.
+             */
+            Node::Ptr node;
+        };
+
+        /** Transaction log with all pending operations. */
+        std::list<Record> log;
     };
 
     /** Create empty properties. */

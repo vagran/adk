@@ -405,6 +405,12 @@ Properties::Node::Node(std::string *name, bool isItem, Node *parent):
 Properties::Node::~Node()
 {}
 
+bool
+Properties::Node::IsItem() const
+{
+    return _isItem;
+}
+
 Properties::ItemNode &
 Properties::Node::Item()
 {
