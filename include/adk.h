@@ -58,6 +58,7 @@
 #include <adk/debug.h>
 
 #include <adk/utils.h>
+#include <adk/optional.h>
 #include <adk/bitmap.h>
 #include <adk/hash.h>
 #include <adk/rb_tree.h>

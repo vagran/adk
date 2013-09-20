@@ -1,10 +1,15 @@
-# /ADK/unittest/Makefile
+# /ADK/unittest/misc/Makefile
 #
 # This file is a part of ADK library.
 # Copyright (c) 2012-2013, Artyom Lebedev <artyom.lebedev@gmail.com>
 # All rights reserved.
 # See COPYING file for copyright details.
 
-SUBDIRS = bitmap python signal xml misc
+ADK_APP_TYPE = unit_test
+
+ADK_TEST_NAME = miscelaneous
+ADK_TEST_DESC = Miscelaneous features
+
+ADK_TEST_SRCS = $(wildcard $(ADK_ROOT)/src/lib/*.cpp)
 
 include $(ADK_ROOT)/make/make.mk

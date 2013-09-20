@@ -534,6 +534,12 @@ public:
     /** Represents item handle exposed to user. */
     class Item {
     public:
+
+        /** Item creation options. */
+        class Options {
+
+        };
+
         /** Get value type. */
         Value::Type
         Type() const;
@@ -567,6 +573,12 @@ public:
 
     /** Represents category handle exposed to user. */
     class Category {
+    public:
+        /** Category creation options. */
+        class Options {
+
+        };
+
         /** Get internal name. */
         std::string
         Name() const;
@@ -588,9 +600,12 @@ public:
 
     /** Each sheet modification is done in some transaction context. A
      * transaction accumulates modification operations (node change/add/delete).
+     * When a transaction is committed the properties tree is locked.
      * */
     class Transaction {
     public:
+        typedef std::shared_ptr<Transaction> Ptr;
+
         Transaction(Transaction &&);
         Transaction(const Transaction &) = delete;
 
@@ -609,6 +624,18 @@ public:
          */
         void
         Cancel();
+
+        /** Add new category.
+         *
+         * @param path Path of the new category. Last component is the new
+         *      category name. All the preceding components should name existing
+         *      categories.
+         * @param options Category creation options.
+         * @return New category handle.
+         */
+        Category
+        AddCategory(const Path &path,
+                    const Category::Options &options = Category::Options());
 
     private:
         /** Represents transaction log record. Each record is either one or set
@@ -652,6 +679,15 @@ public:
       */
     void
     Load(const Xml &xml);
+
+    /** Open a new transaction for the sheet modification. Changes made in scope
+     * of this transaction are committed when transaction Commit() method is
+     * called or after last reference to the transaction is released.
+     *
+     * @return New transaction object.
+     */
+    Transaction::Ptr
+    OpenTransaction();
 
 private:
     /** Root category. Its display name contains optional title for the whole

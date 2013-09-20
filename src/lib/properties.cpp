@@ -540,3 +540,10 @@ Properties::Load(const Xml &xml __UNUSED)
 {
     //XXX
 }
+
+Properties::Transaction::Ptr
+Properties::OpenTransaction()
+{
+    //XXX
+    return nullptr;
+}
