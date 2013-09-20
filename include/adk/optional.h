@@ -58,6 +58,13 @@ public:
         }
     }
 
+    ~Optional()
+    {
+        if (isValid) {
+            (**this).~T();
+        }
+    }
+
     Optional &
     operator =(Null_t)
     {
@@ -97,8 +104,8 @@ public:
             if (value.isValid) {
                 **this = *value;
             } else {
-                isValid = false;
                 (**this).~T();
+                isValid = false;
             }
         } else if (value.isValid) {
             new(storage) T(*value);
@@ -114,8 +121,8 @@ public:
             if (value.isValid) {
                 **this = *std::move(value);
             } else {
-                isValid = false;
                 (**this).~T();
+                isValid = false;
             }
         } else if (value.isValid) {
             new(storage) T(*std::move(value));
@@ -181,6 +188,15 @@ public:
     constexpr explicit operator bool() const
     {
         return isValid;
+    }
+
+    void
+    Disengage()
+    {
+        if (isValid) {
+            (**this).~T();
+            isValid = false;
+        }
     }
 
 private:
