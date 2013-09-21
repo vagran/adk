@@ -47,7 +47,7 @@ UT_TEST("Optional class")
         UT_BOOL(x) == UT_TRUE;
         UT(x->x) == UT(2);
 
-        x = Optional<C>::Null_t();
+        x = nullopt;
         UT_BOOL(x) == UT_FALSE;
     }
 
@@ -60,7 +60,7 @@ UT_TEST("Optional class")
         x = y;
         UT(x->x) == UT(2);
 
-        x = Optional<C>::Null_t();
+        x = nullopt;
         UT_BOOL(x) == UT_FALSE;
 
         x = std::move(y);
@@ -74,11 +74,14 @@ UT_TEST("Optional class")
         x = c;
         UT(x->x) == UT(2);
 
-        x = Optional<C>::Null_t();
+        x = nullopt;
         UT_BOOL(x) == UT_FALSE;
 
         x = std::move(c);
         UT(x->x) == UT(2);
         UT(c.x) == UT(0);
+
+        x = 3;
+        UT(x->x) == UT(3);
     }
 }

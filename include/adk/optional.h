@@ -15,18 +15,22 @@
 
 namespace adk {
 
+/** Type for null option. Used to disengage optional value. */
+struct Nullopt_t {};
+
+/** Null option. Used to disengage optional value. */
+constexpr Nullopt_t nullopt;
+
 /** The class encapsulates optional value of type T. */
 template <typename T>
 class Optional {
 public:
 
-    class Null_t {};
-
     constexpr Optional():
         isValid(false)
     {}
 
-    constexpr Optional(Null_t):
+    constexpr Optional(Nullopt_t):
         isValid(false)
     {}
 
@@ -66,7 +70,7 @@ public:
     }
 
     Optional &
-    operator =(Null_t)
+    operator =(Nullopt_t)
     {
         (**this).~T();
         isValid = false;
