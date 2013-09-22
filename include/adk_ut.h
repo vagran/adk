@@ -140,6 +140,7 @@ struct TestValueTypeAdapter<char const (&)[size]> {
 
 /** Verify that expression @a expr throws exception of type @a excType. */
 #define UT_THROWS(expr, excType) do { \
+    ut::__ut_hit_exception(); \
     bool __caught = false; \
     try { \
         expr; \
@@ -185,6 +186,8 @@ void __ut_vtrace(const char *file, int line, const char *msg, __ut_va_list args)
 void __ut_hit_value();
 /** Increment assertions statistics. */
 void __ut_hit_assert();
+/** Increment exceptions statistics. */
+void __ut_hit_exception();
 
 unsigned __ut_strlen(const char *s);
 int __ut_strcmp(const char *s1, const char *s2);

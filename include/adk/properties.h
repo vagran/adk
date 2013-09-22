@@ -241,6 +241,7 @@ public:
 
     class Item;
     class Category;
+    class Transaction;
 
     /* ************************************************************************/
     /** Stored value wrapper. The value has dynamic type which is defined when
@@ -486,7 +487,8 @@ private:
         Name() const;
 
     protected:
-        Node(std::string *name, bool isItem, Node *parent = nullptr);
+        Node(std::string *name, bool isItem, Node *parent,
+             Transaction *trans);
 
         /** Indicates whether it is item or category. */
         bool _isItem;
@@ -494,8 +496,12 @@ private:
         std::string *_name;
         /** Parent node, nullptr for root. */
         Node *_parent;
+
+        /** Associated transaction if not yet committed to the sheet. */
+        Transaction *_transaction;
     };
 
+    /** Leaf (item) node. */
     class ItemNode: public Node {
 
     private:
@@ -506,26 +512,27 @@ private:
         /** Current value. */
         Value _value;
         /** Display name, empty if not specified. */
-        std::string _dispName,
+        Optional<std::string> _dispName,
         /** Description text. */
-                    _description,
+                              _description,
         /** Units string, empty if no units specified. */
-                    _units;
+                              _units;
     };
 
+    /** Non-leaf (category) node. */
     class CategoryNode: public Node {
     public:
         /** Get child node by path. nullptr is returned if the node not found. */
-        virtual Node *
+        Node *
         Find(const std::string &path);
 
     private:
         friend class Category;
 
         /** Display name, empty if not specified. */
-        std::string _dispName,
+        Optional<std::string> _dispName,
         /** Description text. */
-                    _description;
+                              _description;
         /** Child nodes. */
         std::map<std::string, Node::Ptr> _children;
     };
@@ -537,7 +544,19 @@ public:
 
         /** Item creation options. */
         class Options {
+        public:
+            Optional<std::string> dispName,
+                                  description,
+                                  units;
 
+            Options &
+            DispName(Optional<std::string> dispName);
+
+            Options &
+            Description(Optional<std::string> description);
+
+            Options &
+            Units(Optional<std::string> units);
         };
 
         /** Get value type. */
@@ -576,7 +595,16 @@ public:
     public:
         /** Category creation options. */
         class Options {
+        public:
 
+            Optional<std::string> dispName,
+                                  description;
+
+            Options &
+            DispName(Optional<std::string> dispName);
+
+            Options &
+            Description(Optional<std::string> description);
         };
 
         /** Get internal name. */
@@ -606,7 +634,7 @@ public:
     public:
         typedef std::shared_ptr<Transaction> Ptr;
 
-        Transaction(Transaction &&);
+        Transaction(Transaction &&trans);
         Transaction(const Transaction &) = delete;
 
         ~Transaction();
@@ -637,6 +665,32 @@ public:
         AddCategory(const Path &path,
                     const Category::Options &options = Category::Options());
 
+        /** Add new item.
+         *
+         * @param path Path of the new item. Last component is the new item
+         *      name. All the preceding components should name existing
+         *      categories.
+         * @param value Value for the item. Should not be empty value.
+         * @param options Item creation options.
+         * @return New item handle.
+         */
+        Item
+        AddItem(const Path &path, const Value &value,
+                const Item::Options &options = Item::Options());
+
+        /** Add new item.
+         *
+         * @param path Path of the new item. Last component is the new item
+         *      name. All the preceding components should name existing
+         *      categories.
+         * @param value Value for the item. Should not be empty value.
+         * @param options Item creation options.
+         * @return New item handle.
+         */
+        Item
+        AddItem(const Path &path, Value &&value,
+                const Item::Options &options = Item::Options());
+
     private:
         /** Represents transaction log record. Each record is either one or set
          * of aggregated pending operations.
@@ -645,19 +699,20 @@ public:
         public:
             /** Operation type. */
             enum class Type {
+                /** Modify item value. */
                 MODIFY,
+                /** Add new item or category. */
                 ADD,
+                /** Delete item or category. */
                 DELETE
             };
 
             /** Affected path. */
             Path path;
-            /** Associated node if any. Content depends on operation:
-             * MODIFY: modified item or category node.
-             * ADD: Added item node or category node with possible subtree.
-             * DELETE: Should be null.
-             */
-            Node::Ptr node;
+            /** New node(s) for add operation. Can be subtree. */
+            Node::Ptr new_node;
+            /** New value for item modification operation. */
+            Value new_value;
         };
 
         /** Transaction log with all pending operations. */

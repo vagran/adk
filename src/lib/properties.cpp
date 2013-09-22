@@ -398,8 +398,9 @@ Properties::Path::SubPath(size_t start, size_t count) &&
 /* ****************************************************************************/
 /* Properties::Node class. */
 
-Properties::Node::Node(std::string *name, bool isItem, Node *parent):
-    _isItem(isItem), _name(name), _parent(parent)
+Properties::Node::Node(std::string *name, bool isItem, Node *parent,
+                       Transaction *trans):
+    _isItem(isItem), _name(name), _parent(parent), _transaction(trans)
 {}
 
 Properties::Node::~Node()
@@ -445,22 +446,39 @@ std::string
 Properties::Category::DispName() const
 {
     ASSERT(_node);
-    if (_node->_dispName.empty()) {
+    if (!_node->_dispName) {
         return _node->Name();
     }
-    return _node->_dispName;
+    return *_node->_dispName;
 }
 
 std::string
 Properties::Category::Description() const
 {
     ASSERT(_node);
-    return _node->_description;
+    return _node->_description ? *_node->_description : std::string();
 }
 
 Properties::Category::operator bool() const
 {
     return _node != nullptr;
+}
+
+/* ****************************************************************************/
+/* Properties::Category::Options class. */
+
+Properties::Category::Options &
+Properties::Category::Options::DispName(Optional<std::string> dispName)
+{
+    this->dispName = dispName;
+    return *this;
+}
+
+Properties::Category::Options &
+Properties::Category::Options::Description(Optional<std::string> description)
+{
+    this->description = description;
+    return *this;
 }
 
 /* ****************************************************************************/
@@ -491,30 +509,104 @@ std::string
 Properties::Item::DispName() const
 {
     ASSERT(_node);
-    if (_node->_dispName.empty()) {
+    if (!_node->_dispName) {
         return _node->Name();
     }
-    return _node->_dispName;
+    return *_node->_dispName;
 }
 
 std::string
 Properties::Item::Description() const
 {
     ASSERT(_node);
-    return _node->_description;
+    return _node->_description ? *_node->_description : std::string();
 }
 
 std::string
 Properties::Item::Units() const
 {
     ASSERT(_node);
-    return _node->_units;
+    return _node->_units ? *_node->_units : std::string();
 }
 
 Properties::Item::operator bool() const
 {
     return _node != nullptr;
 }
+
+/* ****************************************************************************/
+/* Properties::Item::Options class. */
+
+Properties::Item::Options &
+Properties::Item::Options::DispName(Optional<std::string> dispName)
+{
+    this->dispName = dispName;
+    return *this;
+}
+
+Properties::Item::Options &
+Properties::Item::Options::Description(Optional<std::string> description)
+{
+    this->description = description;
+    return *this;
+}
+
+Properties::Item::Options &
+Properties::Item::Options::Units(Optional<std::string> units)
+{
+    this->description = units;
+    return *this;
+}
+
+/* ****************************************************************************/
+/* Properties::Transaction class. */
+
+Properties::Transaction::Transaction(Transaction &&trans __UNUSED)
+{
+    //XXX
+}
+
+Properties::Transaction::~Transaction()
+{
+    //XXX
+}
+
+void
+Properties::Transaction::Commit()
+{
+    //XXX
+}
+
+void
+Properties::Transaction::Cancel()
+{
+    //XXX
+}
+
+Properties::Category
+Properties::Transaction::AddCategory(const Path &path __UNUSED,
+                                     const Category::Options &options __UNUSED)
+{
+    //XXX
+    return Category();
+}
+
+Properties::Item
+Properties::Transaction::AddItem(const Path &path __UNUSED, const Value &value __UNUSED,
+                                 const Item::Options &options __UNUSED)
+{
+    //XXX
+    return Item();
+}
+
+Properties::Item
+Properties::Transaction::AddItem(const Path &path __UNUSED, Value &&value __UNUSED,
+                                 const Item::Options &options __UNUSED)
+{
+    //XXX
+    return Item();
+}
+
 
 /* ****************************************************************************/
 /* Properties class. */
@@ -538,6 +630,7 @@ Properties::Clear()
 void
 Properties::Load(const Xml &xml __UNUSED)
 {
+    Transaction::Ptr trans = OpenTransaction();
     //XXX
 }
 

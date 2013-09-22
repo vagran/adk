@@ -129,19 +129,22 @@ public:
     void RegisterTest(TestDesc *desc);
     inline void HitValue() { _numValues++; _totNumValues++; }
     inline void HitAssert() { _numAsserts++; _totNumAsserts++; }
+    inline void HitException() { _numExceptions++; _totNumExceptions++; }
     void PrintStat(bool total = false);
 private:
     std::list<TestDesc *, UtAllocator<TestDesc *>> _tests;
-    size_t _numValues, _numAsserts;
-    size_t _totNumValues, _totNumAsserts;
+    size_t _numValues, _numAsserts, _numExceptions;
+    size_t _totNumValues, _totNumAsserts, _totNumExceptions;
 };
 
 TestMan::TestMan()
 {
     _numValues = 0;
     _numAsserts = 0;
+    _numExceptions = 0;
     _totNumValues = 0;
     _totNumAsserts = 0;
+    _totNumExceptions = 0;
 }
 
 TestMan::~TestMan()
@@ -154,12 +157,17 @@ TestMan::PrintStat(bool total)
 {
     if (!total) {
         printf("Values checked: %zu\nAsserts executed: %zu\n",
-               _numValues,_numAsserts);
+               _numValues, _numAsserts);
+        if (_numExceptions) {
+            printf("Exceptions checked: %zu\n", _numExceptions);
+        }
         _numValues = 0;
         _numAsserts = 0;
+        _numExceptions = 0;
     } else {
-        printf("Total values checked: %zu\nTotal asserts executed: %zu\n",
-               _totNumValues,_totNumAsserts);
+        printf("Total values checked: %zu\nTotal asserts executed: %zu\n"
+               "Total exceptions checked: %zu\n",
+               _totNumValues, _totNumAsserts, _totNumExceptions);
     }
 }
 
@@ -349,6 +357,12 @@ void
 ut::__ut_hit_assert()
 {
     ::testMan.HitAssert();
+}
+
+void
+ut::__ut_hit_exception()
+{
+    ::testMan.HitException();
 }
 
 int
