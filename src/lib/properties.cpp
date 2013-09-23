@@ -406,6 +406,12 @@ Properties::Node::Node(std::string *name, bool isItem, Node *parent,
 Properties::Node::~Node()
 {}
 
+Properties::Node::Ptr
+Properties::Node::GetPtr()
+{
+    return shared_from_this();
+}
+
 bool
 Properties::Node::IsItem() const
 {
@@ -430,6 +436,28 @@ std::string &
 Properties::Node::Name() const
 {
     return *_name;
+}
+
+/* Properties::CategoryNode class. */
+
+Properties::Node::Ptr
+Properties::CategoryNode::Find(const Path &path)
+{
+    CategoryNode *node = this;
+    for (size_t idx = 0; idx < path.Size(); idx++) {
+        auto it = _children.find(path[idx]);
+        if (it == _children.end()) {
+            return nullptr;
+        }
+        if (it->second->IsItem()) {
+            if (idx < path.Size() - 1) {
+                return nullptr;
+            }
+            return it->second;
+        }
+        node = &it->second->Category();
+    }
+    return node->GetPtr();
 }
 
 /* ****************************************************************************/
@@ -584,29 +612,97 @@ Properties::Transaction::Cancel()
 }
 
 Properties::Category
-Properties::Transaction::AddCategory(const Path &path __UNUSED,
+Properties::Transaction::AddCategory(const Path &path,
                                      const Category::Options &options __UNUSED)
 {
+    CategoryNode *cn = _CheckAddition(path);
+    if (cn) {
+        //XXX
+    }
     //XXX
     return Category();
 }
 
 Properties::Item
-Properties::Transaction::AddItem(const Path &path __UNUSED, const Value &value __UNUSED,
+Properties::Transaction::AddItem(const Path &path, const Value &value __UNUSED,
                                  const Item::Options &options __UNUSED)
 {
+    CategoryNode *cn = _CheckAddition(path);
+    if (cn) {
+        //XXX
+    }
     //XXX
     return Item();
 }
 
 Properties::Item
-Properties::Transaction::AddItem(const Path &path __UNUSED, Value &&value __UNUSED,
+Properties::Transaction::AddItem(const Path &path, Value &&value __UNUSED,
                                  const Item::Options &options __UNUSED)
 {
+    CategoryNode *cn = _CheckAddition(path);
+    if (cn) {
+        //XXX
+    }
     //XXX
     return Item();
 }
 
+void
+Properties::Transaction::Delete(const Path &path __UNUSED)
+{
+    //XXX
+}
+
+Properties::CategoryNode *
+Properties::Transaction::_CheckAddition(const Path &path)
+{
+    for (Record &rec: _log) {
+        size_t len = path.HasCommonPrefix(rec.path);
+        if (!len) {
+            continue;
+        }
+        if (rec.type == Record::Type::DELETE) {
+            if (len == path.Size() && len < rec.path.Size()) {
+                ADK_EXCEPTION(InvalidOpException,
+                              "Cannot add node - same path exists in pending "
+                              "delete record");
+            }
+        } else if (rec.type == Record::Type::MODIFY) {
+            if (len == rec.path.Size()) {
+                ADK_EXCEPTION(InvalidOpException,
+                              "Cannot add node - have pending item modification "
+                              "record with the same prefix");
+            }
+            if (len == path.Size() && len < rec.path.Size()) {
+                ADK_EXCEPTION(InvalidOpException,
+                              "Cannot add node - same path exists in pending "
+                              "modification record");
+            }
+        } else if (rec.type == Record::Type::ADD) {
+            if (len == path.Size()) {
+                ADK_EXCEPTION(InvalidOpException,
+                              "Cannot add node - same path exists in pending "
+                              "addition record");
+            }
+            if (rec.new_node->IsItem()) {
+                ADK_EXCEPTION(InvalidOpException,
+                              "Cannot add node - item node exists in the "
+                              "preceding path");
+            }
+            /* Find node to insert the new one to. */
+            Node::Ptr node = rec.new_node->Category().Find(path.SubPath(0, len));
+            if (node) {
+                if (node->IsItem()) {
+                    ADK_EXCEPTION(InvalidOpException,
+                                  "Cannot add node - item node exists in the "
+                                  "preceding path");
+                }
+                return &node->Category();
+            }
+        }
+    }
+    return nullptr;
+}
 
 /* ****************************************************************************/
 /* Properties class. */

@@ -238,6 +238,8 @@ public:
      * validators.
      */
     ADK_DEFINE_DERIVED_EXCEPTION(ValidationException, Exception);
+    /** The requested operation is invalid. */
+    ADK_DEFINE_DERIVED_EXCEPTION(InvalidOpException, Exception);
 
     class Item;
     class Category;
@@ -436,7 +438,7 @@ public:
 
         /** Check if the provided path has common prefix with this path.
          * @return number of components in common prefix. Zero if the paths
-         * does not have common prefix.
+         *      does not have common prefix.
          */
         size_t
         HasCommonPrefix(const Path &path) const;
@@ -467,12 +469,15 @@ private:
     class CategoryNode;
 
     /** Represents node in the properties tree. */
-    class Node {
+    class Node: public std::enable_shared_from_this<Node> {
     public:
         typedef std::shared_ptr<Node> Ptr;
 
         virtual
         ~Node();
+
+        Ptr
+        GetPtr();
 
         bool
         IsItem() const;
@@ -523,8 +528,8 @@ private:
     class CategoryNode: public Node {
     public:
         /** Get child node by path. nullptr is returned if the node not found. */
-        Node *
-        Find(const std::string &path);
+        Ptr
+        Find(const Path &path);
 
     private:
         friend class Category;
@@ -534,7 +539,7 @@ private:
         /** Description text. */
                               _description;
         /** Child nodes. */
-        std::map<std::string, Node::Ptr> _children;
+        std::map<std::string, Ptr> _children;
     };
 
 public:
@@ -660,6 +665,8 @@ public:
          *      categories.
          * @param options Category creation options.
          * @return New category handle.
+         * @throws InvalidOpException if the change conflicts with already
+         *      queued operations.
          */
         Category
         AddCategory(const Path &path,
@@ -673,6 +680,8 @@ public:
          * @param value Value for the item. Should not be empty value.
          * @param options Item creation options.
          * @return New item handle.
+         * @throws InvalidOpException if the change conflicts with already
+         *      queued operations.
          */
         Item
         AddItem(const Path &path, const Value &value,
@@ -686,10 +695,20 @@ public:
          * @param value Value for the item. Should not be empty value.
          * @param options Item creation options.
          * @return New item handle.
+         * @throws InvalidOpException if the change conflicts with already
+         *      queued operations.
          */
         Item
         AddItem(const Path &path, Value &&value,
                 const Item::Options &options = Item::Options());
+
+        /** Delete a node (either item or category).
+         * @param path Node path to delete.
+         * @throws InvalidOpException if the change conflicts with already
+         *      queued operations.
+         */
+        void
+        Delete(const Path &path);
 
     private:
         /** Represents transaction log record. Each record is either one or set
@@ -707,6 +726,8 @@ public:
                 DELETE
             };
 
+            /** Operation type. */
+            Type type;
             /** Affected path. */
             Path path;
             /** New node(s) for add operation. Can be subtree. */
@@ -716,7 +737,18 @@ public:
         };
 
         /** Transaction log with all pending operations. */
-        std::list<Record> log;
+        std::list<Record> _log;
+
+        /** Check if the path is suitable for node addition.
+         *
+         * @param path Path for node to add.
+         * @return Pointer to parent node if such exists in the transaction,
+         *      nullptr if new node should be created.
+         * @throws InvalidOpException if the addition conflicts with already
+         *      queued operations.
+         */
+        CategoryNode *
+        _CheckAddition(const Path &path);
     };
 
     /** Create empty properties. */
