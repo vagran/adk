@@ -84,6 +84,4 @@ UT_TEST("Optional class")
         x = 3;
         UT(x->x) == UT(3);
     }
-
-    Optional<int &>i;
 }
