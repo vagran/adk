@@ -395,12 +395,39 @@ Properties::Path::SubPath(size_t start, size_t count) &&
     return std::move(*this);
 }
 
+std::string
+Properties::Path::First() const &
+{
+    ASSERT(_components.size());
+    return _components.front();
+}
+
+std::string
+Properties::Path::First() &&
+{
+    ASSERT(_components.size());
+    return std::move(_components).front();
+}
+
+std::string
+Properties::Path::Last() const &
+{
+    ASSERT(_components.size());
+    return _components.back();
+}
+
+std::string
+Properties::Path::Last() &&
+{
+    ASSERT(_components.size());
+    return std::move(_components).back();
+}
+
 /* ****************************************************************************/
 /* Properties::Node class. */
 
-Properties::Node::Node(std::string *name, bool isItem, Node *parent,
-                       Transaction *trans):
-    _isItem(isItem), _name(name), _parent(parent), _transaction(trans)
+Properties::Node::Node(bool isItem, Transaction *trans):
+    _isItem(isItem), _transaction(trans)
 {}
 
 Properties::Node::~Node()
@@ -438,7 +465,29 @@ Properties::Node::Name() const
     return *_name;
 }
 
+/* Properties::ItemNode class. */
+
+Properties::ItemNode::Ptr
+Properties::ItemNode::Create(Transaction *trans)
+{
+    return std::make_shared<ItemNode>(trans);
+}
+
+Properties::ItemNode::ItemNode(Transaction *trans):
+    Node(true, trans)
+{}
+
 /* Properties::CategoryNode class. */
+
+Properties::CategoryNode::Ptr
+Properties::CategoryNode::Create(Transaction *trans)
+{
+    return std::make_shared<CategoryNode>(trans);
+}
+
+Properties::CategoryNode::CategoryNode(Transaction *trans):
+    Node(false, trans)
+{}
 
 Properties::Node::Ptr
 Properties::CategoryNode::Find(const Path &path)
@@ -462,6 +511,10 @@ Properties::CategoryNode::Find(const Path &path)
 
 /* ****************************************************************************/
 /* Properties::Category class. */
+
+Properties::Category::Category(CategoryNode *node):
+    _node(node)
+{}
 
 std::string
 Properties::Category::Name() const
@@ -615,19 +668,29 @@ Properties::Category
 Properties::Transaction::AddCategory(const Path &path,
                                      const Category::Options &options __UNUSED)
 {
-    CategoryNode *cn = _CheckAddition(path);
+    auto res = _CheckAddition(path);
+    CategoryNode *cn = res.first;
+    Node::Ptr node = CategoryNode::Create(this);
     if (cn) {
+        cn->_children.emplace(path.Last(), node);
         //XXX
+        return &node->Category();
     }
+    _log.emplace_back();
+    Record &rec = _log.back();
+    rec.node_name = path.Last();
+    rec.new_node = node;
+    node->_name = &rec.node_name;
     //XXX
-    return Category();
+    return &node->Category();
 }
 
 Properties::Item
 Properties::Transaction::AddItem(const Path &path, const Value &value __UNUSED,
                                  const Item::Options &options __UNUSED)
 {
-    CategoryNode *cn = _CheckAddition(path);
+    auto res = _CheckAddition(path);
+    CategoryNode *cn = res.first;
     if (cn) {
         //XXX
     }
@@ -639,7 +702,8 @@ Properties::Item
 Properties::Transaction::AddItem(const Path &path, Value &&value __UNUSED,
                                  const Item::Options &options __UNUSED)
 {
-    CategoryNode *cn = _CheckAddition(path);
+    auto res = _CheckAddition(path);
+    CategoryNode *cn = res.first;
     if (cn) {
         //XXX
     }
@@ -653,7 +717,7 @@ Properties::Transaction::Delete(const Path &path __UNUSED)
     //XXX
 }
 
-Properties::CategoryNode *
+std::pair<Properties::CategoryNode *, Properties::Transaction::Record *>
 Properties::Transaction::_CheckAddition(const Path &path)
 {
     for (Record &rec: _log) {
@@ -697,11 +761,11 @@ Properties::Transaction::_CheckAddition(const Path &path)
                                   "Cannot add node - item node exists in the "
                                   "preceding path");
                 }
-                return &node->Category();
+                return {&node->Category(), &rec};
             }
         }
     }
-    return nullptr;
+    return {nullptr, nullptr};
 }
 
 /* ****************************************************************************/

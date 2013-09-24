@@ -459,6 +459,15 @@ public:
         Path
         SubPath(size_t start, size_t count = npos) &&;
 
+        std::string
+        First() const &;
+        std::string
+        First() &&;
+
+        std::string
+        Last() const &;
+        std::string
+        Last() &&;
     private:
         std::vector<std::string> _components;
     };
@@ -492,15 +501,16 @@ private:
         Name() const;
 
     protected:
-        Node(std::string *name, bool isItem, Node *parent,
-             Transaction *trans);
+        friend class Transaction;
+
+        Node(bool isItem, Transaction *trans);
 
         /** Indicates whether it is item or category. */
         bool _isItem;
         /** Internal name. */
-        std::string *_name;
+        std::string *_name = nullptr;
         /** Parent node, nullptr for root. */
-        Node *_parent;
+        Node *_parent = nullptr;
 
         /** Associated transaction if not yet committed to the sheet. */
         Transaction *_transaction;
@@ -508,9 +518,15 @@ private:
 
     /** Leaf (item) node. */
     class ItemNode: public Node {
+    public:
+        static Ptr
+        Create(Transaction *trans);
+
+        ItemNode(Transaction *trans);
 
     private:
         friend class Item;
+        friend class Transaction;
 
         //XXX min/maxValue, maxLen should attach built-in validators
 
@@ -527,12 +543,18 @@ private:
     /** Non-leaf (category) node. */
     class CategoryNode: public Node {
     public:
+        static Ptr
+        Create(Transaction *trans);
+
+        CategoryNode(Transaction *trans);
+
         /** Get child node by path. nullptr is returned if the node not found. */
         Ptr
         Find(const Path &path);
 
     private:
         friend class Category;
+        friend class Transaction;
 
         /** Display name, empty if not specified. */
         Optional<std::string> _dispName,
@@ -611,6 +633,8 @@ public:
             Options &
             Description(Optional<std::string> description);
         };
+
+        Category(CategoryNode *node = nullptr);
 
         /** Get internal name. */
         std::string
@@ -732,6 +756,8 @@ public:
             Path path;
             /** New node(s) for add operation. Can be subtree. */
             Node::Ptr new_node;
+            /** New node name. */
+            std::string node_name;
             /** New value for item modification operation. */
             Value new_value;
         };
@@ -743,11 +769,12 @@ public:
          *
          * @param path Path for node to add.
          * @return Pointer to parent node if such exists in the transaction,
-         *      nullptr if new node should be created.
+         *      nullptr if new node should be created. Pointer to the existing
+         *      addition record if suitable found, nullptr otherwise.
          * @throws InvalidOpException if the addition conflicts with already
          *      queued operations.
          */
-        CategoryNode *
+        std::pair<CategoryNode *, Record *>
         _CheckAddition(const Path &path);
     };
 
