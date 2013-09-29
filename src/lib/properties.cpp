@@ -459,7 +459,7 @@ Properties::Node::Category()
     return reinterpret_cast<CategoryNode &>(*this);
 }
 
-std::string &
+std::string
 Properties::Node::Name() const
 {
     return *_name;
@@ -565,6 +565,10 @@ Properties::Category::Options::Description(Optional<std::string> description)
 /* ****************************************************************************/
 /* Properties::Item class. */
 
+Properties::Item::Item(ItemNode *node):
+    _node(node)
+{}
+
 Properties::Value::Type
 Properties::Item::Type() const
 {
@@ -642,9 +646,20 @@ Properties::Item::Options::Units(Optional<std::string> units)
 /* ****************************************************************************/
 /* Properties::Transaction class. */
 
-Properties::Transaction::Transaction(Transaction &&trans __UNUSED)
+Properties::Transaction::Ptr
+Properties::Transaction::Create(Properties *props)
 {
-    //XXX
+    return std::make_shared<Transaction>(props);
+}
+
+Properties::Transaction::Transaction(Properties *props):
+    _props(props)
+{}
+
+Properties::Transaction::Transaction(Transaction &&trans):
+    _props(trans._props), _log(std::move(trans._log))
+{
+    trans._props = nullptr;
 }
 
 Properties::Transaction::~Transaction()
@@ -672,12 +687,14 @@ Properties::Transaction::AddCategory(const Path &path,
     CategoryNode *cn = res.first;
     Node::Ptr node = CategoryNode::Create(this);
     if (cn) {
-        cn->_children.emplace(path.Last(), node);
+        auto res = cn->_children.emplace(path.Last(), node);
+        node->_name = &res.first->first;
         //XXX
         return &node->Category();
     }
     _log.emplace_back();
     Record &rec = _log.back();
+    rec.type = Record::Type::ADD;
     rec.node_name = path.Last();
     rec.new_node = node;
     node->_name = &rec.node_name;
@@ -685,36 +702,60 @@ Properties::Transaction::AddCategory(const Path &path,
     return &node->Category();
 }
 
-Properties::Item
-Properties::Transaction::AddItem(const Path &path, const Value &value __UNUSED,
-                                 const Item::Options &options __UNUSED)
+Properties::Node::Ptr
+Properties::Transaction::_AddItem(const Path &path, const Item::Options &options __UNUSED)
 {
     auto res = _CheckAddition(path);
     CategoryNode *cn = res.first;
+    Node::Ptr node = ItemNode::Create(this);
     if (cn) {
         //XXX
+        auto res = cn->_children.emplace(path.Last(), node);
+        node->_name = &res.first->first;
+        //XXX
+        return node;
     }
+    _log.emplace_back();
+    Record &rec = _log.back();
+    rec.type = Record::Type::ADD;
+    rec.node_name = path.Last();
+    rec.new_node = node;
+    node->_name = &rec.node_name;
     //XXX
-    return Item();
+    return node;
 }
 
 Properties::Item
-Properties::Transaction::AddItem(const Path &path, Value &&value __UNUSED,
-                                 const Item::Options &options __UNUSED)
+Properties::Transaction::AddItem(const Path &path, const Value &value,
+                                 const Item::Options &options)
 {
-    auto res = _CheckAddition(path);
-    CategoryNode *cn = res.first;
-    if (cn) {
-        //XXX
-    }
-    //XXX
-    return Item();
+    Node::Ptr node = _AddItem(path, options);
+    node->Item()._value = value;
+    return &node->Item();
+}
+
+Properties::Item
+Properties::Transaction::AddItem(const Path &path, Value &&value,
+                                 const Item::Options &options)
+{
+    Node::Ptr node = _AddItem(path, options);
+    node->Item()._value = std::move(value);
+    return &node->Item();
 }
 
 void
 Properties::Transaction::Delete(const Path &path __UNUSED)
 {
     //XXX
+}
+
+void
+Properties::Transaction::DeleteAll()
+{
+    _log.clear();
+    _log.emplace_back();
+    Record &rec = _log.back();
+    rec.type = Record::Type::DELETE;
 }
 
 std::pair<Properties::CategoryNode *, Properties::Transaction::Record *>
@@ -788,15 +829,73 @@ Properties::Clear()
 }
 
 void
-Properties::Load(const Xml &xml __UNUSED)
+Properties::Load(const Xml &xml)
 {
     Transaction::Ptr trans = OpenTransaction();
+    trans->DeleteAll();
+    _LoadCategory(trans, xml.Root(), Path(), true);
+}
+
+void
+Properties::_LoadCategory(Transaction::Ptr trans __UNUSED, Xml::Element catEl,
+                          const Path &path, bool isRoot)
+{
+    std::string name;
+    if (!isRoot) {
+        auto nameAttr = catEl.Attr("name");
+        if (!nameAttr) {
+            ADK_EXCEPTION(ParseException,
+                          "Required 'name' attribute not found in element " <<
+                          catEl.Name() << " at " << catEl.GetLocation().Str());
+        }
+        name = nameAttr.Value();
+    }
+
+    Category::Options opts;
+
+    Xml::Element e = catEl.Child("description");
+    if (e) {
+        opts.Description(e.Value());
+    }
+
+    if (!path.Size()) {
+        Xml::Attribute a = catEl.Attr("dispName");
+        if (a) {
+            opts.DispName(a.Value());
+        }
+    } else {
+        e = catEl.Child("title");
+        if (e) {
+            opts.DispName(e.Value());
+        }
+    }
+
+    trans->AddCategory(isRoot ? Path() : path + name);
+
+    for (Xml::Element e: catEl.Children("item")) {
+        _LoadItem(trans, e, isRoot ? Path() : path + name);
+    }
+
+    for (Xml::Element e: catEl.Children("category")) {
+        _LoadCategory(trans, e, isRoot ? Path() : path + name);
+    }
+}
+
+void
+Properties::_LoadItem(Transaction::Ptr trans __UNUSED, Xml::Element itemEl __UNUSED,
+                      const Path &path __UNUSED)
+{
+    //XXX
+}
+
+void
+Properties::Save(Xml &xml __UNUSED)
+{
     //XXX
 }
 
 Properties::Transaction::Ptr
 Properties::OpenTransaction()
 {
-    //XXX
-    return nullptr;
+    return Transaction::Create(this);
 }

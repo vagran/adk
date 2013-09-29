@@ -19,6 +19,34 @@ namespace adk {
 
 /** Represents XML document manipulator. */
 class Xml {
+public:
+    /** Represents parse location in the document. */
+    class Location {
+    public:
+        /** Line number. */
+        const int line,
+        /** Column number. */
+                  column;
+
+        Location():
+            line(-1), column(-1)
+        {}
+
+        Location(XML_Parser p):
+            line(XML_GetCurrentLineNumber(p)),
+            column(XML_GetCurrentColumnNumber(p))
+        {}
+
+        /** Return location string. */
+        std::string
+        Str()
+        {
+            if (line < 0) {
+                return "dynamic";
+            }
+            return std::to_string(line) + ':' + std::to_string(column);
+        }
+    };
 private:
     /** Numerical name ID. */
     typedef u32 NameId;
@@ -78,8 +106,8 @@ private:
     public:
         typedef std::unique_ptr<ElementNode> Ptr;
 
-        ElementNode(Xml &doc, NameId nameId = 0):
-            _doc(doc), _nameId(nameId)
+        ElementNode(Xml &doc, const Location &loc, NameId nameId = 0):
+            _doc(doc), _nameId(nameId), _loc(loc)
         {}
 
         /** Get element content. */
@@ -94,6 +122,12 @@ private:
         Name() const
         {
             return _doc._GetName(_nameId);
+        }
+
+        Location
+        GetLocation() const
+        {
+            return _loc;
         }
 
         bool
@@ -168,6 +202,8 @@ private:
         std::map<NameId, SiblingList> _children;
         /** Attributes. */
         std::map<NameId, AttributeNode::Ptr> _attrs;
+        /** Location of this entity. */
+        Location _loc;
 
         AttributeNode *
         _SetAttribute(NameId nameId, const std::string &value);
@@ -395,6 +431,12 @@ public:
             return _node->Name();
         }
 
+        Location
+        GetLocation() const
+        {
+            return _node->GetLocation();
+        }
+
         void
         SetValue(const std::string &value)
         {
@@ -603,7 +645,8 @@ private:
 
     /** Create a new element with the specified attributes. */
     ElementNode::Ptr
-    _CreateElement(NameId nameId, const XML_Char **attrs);
+    _CreateElement(NameId nameId, const XML_Char **attrs,
+                   const Location &loc = Location());
 
     void
     _SaveElement(Element e, int indentation, std::ostream &stream) const;

@@ -517,10 +517,10 @@ Xml::_StartElementHandler(const XML_Char *name, const XML_Char **attrs)
 {
     NameId nid = _AddName(name);
     if (!_root) {
-        _root = _CreateElement(nid, attrs);
+        _root = _CreateElement(nid, attrs, _parser);
         _curElement = _root.get();
     } else {
-        ElementNode::Ptr e = _CreateElement(nid, attrs);
+        ElementNode::Ptr e = _CreateElement(nid, attrs, _parser);
         ElementNode *ePtr = e.get();
         _curElement->_AddChild(std::move(e));
         _curElement = ePtr;
@@ -535,9 +535,9 @@ Xml::_EndElementHandler(const XML_Char *name __UNUSED)
 }
 
 Xml::ElementNode::Ptr
-Xml::_CreateElement(NameId nameId, const XML_Char **attrs)
+Xml::_CreateElement(NameId nameId, const XML_Char **attrs, const Location &loc)
 {
-    ElementNode::Ptr e = ElementNode::Ptr(new ElementNode(*this, nameId));
+    ElementNode::Ptr e = ElementNode::Ptr(new ElementNode(*this, loc, nameId));
     while (*attrs) {
         NameId nid = _AddName(attrs[0]);
         e->_SetAttribute(nid, attrs[1]);

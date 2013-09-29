@@ -497,7 +497,7 @@ private:
         CategoryNode &
         Category();
 
-        std::string &
+        std::string
         Name() const;
 
     protected:
@@ -508,7 +508,7 @@ private:
         /** Indicates whether it is item or category. */
         bool _isItem;
         /** Internal name. */
-        std::string *_name = nullptr;
+        const std::string *_name = nullptr;
         /** Parent node, nullptr for root. */
         Node *_parent = nullptr;
 
@@ -585,6 +585,8 @@ public:
             Options &
             Units(Optional<std::string> units);
         };
+
+        Item(ItemNode *node = nullptr);
 
         /** Get value type. */
         Value::Type
@@ -663,8 +665,12 @@ public:
     public:
         typedef std::shared_ptr<Transaction> Ptr;
 
+        static Ptr
+        Create(Properties *props);
+
         Transaction(Transaction &&trans);
         Transaction(const Transaction &) = delete;
+        Transaction(Properties *props);
 
         ~Transaction();
 
@@ -734,6 +740,10 @@ public:
         void
         Delete(const Path &path);
 
+        /** Delete all the content. */
+        void
+        DeleteAll();
+
     private:
         /** Represents transaction log record. Each record is either one or set
          * of aggregated pending operations.
@@ -746,7 +756,7 @@ public:
                 MODIFY,
                 /** Add new item or category. */
                 ADD,
-                /** Delete item or category. */
+                /** Delete item or category. Empty path indicates entire clearing. */
                 DELETE
             };
 
@@ -762,6 +772,7 @@ public:
             Value new_value;
         };
 
+        Properties *_props;
         /** Transaction log with all pending operations. */
         std::list<Record> _log;
 
@@ -776,6 +787,9 @@ public:
          */
         std::pair<CategoryNode *, Record *>
         _CheckAddition(const Path &path);
+
+        Node::Ptr
+        _AddItem(const Path &path, const Item::Options &options);
     };
 
     /** Create empty properties. */
@@ -794,6 +808,10 @@ public:
     void
     Load(const Xml &xml);
 
+    /** Serialize the properties sheet to the XML document. */
+    void
+    Save(Xml &xml);
+
     /** Open a new transaction for the sheet modification. Changes made in scope
      * of this transaction are committed when transaction Commit() method is
      * called or after last reference to the transaction is released.
@@ -809,6 +827,13 @@ private:
      * optional description.
      */
     Category _root;
+
+    void
+    _LoadCategory(Transaction::Ptr trans, Xml::Element catEl, const Path &path,
+                  bool isRoot = false);
+
+    void
+    _LoadItem(Transaction::Ptr trans, Xml::Element itemEl, const Path &path);
 };
 
 } /* namespace adk */
