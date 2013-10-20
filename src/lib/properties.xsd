@@ -68,7 +68,7 @@ See COPYING file for copyright details.
             <element name="value" minOccurs="0">
                 <annotation>
                     <documentation>
-                        Item value if not specified via attribute or text content
+                        Item value if not specified text content
                     </documentation>
                 </annotation>
             </element>

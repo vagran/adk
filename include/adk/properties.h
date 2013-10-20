@@ -283,6 +283,24 @@ public:
             return _type;
         }
 
+        /** Get type by its name.
+         *
+         * @return NONE if type not recognized.
+         */
+        static Type
+        TypeFromString(const std::string &typeStr);
+
+        /** Create value from the provided string.
+         *
+         * @param type Value type.
+         * @param s String with value representation.
+         * @return Parsed value.
+         * @throws ParseException if the value cannot be parsed from the
+         *      provided string.
+         */
+        static Value
+        FromString(Type type, const std::string &s);
+
         /* Obtain copy of the value. */
         long
         GetInteger() const &;
@@ -828,10 +846,23 @@ private:
      */
     Category _root;
 
+    /** Load category from XML element.
+     *
+     * @param trans Target transaction.
+     * @param catEl XML element with category description.
+     * @param path Preceding path.
+     * @param isRoot Is it root category.
+     */
     void
     _LoadCategory(Transaction::Ptr trans, Xml::Element catEl, const Path &path,
                   bool isRoot = false);
 
+    /** Load item from XML element.
+     *
+     * @param trans Target transaction.
+     * @param itemEl XML element with item description.
+     * @param path Preceding path.
+     */
     void
     _LoadItem(Transaction::Ptr trans, Xml::Element itemEl, const Path &path);
 };

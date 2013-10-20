@@ -76,6 +76,82 @@ Properties::Value::Value(Value &&value):
     value._type = Type::NONE;
 }
 
+Properties::Value::Type
+Properties::Value::TypeFromString(const std::string &typeStr)
+{
+    if (typeStr == "integer") {
+        return Type::INTEGER;
+    } else if (typeStr == "float") {
+        return Type::FLOAT;
+    } else if (typeStr == "boolean") {
+        return Type::BOOLEAN;
+    } else if (typeStr == "string") {
+        return Type::STRING;
+    }
+    return Type::NONE;
+}
+
+Properties::Value
+Properties::Value::FromString(Type type, const std::string &s)
+{
+    size_t pos;
+
+    switch (type) {
+
+    case Type::INTEGER:
+        long l;
+        try {
+            l = std::stol(s, &pos, 0);
+        } catch (std::invalid_argument &) {
+            ADK_EXCEPTION(ParseException,
+                          "Cannot convert string to integer: " << s);
+        } catch (std::out_of_range &) {
+            ADK_EXCEPTION(ParseException,
+                          "Value out of range: " << s);
+        }
+        if (pos != s.size()) {
+            ADK_EXCEPTION(ParseException,
+                          "Trailing garbage in integer value: " << s);
+        }
+        return Value(l);
+
+    case Type::FLOAT:
+        double d;
+        try {
+            d = std::stod(s, &pos);
+        } catch (std::invalid_argument &) {
+            ADK_EXCEPTION(ParseException,
+                          "Cannot convert string to float: " << s);
+        } catch (std::out_of_range &) {
+            ADK_EXCEPTION(ParseException,
+                          "Value out of range: " << s);
+        }
+        if (pos != s.size()) {
+            ADK_EXCEPTION(ParseException,
+                          "Trailing garbage in float value: " << s);
+        }
+        return Value(d);
+
+    case Type::BOOLEAN:
+        bool b;
+        if (s == "true") {
+            b = true;
+        } else if (s == "false") {
+            b = false;
+        } else {
+            ADK_EXCEPTION(ParseException, "Invalid boolean value: " << s);
+        }
+        return Value(b);
+
+    case Type::STRING:
+        return Value(s);
+
+    case Type::NONE:
+        break;
+    }
+    ENSURE(false);
+}
+
 long
 Properties::Value::GetInteger() const &
 {
@@ -834,14 +910,22 @@ Properties::Load(const Xml &xml)
     Transaction::Ptr trans = OpenTransaction();
     trans->DeleteAll();
     _LoadCategory(trans, xml.Root(), Path(), true);
+    trans->Commit();
 }
 
 void
-Properties::_LoadCategory(Transaction::Ptr trans __UNUSED, Xml::Element catEl,
+Properties::_LoadCategory(Transaction::Ptr trans, Xml::Element catEl,
                           const Path &path, bool isRoot)
 {
     std::string name;
-    if (!isRoot) {
+    Category::Options opts;
+
+    if (isRoot) {
+        Xml::Element e = catEl.Child("title");
+        if (e) {
+            opts.DispName(e.Value());
+        }
+    } else {
         auto nameAttr = catEl.Attr("name");
         if (!nameAttr) {
             ADK_EXCEPTION(ParseException,
@@ -849,28 +933,19 @@ Properties::_LoadCategory(Transaction::Ptr trans __UNUSED, Xml::Element catEl,
                           catEl.Name() << " at " << catEl.GetLocation().Str());
         }
         name = nameAttr.Value();
-    }
 
-    Category::Options opts;
+        Xml::Attribute a = catEl.Attr("dispName");
+        if (a) {
+            opts.DispName(a.Value());
+        }
+    }
 
     Xml::Element e = catEl.Child("description");
     if (e) {
         opts.Description(e.Value());
     }
 
-    if (!path.Size()) {
-        Xml::Attribute a = catEl.Attr("dispName");
-        if (a) {
-            opts.DispName(a.Value());
-        }
-    } else {
-        e = catEl.Child("title");
-        if (e) {
-            opts.DispName(e.Value());
-        }
-    }
-
-    trans->AddCategory(isRoot ? Path() : path + name);
+    trans->AddCategory(isRoot ? Path(":") : path + name, opts);
 
     for (Xml::Element e: catEl.Children("item")) {
         _LoadItem(trans, e, isRoot ? Path() : path + name);
@@ -882,10 +957,62 @@ Properties::_LoadCategory(Transaction::Ptr trans __UNUSED, Xml::Element catEl,
 }
 
 void
-Properties::_LoadItem(Transaction::Ptr trans __UNUSED, Xml::Element itemEl __UNUSED,
-                      const Path &path __UNUSED)
+Properties::_LoadItem(Transaction::Ptr trans, Xml::Element itemEl,
+                      const Path &path)
 {
-    //XXX
+    Item::Options opts;
+
+    auto nameAttr = itemEl.Attr("name");
+    if (!nameAttr) {
+        ADK_EXCEPTION(ParseException,
+                      "Required 'name' attribute not found in element " <<
+                      itemEl.Name() << " at " << itemEl.GetLocation().Str());
+    }
+    std::string name = nameAttr.Value();
+
+    Xml::Attribute a = itemEl.Attr("dispName");
+    if (a) {
+        opts.DispName(a.Value());
+    }
+
+    a = itemEl.Attr("units");
+    if (a) {
+        opts.Units(a.Value());
+    }
+
+    Xml::Element e = itemEl.Child("description");
+    if (e) {
+        opts.Description(e.Value());
+    }
+
+    a = itemEl.Attr("type");
+    if (!a) {
+        ADK_EXCEPTION(ParseException,
+                      "Required 'type' attribute not found in element " <<
+                      itemEl.Name() << " at " << itemEl.GetLocation().Str());
+    }
+    Value::Type type = Value::TypeFromString(a.Value());
+    if (type == Value::Type::NONE) {
+        ADK_EXCEPTION(ParseException,
+                      "Invalid type specified: " << a.Value() << " at " <<
+                      itemEl.GetLocation().Str());
+    }
+
+    std::string valueStr;
+    a = itemEl.Attr("value");
+    if (a) {
+        valueStr = a.Value();
+    } else {
+        e = itemEl.Child("value");
+        if (e) {
+            valueStr = e.Value();
+        } else {
+            valueStr = itemEl.Value();
+        }
+    }
+    Value value = Value::FromString(type, valueStr);
+
+    trans->AddItem(path + name, std::move(value), opts);
 }
 
 void
