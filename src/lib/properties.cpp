@@ -541,6 +541,16 @@ Properties::Node::Name() const
     return *_name;
 }
 
+void
+Properties::Node::Unlink()
+{
+    if (!_parent) {
+        return;
+    }
+    _parent->Category().UnlinkChild(*_name);
+    _parent = nullptr;
+}
+
 /* Properties::ItemNode class. */
 
 Properties::ItemNode::Ptr
@@ -583,6 +593,14 @@ Properties::CategoryNode::Find(const Path &path)
         node = &it->second->Category();
     }
     return node->GetPtr();
+}
+
+void
+Properties::CategoryNode::UnlinkChild(const std::string &name)
+{
+    auto it = _children.find(name);
+    ASSERT(it != _children.end());
+    _children.erase(it);
 }
 
 /* ****************************************************************************/
@@ -752,7 +770,7 @@ Properties::Transaction::Commit()
 void
 Properties::Transaction::Cancel()
 {
-    //XXX
+    _log.clear();
 }
 
 Properties::Category
@@ -765,6 +783,7 @@ Properties::Transaction::AddCategory(const Path &path,
     if (cn) {
         auto res = cn->_children.emplace(path.Last(), node);
         node->_name = &res.first->first;
+        node->_parent = cn;
         //XXX
         return &node->Category();
     }
@@ -773,6 +792,7 @@ Properties::Transaction::AddCategory(const Path &path,
     rec.type = Record::Type::ADD;
     rec.node_name = path.Last();
     rec.new_node = node;
+    rec.path = path;
     node->_name = &rec.node_name;
     //XXX
     return &node->Category();
@@ -788,6 +808,7 @@ Properties::Transaction::_AddItem(const Path &path, const Item::Options &options
         //XXX
         auto res = cn->_children.emplace(path.Last(), node);
         node->_name = &res.first->first;
+        node->_parent = cn;
         //XXX
         return node;
     }
@@ -796,6 +817,7 @@ Properties::Transaction::_AddItem(const Path &path, const Item::Options &options
     rec.type = Record::Type::ADD;
     rec.node_name = path.Last();
     rec.new_node = node;
+    rec.path = path;
     node->_name = &rec.node_name;
     //XXX
     return node;
@@ -820,9 +842,16 @@ Properties::Transaction::AddItem(const Path &path, Value &&value,
 }
 
 void
-Properties::Transaction::Delete(const Path &path __UNUSED)
+Properties::Transaction::Delete(const Path &path)
 {
-    //XXX
+    bool needRec = _CheckDeletion(path, false);
+    _CheckDeletion(path, true);
+    if (needRec) {
+        _log.emplace_back();
+        Record &rec = _log.back();
+        rec.type = Record::Type::DELETE;
+        rec.path = path;
+    }
 }
 
 void
@@ -832,6 +861,80 @@ Properties::Transaction::DeleteAll()
     _log.emplace_back();
     Record &rec = _log.back();
     rec.type = Record::Type::DELETE;
+}
+
+bool
+Properties::Transaction::_CheckDeletion(const Path &path, bool apply)
+{
+    bool needRec = true;
+    for (auto it = _log.begin(); it != _log.end();) {
+        Record &rec = *it;
+        size_t len = path.HasCommonPrefix(rec.path);
+        if (!len) {
+            it++;
+            continue;
+        }
+        if (rec.type == Record::Type::DELETE) {
+            if (len == rec.path.Size()) {
+                /* Already deleted. */
+                ADK_EXCEPTION(InvalidOpException,
+                              "Cannot delete node - the specified path was "
+                              "already deleted");
+            } else if (len == path.Size()) {
+                /* New record covers the found one so it can be deleted. */
+                if (apply) {
+                    it = _log.erase(it);
+                    continue;
+                }
+            }
+            /* else unrelated deletion, should create separate record */
+        } else if (rec.type == Record::Type::MODIFY) {
+            if (len == path.Size()) {
+                /* Modified node is deleted so delete the record. */
+                if (apply) {
+                    it = _log.erase(it);
+                    continue;
+                }
+            } else {
+                ADK_EXCEPTION(InvalidOpException,
+                              "Cannot delete node - have pending item "
+                              "modification record with the same prefix");
+            }
+        } else if (rec.type == Record::Type::ADD) {
+            if (len == path.Size()) {
+                /* Added subtree deleted. */
+                if (len == rec.path.Size()) {
+                    /* Just delete the previous added node. */
+                    needRec = false;
+                }
+                if (apply) {
+                    it = _log.erase(it);
+                    continue;
+                }
+            } else if (len == rec.path.Size()) {
+                needRec = false;
+                /* Deleted node should be one of the previously added. */
+                if (rec.new_node->IsItem()) {
+                    ADK_EXCEPTION(InvalidOpException,
+                                  "Cannot delete node - added item node exists "
+                                  "in the preceding path");
+                }
+                Node::Ptr node = rec.new_node->Category().Find(
+                    path.SubPath(rec.path.Size(), path.Size() - rec.path.Size()));
+                if (!node) {
+                    ADK_EXCEPTION(InvalidOpException,
+                                  "Cannot delete node - not found in the previously "
+                                  "added subtree");
+                }
+                if (apply) {
+                    node->Unlink();
+                }
+            }
+            /* else unrelated node deleted, just place the record. */
+        }
+        it++;
+    }
+    return needRec;
 }
 
 std::pair<Properties::CategoryNode *, Properties::Transaction::Record *>
@@ -865,20 +968,33 @@ Properties::Transaction::_CheckAddition(const Path &path)
                               "Cannot add node - same path exists in pending "
                               "addition record");
             }
-            if (rec.new_node->IsItem()) {
-                ADK_EXCEPTION(InvalidOpException,
-                              "Cannot add node - item node exists in the "
-                              "preceding path");
-            }
-            /* Find node to insert the new one to. */
-            Node::Ptr node = rec.new_node->Category().Find(path.SubPath(0, len));
-            if (node) {
-                if (node->IsItem()) {
+            if (len == rec.path.Size()) {
+                /* Adding child to previous added node. */
+                if (rec.new_node->IsItem()) {
                     ADK_EXCEPTION(InvalidOpException,
                                   "Cannot add node - item node exists in the "
                                   "preceding path");
                 }
-                return {&node->Category(), &rec};
+                /* Find node to insert the new one to. */
+                Path parentSubpath = path.SubPath(rec.path.Size(),
+                                                  path.Size() - rec.path.Size() - 1);
+                Node::Ptr node = rec.new_node->Category().Find(parentSubpath);
+                if (node) {
+                    if (node->IsItem()) {
+                        ADK_EXCEPTION(InvalidOpException,
+                                      "Cannot add node - item node exists in the "
+                                      "preceding path");
+                    }
+                    if (node->Category().Find(path.SubPath(path.Size() - 1, 1))) {
+                        ADK_EXCEPTION(InvalidOpException,
+                                      "Cannot add node - same node already added");
+                    }
+                    return {&node->Category(), &rec};
+                } else {
+                    ADK_EXCEPTION(InvalidOpException,
+                                  "Cannot add node - parent node not found in "
+                                  "existing addition record");
+                }
             }
         }
     }

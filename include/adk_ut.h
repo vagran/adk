@@ -144,8 +144,9 @@ struct TestValueTypeAdapter<char const (&)[size]> {
     bool __caught = false; \
     try { \
         expr; \
-    } catch (excType &) { \
+    } catch (excType &__e) { \
         __caught = true; \
+        UT_TRACE("Exception caught: %s", __e.what()); \
     } \
     if (!__caught) { \
         UT_FAIL("Expected exception of type '%s' was not caught in expression '%s'", \

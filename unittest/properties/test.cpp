@@ -256,3 +256,36 @@ UT_TEST("Properties::Path class")
         UT(Properties::Path("1/2/3/4").SubPath(3, 1).Str().c_str()) == UT("4");
     }
 }
+
+UT_TEST("Properties::Transaction class")
+{
+    Properties props;
+    Properties::Transaction::Ptr t = props.OpenTransaction();
+
+    t->AddCategory("a/b/c");
+    UT_THROWS(t->AddCategory("a/b/c"), Properties::InvalidOpException);
+    t->AddCategory("a/b/d");
+    UT_THROWS(t->AddCategory("a/b"), Properties::InvalidOpException);
+
+    t->AddItem("a/b/e", 1);
+    UT_THROWS(t->AddCategory("a/b/e/f"), Properties::InvalidOpException);
+    UT_THROWS(t->AddItem("a/b/e/f", 1), Properties::InvalidOpException);
+
+    t->AddCategory("a/b/c/d");
+    t->AddCategory("a/b/c/e");
+    t->AddCategory("a/b/c/e/f");
+    UT_THROWS(t->AddCategory("a/b/c/e"), Properties::InvalidOpException);
+
+    t->Delete("x/y/z");
+    UT_THROWS(t->AddCategory("x/y"), Properties::InvalidOpException);
+
+    UT_THROWS(t->Delete("a/b/c/g/g/g"), Properties::InvalidOpException);
+    t->Delete("a/b/c/e");
+    UT_THROWS(t->AddCategory("a/b/c/e/f"), Properties::InvalidOpException);
+    t->AddCategory("a/b/c/e");
+    t->AddCategory("a/b/c/e/f");
+
+    t->Delete("a");
+    UT_THROWS(t->Delete("a"), Properties::InvalidOpException);
+    UT_THROWS(t->Delete("a/b/c"), Properties::InvalidOpException);
+}

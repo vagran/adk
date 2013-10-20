@@ -518,6 +518,10 @@ private:
         std::string
         Name() const;
 
+        /** Unlink the node from its parent. */
+        void
+        Unlink();
+
     protected:
         friend class Transaction;
 
@@ -569,6 +573,10 @@ private:
         /** Get child node by path. nullptr is returned if the node not found. */
         Ptr
         Find(const Path &path);
+
+        /** Unlink child node with the specified name. */
+        void
+        UnlinkChild(const std::string &name);
 
     private:
         friend class Category;
@@ -805,6 +813,17 @@ public:
          */
         std::pair<CategoryNode *, Record *>
         _CheckAddition(const Path &path);
+
+        /** Check if the path is suitable for node deletion. In case there is
+         * add or modify records with the same path they are deleted from the
+         * transaction if "apply" argument is true.
+         *
+         * @param path Path for node to delete.
+         * @return true if deletion record should be created, false if it is
+         *      already covered by another deletion record.
+         */
+        bool
+        _CheckDeletion(const Path &path, bool apply);
 
         Node::Ptr
         _AddItem(const Path &path, const Item::Options &options);
