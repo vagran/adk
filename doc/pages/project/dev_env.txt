@@ -55,6 +55,10 @@ Should be installed on build machine via package manager:
   * libc6-dbg
   * libfontconfig1-dev
   * libncurses5-dev
+  * libdbus-glib-1-dev
+  * libgconf2-dev
+  * libgail-dev
+  * libxtst-dev
 
 ===== Other prerequesties =====
 

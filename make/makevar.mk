@@ -100,7 +100,7 @@ export ATK_VERSION = 1.0
 export ATKMM_VERSION = 1.6
 export LIBUSB_VERSION = 1.0
 
-export PYTHON_VERSION = 3.3m
+export PYTHON_VERSION = 3.4m
 
 export ADK_PLATFORM_ID_AVR = 0
 export ADK_PLATFORM_ID_LINUX32 = 1
@@ -112,7 +112,8 @@ export ADK_PLATFORM_ID_WIN64 = 4
 export DESKTOP_LIBS = \
 	glib-$(GLIB_VERSION) \
     glibmm-$(GLIBMM_VERSION) \
-    sigc-$(SIGCPP_VERSION)
+    sigc-$(SIGCPP_VERSION) \
+    atk-$(ATK_VERSION)
 
 # Desktop GUI libraries
 export DESKTOP_GUI_LIBS = \
