@@ -64,16 +64,13 @@ public:
 
     ~Optional()
     {
-        if (isValid) {
-            (**this).~T();
-        }
+        Disengage();
     }
 
     Optional &
     operator =(Nullopt_t)
     {
-        (**this).~T();
-        isValid = false;
+        Disengage();
         return *this;
     }
 
