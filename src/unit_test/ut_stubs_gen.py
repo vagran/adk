@@ -67,13 +67,15 @@ def Exec(cmd, errorFatal = True):
 
 def ParseFile(filename, isTest, isDynamicLib):
     global opts, defined_syms, wanted_syms
-    
+
     if isDynamicLib:
         cmd = '{} -D {}'.format(opts.nm, filename)
     else:
         cmd = '{} {}'.format(opts.nm, filename)
     output = Exec(cmd, errorFatal = False)
-    if output.exitcode != 0:
+    if (output.exitcode != 0 or 
+        (len(output) > 0 and re.match('.*\\Wno symbols$', output[0]) is not None)):
+        
         # Try opposite command. Detached debug symbols for libraries are not
         # dynamic.
         if isDynamicLib:

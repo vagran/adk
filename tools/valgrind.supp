@@ -243,3 +243,47 @@
    fun:calculate_path
    fun:Py_GetProgramFullPath
 }
+
+{
+   Python
+   Memcheck:Cond
+   fun:_PyObject_Realloc
+}
+
+{
+   Python
+   Memcheck:Value8
+   fun:_PyObject_Realloc
+}
+
+{
+   Python
+   Memcheck:Value8
+   fun:_PyObject_Free
+}
+
+{
+   Python
+   Memcheck:Cond
+   fun:_PyObject_Free
+}
+
+{
+   Python
+   Memcheck:Addr4
+   fun:_PyObject_Free
+}
+
+{
+   Python
+   Memcheck:Addr4
+   fun:_PyObject_Realloc
+}
+
+{
+   Python
+   Memcheck:Free
+   fun:free
+   ...
+   fun:Py_Finalize
+}
