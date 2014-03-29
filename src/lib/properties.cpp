@@ -499,6 +499,46 @@ Properties::Path::Last() &&
     return std::move(_components).back();
 }
 
+bool
+Properties::Path::operator ==(const Path &path) const
+{
+    if (_components.size() != path._components.size()) {
+        return false;
+    }
+    for (size_t i = 0; i < _components.size(); i++) {
+        if (_components[i] != path._components[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool
+Properties::Path::operator !=(const Path &path) const
+{
+    return !(*this == path);
+}
+
+Properties::Path
+Properties::Path::Parent() const &
+{
+    size_t size = _components.size();
+    if (size == 0) {
+        return Path();
+    }
+    return SubPath(0, size - 1);
+}
+
+Properties::Path
+Properties::Path::Parent() &&
+{
+    size_t size = _components.size();
+    if (size == 0) {
+        return *this;
+    }
+    return std::move(*this).SubPath(0, size - 1);
+}
+
 /* ****************************************************************************/
 /* Properties::Node class. */
 
@@ -603,6 +643,15 @@ Properties::CategoryNode::Find(const Path &path, bool itemInPathFatal)
         node = &it->second->Category();
     }
     return node->GetPtr();
+}
+
+void
+Properties::CategoryNode::AddChild(const std::string &name, Ptr node)
+{
+    ASSERT(_children.find(name) == _children.end());
+    auto res = _children.emplace(name, node);
+    node->_name = &res.first->first;
+    node->_parent = this;
 }
 
 void
@@ -767,14 +816,13 @@ Properties::Transaction::Transaction(Transaction &&trans):
 }
 
 Properties::Transaction::~Transaction()
-{
-    //XXX
-}
+{}
 
 void
 Properties::Transaction::Commit()
 {
-    //XXX
+    _props->_CommitTransaction(*this);
+    _log.clear();
 }
 
 void
@@ -791,9 +839,7 @@ Properties::Transaction::AddCategory(const Path &path,
     CategoryNode *cn = res.first;
     Node::Ptr node = CategoryNode::Create(this);
     if (cn) {
-        auto res = cn->_children.emplace(path.Last(), node);
-        node->_name = &res.first->first;
-        node->_parent = cn;
+        cn->AddChild(path.Last(), node);
         //XXX
         return &node->Category();
     }
@@ -1118,9 +1164,7 @@ Properties::Transaction::_CheckAddition(const Path &path)
 /* Properties class. */
 
 Properties::Properties()
-{
-
-}
+{}
 
 Properties::Properties(const Xml &xml)
 {
@@ -1130,7 +1174,61 @@ Properties::Properties(const Xml &xml)
 void
 Properties::Clear()
 {
-    //XXX
+    Transaction::Ptr t = OpenTransaction();
+    t->DeleteAll();
+    t->Commit();
+}
+
+Properties::Category
+Properties::AddCategory(const Path &path, const Category::Options &options)
+{
+    Transaction::Ptr t = OpenTransaction();
+    Category res = t->AddCategory(path, options);
+    t->Commit();
+    return res;
+}
+
+Properties::Item
+Properties::AddItem(const Path &path, const Value &value,
+                    const Item::Options &options)
+{
+    Transaction::Ptr t = OpenTransaction();
+    Item res = t->AddItem(path, value, options);
+    t->Commit();
+    return res;
+}
+
+Properties::Item
+Properties::AddItem(const Path &path, Value &&value, const Item::Options &options)
+{
+    Transaction::Ptr t = OpenTransaction();
+    Item res = t->AddItem(path, std::move(value), options);
+    t->Commit();
+    return res;
+}
+
+void
+Properties::Delete(const Path &path)
+{
+    Transaction::Ptr t = OpenTransaction();
+    t->Delete(path);
+    t->Commit();
+}
+
+void
+Properties::Modify(const Path &path, const Value &value)
+{
+    Transaction::Ptr t = OpenTransaction();
+    t->Modify(path, value);
+    t->Commit();
+}
+
+void
+Properties::Modify(const Path &path, Value &&value)
+{
+    Transaction::Ptr t = OpenTransaction();
+    t->Modify(path, std::move(value));
+    t->Commit();
 }
 
 void
@@ -1245,6 +1343,25 @@ Properties::_LoadItem(Transaction::Ptr trans, Xml::Element itemEl,
 }
 
 void
+Properties::_CommitTransaction(Transaction &trans)
+{
+    std::unique_lock<std::mutex> lock(_mutex);
+
+    /* Check operations validity. */
+    _CheckAdditions(trans);
+    //XXX
+
+    //XXX set current transaction by guard object
+
+    /* Run validators. */
+    //XXX
+
+    /* Apply transaction data. */
+    _ApplyAdditions(trans);
+    //XXX
+}
+
+void
 Properties::Save(Xml &xml __UNUSED)
 {
     //XXX
@@ -1254,4 +1371,94 @@ Properties::Transaction::Ptr
 Properties::OpenTransaction()
 {
     return Transaction::Create(this);
+}
+
+void
+Properties::_CheckAdditions(Transaction &trans)
+{
+    bool rootAdded = false;
+    if (!_root) {
+        for (Transaction::Record &rec: trans._log) {
+            if (rec.type == Transaction::Record::Type::ADD &&
+                rec.path == ":") {
+
+                rootAdded = true;
+                break;
+            }
+        }
+    }
+
+    for (Transaction::Record &rec: trans._log) {
+        if (rec.type != Transaction::Record::Type::ADD) {
+            continue;
+        }
+        /* Parent node should exist, the added one should not. */
+        if (rec.path == ":") {
+            if (_root) {
+                ADK_EXCEPTION(InvalidOpException,
+                              "Cannot add root category - already exists");
+            }
+            continue;
+        }
+        if (rec.path.Size() > 1) {
+            auto node = _LookupNode(rec.path.Parent());
+            if (!node) {
+                ADK_EXCEPTION(InvalidOpException,
+                              "Cannot add node - parent does not exist");
+            }
+            if (!node->IsCategory()) {
+                ADK_EXCEPTION(InvalidOpException,
+                              "Cannot add node - parent is not category");
+            }
+        } else if (!_root && !rootAdded) {
+            ADK_EXCEPTION(InvalidOpException,
+                          "Cannot add node - root category does not exist");
+        }
+        if (_LookupNode(rec.path)) {
+            ADK_EXCEPTION(InvalidOpException,
+                          "Cannot add node - already exists");
+        }
+    }
+}
+
+void
+Properties::_ApplyAdditions(Transaction &trans)
+{
+    if (!_root) {
+        for (Transaction::Record &rec: trans._log) {
+            if (rec.type == Transaction::Record::Type::ADD &&
+                rec.path == ":") {
+
+                _root = rec.newNode;
+                _root->_name = nullptr;
+                break;
+            }
+        }
+    }
+
+    for (Transaction::Record &rec: trans._log) {
+        if (rec.type != Transaction::Record::Type::ADD) {
+            continue;
+        }
+        if (rec.path == ":") {
+            continue;
+        }
+        if (rec.path.Size() == 1) {
+            _root->Category().AddChild(rec.nodeName, rec.newNode);
+        } else {
+            Node::Ptr parent = _LookupNode(rec.path.Parent());
+            ASSERT(parent);
+            parent->Category().AddChild(rec.nodeName, rec.newNode);
+        }
+    }
+}
+
+Properties::Node::Ptr
+Properties::_LookupNode(const Path &path)
+{
+    //XXX current transaction
+    if (!_root) {
+        return nullptr;
+    }
+    return _root->Category().Find(path);
 }

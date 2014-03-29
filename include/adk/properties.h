@@ -477,6 +477,11 @@ public:
         Path
         SubPath(size_t start, size_t count = npos) &&;
 
+        Path
+        Parent() const &;
+        Path
+        Parent() &&;
+
         std::string
         First() const &;
         std::string
@@ -486,6 +491,12 @@ public:
         Last() const &;
         std::string
         Last() &&;
+
+        bool
+        operator ==(const Path &path) const;
+        bool
+        operator !=(const Path &path) const;
+
     private:
         std::vector<std::string> _components;
     };
@@ -527,6 +538,7 @@ private:
 
     protected:
         friend class Transaction;
+        friend class Properties;
 
         Node(bool isItem, Transaction *trans);
 
@@ -579,6 +591,10 @@ private:
          */
         Ptr
         Find(const Path &path, bool itemInPathFatal = false);
+
+        /** Add new child node. */
+        void
+        AddChild(const std::string &name, Ptr node);
 
         /** Unlink child node with the specified name. */
         void
@@ -686,6 +702,7 @@ public:
         operator bool() const;
 
     private:
+
         CategoryNode *_node;
     };
 
@@ -724,7 +741,8 @@ public:
          *
          * @param path Path of the new category. Last component is the new
          *      category name. All the preceding components should name existing
-         *      categories.
+         *      categories. Special category path ":" corresponds to root
+         *      category and is a way to specify its options.
          * @param options Category creation options.
          * @return New category handle.
          * @throws InvalidOpException if the change conflicts with already
@@ -785,6 +803,8 @@ public:
         Modify(const Path &path, Value &&value);
 
     private:
+        friend class Properties;
+
         /** Represents transaction log record. Each record is either one or set
          * of aggregated pending operations.
          */
@@ -878,19 +898,88 @@ public:
 
     /** Open a new transaction for the sheet modification. Changes made in scope
      * of this transaction are committed when transaction Commit() method is
-     * called or after last reference to the transaction is released.
+     * called.
      *
      * @return New transaction object.
      */
     Transaction::Ptr
     OpenTransaction();
 
+    /** Add new category.
+     *
+     * @param path Path of the new category. Last component is the new
+     *      category name. All the preceding components should name existing
+     *      categories. Special category path ":" corresponds to root
+     *      category and is a way to specify its options.
+     * @param options Category creation options.
+     * @return New category handle.
+     * @throws InvalidOpException if the change conflicts is not legal.
+     * @throws ValidationException if a validator rejected the changes.
+     */
+    Category
+    AddCategory(const Path &path,
+                const Category::Options &options = Category::Options());
+
+    /** Add new item.
+     *
+     * @param path Path of the new item. Last component is the new item
+     *      name. All the preceding components should name existing
+     *      categories.
+     * @param value Value for the item. Should not be empty value.
+     * @param options Item creation options.
+     * @return New item handle.
+     * @throws InvalidOpException if the change conflicts is not legal.
+     * @throws ValidationException if a validator rejected the changes.
+     */
+    Item
+    AddItem(const Path &path, const Value &value,
+            const Item::Options &options = Item::Options());
+
+    /** Add new item.
+     *
+     * @param path Path of the new item. Last component is the new item
+     *      name. All the preceding components should name existing
+     *      categories.
+     * @param value Value for the item. Should not be empty value.
+     * @param options Item creation options.
+     * @return New item handle.
+     * @throws InvalidOpException if the change conflicts is not legal.
+     * @throws ValidationException if a validator rejected the changes.
+     */
+    Item
+    AddItem(const Path &path, Value &&value,
+            const Item::Options &options = Item::Options());
+
+    /** Delete a node (either item or category).
+     * @param path Node path to delete.
+     * @throws InvalidOpException if the change conflicts is not legal.
+     * @throws ValidationException if a validator rejected the changes.
+     */
+    void
+    Delete(const Path &path);
+
+    /** Modify item value.
+     * @throws InvalidOpException if the change conflicts is not legal.
+     * @throws ValidationException if a validator rejected the changes.
+     */
+    void
+    Modify(const Path &path, const Value &value);
+
+    /** Modify item value.
+     * @throws InvalidOpException if the change conflicts is not legal.
+     * @throws ValidationException if a validator rejected the changes.
+     */
+    void
+    Modify(const Path &path, Value &&value);
+
 private:
     /** Root category. Its display name contains optional title for the whole
      * properties sheet. Description corresponds to the whole properties sheet
      * optional description.
      */
-    Category _root;
+    Node::Ptr _root;
+    /** Mutex for properties tree modification. */
+    std::mutex _mutex;
 
     /** Load category from XML element.
      *
@@ -911,6 +1000,25 @@ private:
      */
     void
     _LoadItem(Transaction::Ptr trans, Xml::Element itemEl, const Path &path);
+
+    /** Transaction is committed. All data validated and either InvalidOpException
+     * or ValidationException is thrown.
+     * @param trans Transaction to commit;
+     */
+    void
+    _CommitTransaction(Transaction &trans);
+
+    /** Check validity of additions in the transactions. */
+    void
+    _CheckAdditions(Transaction &trans);
+
+    /** Apply additions in the transactions. */
+    void
+    _ApplyAdditions(Transaction &trans);
+
+    /** Find node is exists. */
+    Node::Ptr
+    _LookupNode(const Path &path);
 };
 
 } /* namespace adk */
