@@ -509,6 +509,9 @@ private:
         bool
         IsItem() const;
 
+        bool
+        IsCategory() const;
+
         ItemNode &
         Item();
 
@@ -570,9 +573,12 @@ private:
 
         CategoryNode(Transaction *trans);
 
-        /** Get child node by path. nullptr is returned if the node not found. */
+        /** Get child node by path. nullptr is returned if the node not found.
+         * @param itemInPathFatal Throws InvalidOpException if found leaf item
+         *      when searching for a path.
+         */
         Ptr
-        Find(const Path &path);
+        Find(const Path &path, bool itemInPathFatal = false);
 
         /** Unlink child node with the specified name. */
         void
@@ -770,6 +776,14 @@ public:
         void
         DeleteAll();
 
+        /** Modify item value. */
+        void
+        Modify(const Path &path, const Value &value);
+
+        /** Modify item value. */
+        void
+        Modify(const Path &path, Value &&value);
+
     private:
         /** Represents transaction log record. Each record is either one or set
          * of aggregated pending operations.
@@ -791,11 +805,11 @@ public:
             /** Affected path. */
             Path path;
             /** New node(s) for add operation. Can be subtree. */
-            Node::Ptr new_node;
-            /** New node name. */
-            std::string node_name;
+            Node::Ptr newNode;
+            /** New node name. Referenced by Node::_name. */
+            std::string nodeName;
             /** New value for item modification operation. */
-            Value new_value;
+            Value newValue;
         };
 
         Properties *_props;
@@ -825,8 +839,21 @@ public:
         bool
         _CheckDeletion(const Path &path, bool apply);
 
+        /** Check if path is suitable for item modification.
+         *
+         * @param path Path for item to modify.
+         * @return Existing value storage to save new value to.
+         * @throws InvalidOpException if the modification conflicts with already
+         *      queued operations.
+         */
+        Value *
+        _CheckModification(const Path &path, Value::Type newType);
+
         Node::Ptr
         _AddItem(const Path &path, const Item::Options &options);
+
+        Value *
+        _Modify(const Path &path, Value::Type newType);
     };
 
     /** Create empty properties. */

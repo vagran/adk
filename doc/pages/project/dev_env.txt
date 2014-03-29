@@ -44,21 +44,11 @@ They are also automatically built and installed by ''adk_install.py'' script.
 ===== System packages =====
 
 Should be installed on build machine via package manager:
-  * gcc
-  * g++
-  * texinfo
-  * m4
-  * gawk
-  * gcc-multilib
-  * linux-libc-dev
-  * libc6-dev-i386
-  * libc6-dbg
-  * libfontconfig1-dev
-  * libncurses5-dev
-  * libdbus-glib-1-dev
-  * libgconf2-dev
-  * libgail-dev
-  * libxtst-dev
+<code bash>
+sudo apt-get install gcc g++ texinfo m4 gawk gcc-multilib linux-libc-dev \
+    libc6-dev-i386 libc6-dbg libfontconfig1-dev libncurses5-dev libdbus-glib-1-dev \
+    libgconf2-dev libgail-dev libxtst-dev intltool libbonobo2-dev
+</code>
 
 ===== Other prerequesties =====
 

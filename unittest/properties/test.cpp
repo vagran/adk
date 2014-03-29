@@ -288,4 +288,32 @@ UT_TEST("Properties::Transaction class")
     t->Delete("a");
     UT_THROWS(t->Delete("a"), Properties::InvalidOpException);
     UT_THROWS(t->Delete("a/b/c"), Properties::InvalidOpException);
+
+    t->Cancel();
+    t->AddItem("a/b/c/d", Properties::Value(1));
+    UT_THROWS(t->Modify("a/b", Properties::Value(1)), Properties::InvalidOpException);
+    t->Modify("a/b/c/d", Properties::Value(1));
+    UT_THROWS(t->Modify("a/b/c/d/e", Properties::Value(1)), Properties::InvalidOpException);
+    t->Modify("a/b/f", Properties::Value(1));
+
+    t->Cancel();
+    t->AddCategory("a/b/c/d");
+    UT_THROWS(t->Modify("a/b", Properties::Value(1)), Properties::InvalidOpException);
+    UT_THROWS(t->Modify("a/b/c/d", Properties::Value(1)), Properties::InvalidOpException);
+    UT_THROWS(t->Modify("a/b/c/d/e", Properties::Value(1)), Properties::InvalidOpException);
+    t->Modify("a/b/f", Properties::Value(1));
+
+    t->Cancel();
+    t->Delete("a/b/c/d");
+    UT_THROWS(t->Modify("a/b", Properties::Value(1)), Properties::InvalidOpException);
+    UT_THROWS(t->Modify("a/b/c/d", Properties::Value(1)), Properties::InvalidOpException);
+    UT_THROWS(t->Modify("a/b/c/d/e", Properties::Value(1)), Properties::InvalidOpException);
+    t->Modify("a/b/c/e", Properties::Value(1));
+
+    t->Cancel();
+    t->Modify("a/b/c", Properties::Value(1));
+    UT_THROWS(t->Modify("a/b/c/d", Properties::Value(1)), Properties::InvalidOpException);
+    UT_THROWS(t->Modify("a/b", Properties::Value(1)), Properties::InvalidOpException);
+    t->Modify("a/b/c", Properties::Value(2));
+    UT_THROWS(t->Modify("a/b/c", Properties::Value(1.0)), Properties::InvalidOpException);
 }
