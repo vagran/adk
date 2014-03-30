@@ -626,8 +626,8 @@ Properties::CategoryNode::Find(const Path &path, bool itemInPathFatal)
 {
     CategoryNode *node = this;
     for (size_t idx = 0; idx < path.Size(); idx++) {
-        auto it = _children.find(path[idx]);
-        if (it == _children.end()) {
+        auto it = node->_children.find(path[idx]);
+        if (it == node->_children.end()) {
             return nullptr;
         }
         if (it->second->IsItem()) {
@@ -846,7 +846,9 @@ Properties::Transaction::AddCategory(const Path &path,
     _log.emplace_back();
     Record &rec = _log.back();
     rec.type = Record::Type::ADD;
-    rec.nodeName = path.Last();
+    if (path.Size() != 0) {
+        rec.nodeName = path.Last();
+    }
     rec.newNode = node;
     rec.path = path;
     node->_name = &rec.nodeName;
@@ -857,6 +859,9 @@ Properties::Transaction::AddCategory(const Path &path,
 Properties::Node::Ptr
 Properties::Transaction::_AddItem(const Path &path, const Item::Options &options __UNUSED)
 {
+    if (path.Size() == 0) {
+        ADK_EXCEPTION(InvalidOpException, "Cannot add item - root should be category");
+    }
     auto res = _CheckAddition(path);
     CategoryNode *cn = res.first;
     Node::Ptr node = ItemNode::Create(this);
@@ -953,10 +958,6 @@ Properties::Transaction::_CheckModification(const Path &path, Value::Type newTyp
     for (auto it = _log.begin(); it != _log.end();) {
         Record &rec = *it;
         size_t len = path.HasCommonPrefix(rec.path);
-        if (!len) {
-            it++;
-            continue;
-        }
 
         if (rec.type == Record::Type::ADD) {
             if (len == rec.path.Size()) {
@@ -1029,10 +1030,7 @@ Properties::Transaction::_CheckDeletion(const Path &path, bool apply)
     for (auto it = _log.begin(); it != _log.end();) {
         Record &rec = *it;
         size_t len = path.HasCommonPrefix(rec.path);
-        if (!len) {
-            it++;
-            continue;
-        }
+
         if (rec.type == Record::Type::DELETE) {
             if (len == rec.path.Size()) {
                 /* Already deleted. */
@@ -1101,9 +1099,7 @@ Properties::Transaction::_CheckAddition(const Path &path)
 {
     for (Record &rec: _log) {
         size_t len = path.HasCommonPrefix(rec.path);
-        if (!len) {
-            continue;
-        }
+
         if (rec.type == Record::Type::DELETE) {
             if (len == path.Size() && len < rec.path.Size()) {
                 ADK_EXCEPTION(InvalidOpException,
@@ -1154,6 +1150,18 @@ Properties::Transaction::_CheckAddition(const Path &path)
                                   "Cannot add node - parent node not found in "
                                   "existing addition record");
                 }
+            }
+        }
+    }
+
+    /* Check once more if not found existing added subtree. */
+    for (Record &rec: _log) {
+        size_t len = path.HasCommonPrefix(rec.path);
+        if (rec.type == Record::Type::DELETE) {
+            if (len == rec.path.Size() && len < path.Size()) {
+                ADK_EXCEPTION(InvalidOpException,
+                              "Cannot add node - preceding path was previously "
+                              "deleted");
             }
         }
     }
@@ -1272,7 +1280,7 @@ Properties::_LoadCategory(Transaction::Ptr trans, Xml::Element catEl,
         opts.Description(e.Value());
     }
 
-    trans->AddCategory(isRoot ? Path(":") : path + name, opts);
+    trans->AddCategory(isRoot ? Path() : path + name, opts);
 
     for (Xml::Element e: catEl.Children("item")) {
         _LoadItem(trans, e, isRoot ? Path() : path + name);
@@ -1348,6 +1356,7 @@ Properties::_CommitTransaction(Transaction &trans)
     std::unique_lock<std::mutex> lock(_mutex);
 
     /* Check operations validity. */
+    _CheckDeletions(trans);
     _CheckAdditions(trans);
     //XXX
 
@@ -1374,33 +1383,20 @@ Properties::OpenTransaction()
 }
 
 void
+Properties::_CheckDeletions(Transaction &trans __UNUSED)
+{
+    //XXX
+}
+
+void
 Properties::_CheckAdditions(Transaction &trans)
 {
-    bool rootAdded = false;
-    if (!_root) {
-        for (Transaction::Record &rec: trans._log) {
-            if (rec.type == Transaction::Record::Type::ADD &&
-                rec.path == ":") {
-
-                rootAdded = true;
-                break;
-            }
-        }
-    }
-
     for (Transaction::Record &rec: trans._log) {
         if (rec.type != Transaction::Record::Type::ADD) {
             continue;
         }
         /* Parent node should exist, the added one should not. */
-        if (rec.path == ":") {
-            if (_root) {
-                ADK_EXCEPTION(InvalidOpException,
-                              "Cannot add root category - already exists");
-            }
-            continue;
-        }
-        if (rec.path.Size() > 1) {
+        if (rec.path.Size() > 0) {
             auto node = _LookupNode(rec.path.Parent());
             if (!node) {
                 ADK_EXCEPTION(InvalidOpException,
@@ -1410,13 +1406,23 @@ Properties::_CheckAdditions(Transaction &trans)
                 ADK_EXCEPTION(InvalidOpException,
                               "Cannot add node - parent is not category");
             }
-        } else if (!_root && !rootAdded) {
-            ADK_EXCEPTION(InvalidOpException,
-                          "Cannot add node - root category does not exist");
         }
         if (_LookupNode(rec.path)) {
-            ADK_EXCEPTION(InvalidOpException,
-                          "Cannot add node - already exists");
+            /* Check whether it was deleted in this transaction. */
+            bool found = false;
+            for (Transaction::Record &drec: trans._log) {
+                if (drec.type != Transaction::Record::Type::DELETE) {
+                    continue;
+                }
+                if (drec.path == rec.path) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                ADK_EXCEPTION(InvalidOpException,
+                              "Cannot add node - already exists");
+            }
         }
     }
 }
@@ -1424,27 +1430,13 @@ Properties::_CheckAdditions(Transaction &trans)
 void
 Properties::_ApplyAdditions(Transaction &trans)
 {
-    if (!_root) {
-        for (Transaction::Record &rec: trans._log) {
-            if (rec.type == Transaction::Record::Type::ADD &&
-                rec.path == ":") {
-
-                _root = rec.newNode;
-                _root->_name = nullptr;
-                break;
-            }
-        }
-    }
-
     for (Transaction::Record &rec: trans._log) {
         if (rec.type != Transaction::Record::Type::ADD) {
             continue;
         }
-        if (rec.path == ":") {
-            continue;
-        }
-        if (rec.path.Size() == 1) {
-            _root->Category().AddChild(rec.nodeName, rec.newNode);
+        if (rec.path.Size() == 0) {
+            _root = rec.newNode;
+            _root->_name = nullptr;
         } else {
             Node::Ptr parent = _LookupNode(rec.path.Parent());
             ASSERT(parent);

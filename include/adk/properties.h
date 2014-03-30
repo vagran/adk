@@ -822,7 +822,7 @@ public:
 
             /** Operation type. */
             Type type;
-            /** Affected path. */
+            /** Affected path. Empty for root. */
             Path path;
             /** New node(s) for add operation. Can be subtree. */
             Node::Ptr newNode;
@@ -1011,6 +1011,10 @@ private:
     /** Check validity of additions in the transactions. */
     void
     _CheckAdditions(Transaction &trans);
+
+    /** Check validity of deletions in the transactions. */
+    void
+    _CheckDeletions(Transaction &trans);
 
     /** Apply additions in the transactions. */
     void

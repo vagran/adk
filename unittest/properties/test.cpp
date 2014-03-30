@@ -316,6 +316,17 @@ UT_TEST("Properties::Transaction class")
     UT_THROWS(t->Modify("a/b", Properties::Value(1)), Properties::InvalidOpException);
     t->Modify("a/b/c", Properties::Value(2));
     UT_THROWS(t->Modify("a/b/c", Properties::Value(1.0)), Properties::InvalidOpException);
+
+    t->Cancel();
+    t->Delete("a/b");
+    UT_THROWS(t->AddCategory("a/b/c"), Properties::InvalidOpException);
+
+    t->Cancel();
+    t->DeleteAll();
+    UT_THROWS(t->AddCategory("a/b/c"), Properties::InvalidOpException);
+    UT_THROWS(t->AddCategory("a"), Properties::InvalidOpException);
+    t->AddCategory("");
+    t->AddCategory("a");
 }
 
 UT_TEST("Transaction commit")
@@ -327,11 +338,13 @@ UT_TEST("Transaction commit")
 
     UT_THROWS(props.AddCategory("a/b/c"), Properties::InvalidOpException);
 
-    t->AddCategory(":");
+    t->AddCategory("");
     t->AddCategory("a");
     t->AddCategory("a/b");
     t->AddCategory("a/b/c");
     t->Commit();
+
+    UT_THROWS(props.AddCategory("a/b"), Properties::InvalidOpException);
 
     //XXX
 }
