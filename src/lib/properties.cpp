@@ -542,8 +542,8 @@ Properties::Path::Parent() &&
 /* ****************************************************************************/
 /* Properties::Node class. */
 
-Properties::Node::Node(bool isItem, Transaction *trans):
-    _isItem(isItem), _transaction(trans)
+Properties::Node::Node(bool isItem):
+    _isItem(isItem)
 {}
 
 Properties::Node::~Node()
@@ -595,30 +595,31 @@ Properties::Node::Unlink()
     }
     _parent->Category().UnlinkChild(*_name);
     _parent = nullptr;
+    _name = nullptr;
 }
 
 /* Properties::ItemNode class. */
 
 Properties::ItemNode::Ptr
-Properties::ItemNode::Create(Transaction *trans)
+Properties::ItemNode::Create()
 {
-    return std::make_shared<ItemNode>(trans);
+    return std::make_shared<ItemNode>();
 }
 
-Properties::ItemNode::ItemNode(Transaction *trans):
-    Node(true, trans)
+Properties::ItemNode::ItemNode():
+    Node(true)
 {}
 
 /* Properties::CategoryNode class. */
 
 Properties::CategoryNode::Ptr
-Properties::CategoryNode::Create(Transaction *trans)
+Properties::CategoryNode::Create()
 {
-    return std::make_shared<CategoryNode>(trans);
+    return std::make_shared<CategoryNode>();
 }
 
-Properties::CategoryNode::CategoryNode(Transaction *trans):
-    Node(false, trans)
+Properties::CategoryNode::CategoryNode():
+    Node(false)
 {}
 
 Properties::Node::Ptr
@@ -659,6 +660,8 @@ Properties::CategoryNode::UnlinkChild(const std::string &name)
 {
     auto it = _children.find(name);
     ASSERT(it != _children.end());
+    it->second->_name = nullptr;
+    it->second->_parent = nullptr;
     _children.erase(it);
 }
 
@@ -837,7 +840,7 @@ Properties::Transaction::AddCategory(const Path &path,
 {
     auto res = _CheckAddition(path);
     CategoryNode *cn = res.first;
-    Node::Ptr node = CategoryNode::Create(this);
+    Node::Ptr node = CategoryNode::Create();
     if (cn) {
         cn->AddChild(path.Last(), node);
         //XXX
@@ -864,7 +867,7 @@ Properties::Transaction::_AddItem(const Path &path, const Item::Options &options
     }
     auto res = _CheckAddition(path);
     CategoryNode *cn = res.first;
-    Node::Ptr node = ItemNode::Create(this);
+    Node::Ptr node = ItemNode::Create();
     if (cn) {
         //XXX
         auto res = cn->_children.emplace(path.Last(), node);
@@ -1366,6 +1369,7 @@ Properties::_CommitTransaction(Transaction &trans)
     //XXX
 
     /* Apply transaction data. */
+    _ApplyDeletions(trans);
     _ApplyAdditions(trans);
     //XXX
 }
@@ -1383,9 +1387,21 @@ Properties::OpenTransaction()
 }
 
 void
-Properties::_CheckDeletions(Transaction &trans __UNUSED)
+Properties::_CheckDeletions(Transaction &trans)
 {
-    //XXX
+    for (Transaction::Record &rec: trans._log) {
+        if (rec.type != Transaction::Record::Type::DELETE) {
+            continue;
+        }
+        /* Deleted nodes should exist. Root node is exception. */
+        if (rec.path.Size() == 0) {
+            continue;
+        }
+        if (!_LookupNode(rec.path)) {
+            ADK_EXCEPTION(InvalidOpException,
+                          "Cannot delete node - does not exists");
+        }
+    }
 }
 
 void
@@ -1441,6 +1457,23 @@ Properties::_ApplyAdditions(Transaction &trans)
             Node::Ptr parent = _LookupNode(rec.path.Parent());
             ASSERT(parent);
             parent->Category().AddChild(rec.nodeName, rec.newNode);
+        }
+    }
+}
+
+void
+Properties::_ApplyDeletions(Transaction &trans)
+{
+    for (Transaction::Record &rec: trans._log) {
+        if (rec.type != Transaction::Record::Type::DELETE) {
+            continue;
+        }
+        if (rec.path.Size() == 0) {
+            _root = nullptr;
+        } else {
+            Node::Ptr node = _LookupNode(rec.path);
+            ASSERT(node);
+            node->Unlink();
         }
     }
 }

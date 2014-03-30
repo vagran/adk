@@ -344,7 +344,27 @@ UT_TEST("Transaction commit")
     t->AddCategory("a/b/c");
     t->Commit();
 
+    UT_THROWS(props.AddCategory(""), Properties::InvalidOpException);
     UT_THROWS(props.AddCategory("a/b"), Properties::InvalidOpException);
+    UT_THROWS(props.AddCategory("a/b/c"), Properties::InvalidOpException);
+    props.AddCategory("a/b/c/d");
+
+    UT_THROWS(props.Delete("b"), Properties::InvalidOpException);
+    props.Delete("a/b/c");
+    props.AddCategory("a/b/c");
+
+    t->Delete("a/b/c");
+    t->AddCategory("a/b/d");
+    t->Commit();
+
+    props.AddCategory("a/b/d/c");
+
+    t->DeleteAll();
+    t->AddCategory("");
+    t->AddCategory("a");
+    t->AddCategory("a/b");
+    t->AddCategory("a/b/c");
+    t->Commit();
 
     //XXX
 }

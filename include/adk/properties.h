@@ -540,7 +540,7 @@ private:
         friend class Transaction;
         friend class Properties;
 
-        Node(bool isItem, Transaction *trans);
+        Node(bool isItem);
 
         /** Indicates whether it is item or category. */
         bool _isItem;
@@ -548,18 +548,15 @@ private:
         const std::string *_name = nullptr;
         /** Parent node, nullptr for root. */
         Node *_parent = nullptr;
-
-        /** Associated transaction if not yet committed to the sheet. */
-        Transaction *_transaction;
     };
 
     /** Leaf (item) node. */
     class ItemNode: public Node {
     public:
         static Ptr
-        Create(Transaction *trans);
+        Create();
 
-        ItemNode(Transaction *trans);
+        ItemNode();
 
     private:
         friend class Item;
@@ -581,9 +578,9 @@ private:
     class CategoryNode: public Node {
     public:
         static Ptr
-        Create(Transaction *trans);
+        Create();
 
-        CategoryNode(Transaction *trans);
+        CategoryNode();
 
         /** Get child node by path. nullptr is returned if the node not found.
          * @param itemInPathFatal Throws InvalidOpException if found leaf item
@@ -1019,6 +1016,10 @@ private:
     /** Apply additions in the transactions. */
     void
     _ApplyAdditions(Transaction &trans);
+
+    /** Apply deletions in the transactions. */
+    void
+    _ApplyDeletions(Transaction &trans);
 
     /** Find node is exists. */
     Node::Ptr
