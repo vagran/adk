@@ -5,6 +5,6 @@
 # All rights reserved.
 # See COPYING file for copyright details.
 
-SUBDIRS = bitmap python signal xml misc
+SUBDIRS = bitmap python signal xml misc properties
 
 include $(ADK_ROOT)/make/make.mk
