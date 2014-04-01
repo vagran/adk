@@ -291,29 +291,31 @@ UT_TEST("Properties::Transaction class")
 
     t->Cancel();
     t->AddItem("a/b/c/d", Properties::Value(1));
-    UT_THROWS(t->Modify("a/b", Properties::Value(1)), Properties::InvalidOpException);
+    //XXX value for category?
+    t->Modify("a/b", Properties::Value(1));
     t->Modify("a/b/c/d", Properties::Value(1));
+    UT_THROWS(t->Modify("a/b/c/d", Properties::Value("aaa")), Properties::InvalidOpException);
     UT_THROWS(t->Modify("a/b/c/d/e", Properties::Value(1)), Properties::InvalidOpException);
     t->Modify("a/b/f", Properties::Value(1));
 
     t->Cancel();
     t->AddCategory("a/b/c/d");
-    UT_THROWS(t->Modify("a/b", Properties::Value(1)), Properties::InvalidOpException);
-    UT_THROWS(t->Modify("a/b/c/d", Properties::Value(1)), Properties::InvalidOpException);
+    t->Modify("a/b", Properties::Value(1));//XXX
+    t->Modify("a/b/c/d", Properties::Value(1));//XXX
     UT_THROWS(t->Modify("a/b/c/d/e", Properties::Value(1)), Properties::InvalidOpException);
     t->Modify("a/b/f", Properties::Value(1));
 
     t->Cancel();
     t->Delete("a/b/c/d");
-    UT_THROWS(t->Modify("a/b", Properties::Value(1)), Properties::InvalidOpException);
+    t->Modify("a/b", Properties::Value(1));//XXX
     UT_THROWS(t->Modify("a/b/c/d", Properties::Value(1)), Properties::InvalidOpException);
     UT_THROWS(t->Modify("a/b/c/d/e", Properties::Value(1)), Properties::InvalidOpException);
     t->Modify("a/b/c/e", Properties::Value(1));
 
     t->Cancel();
-    t->Modify("a/b/c", Properties::Value(1));
-    UT_THROWS(t->Modify("a/b/c/d", Properties::Value(1)), Properties::InvalidOpException);
-    UT_THROWS(t->Modify("a/b", Properties::Value(1)), Properties::InvalidOpException);
+    t->Modify("a/b/c", Properties::Value(1));//XXX
+    t->Modify("a/b/c/d", Properties::Value(1));
+    t->Modify("a/b", Properties::Value(1));//XXX
     t->Modify("a/b/c", Properties::Value(2));
     UT_THROWS(t->Modify("a/b/c", Properties::Value(1.0)), Properties::InvalidOpException);
 
@@ -365,6 +367,19 @@ UT_TEST("Transaction commit")
     t->AddCategory("a/b");
     t->AddCategory("a/b/c");
     t->Commit();
+
+    props.Clear();
+    UT_THROWS(props.Modify("", Properties::Value(1)), Properties::InvalidOpException);
+    UT_THROWS(props.Modify("a", Properties::Value(1)), Properties::InvalidOpException);
+    t->AddCategory("");
+    t->AddCategory("a");
+    t->AddCategory("a/b");
+    t->AddItem("a/b/c", Properties::Value(1));
+    t->Modify("a/b/c", Properties::Value(2));
+    t->Commit();
+
+    //XXX check a/b/c == 2
+    UT_THROWS(props.Modify("a/b/c", Properties::Value("aaa")), Properties::InvalidOpException);
 
     //XXX
 }

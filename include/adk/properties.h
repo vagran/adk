@@ -553,6 +553,9 @@ private:
     /** Leaf (item) node. */
     class ItemNode: public Node {
     public:
+        /** Current value. */
+        Value value;
+
         static Ptr
         Create();
 
@@ -564,8 +567,6 @@ private:
 
         //XXX min/maxValue, maxLen should attach built-in validators
 
-        /** Current value. */
-        Value _value;
         /** Display name, empty if not specified. */
         Optional<std::string> _dispName,
         /** Description text. */
@@ -821,12 +822,12 @@ public:
             Type type;
             /** Affected path. Empty for root. */
             Path path;
-            /** New node(s) for add operation. Can be subtree. */
+            /** New node(s) for add operation or temporal node for modify
+             * operation. Can be subtree for add operation.
+             */
             Node::Ptr newNode;
             /** New node name. Referenced by Node::_name. */
             std::string nodeName;
-            /** New value for item modification operation. */
-            Value newValue;
         };
 
         Properties *_props;
@@ -859,17 +860,15 @@ public:
         /** Check if path is suitable for item modification.
          *
          * @param path Path for item to modify.
-         * @return Existing value storage to save new value to.
-         * @throws InvalidOpException if the modification conflicts with already
-         *      queued operations.
+         * @return Existing to modify if any found in the transaction log.
          */
-        Value *
+        Node::Ptr
         _CheckModification(const Path &path, Value::Type newType);
 
         Node::Ptr
         _AddItem(const Path &path, const Item::Options &options);
 
-        Value *
+        Node::Ptr
         _Modify(const Path &path, Value::Type newType);
     };
 
@@ -1013,6 +1012,10 @@ private:
     void
     _CheckDeletions(Transaction &trans);
 
+    /** Check validity of modifications in the transactions. */
+    void
+    _CheckModifications(Transaction &trans);
+
     /** Apply additions in the transactions. */
     void
     _ApplyAdditions(Transaction &trans);
@@ -1021,7 +1024,11 @@ private:
     void
     _ApplyDeletions(Transaction &trans);
 
-    /** Find node is exists. */
+    /** Apply modifications in the transaction. */
+    void
+    _ApplyModifications(Transaction &trans);
+
+    /** Find node if exists. */
     Node::Ptr
     _LookupNode(const Path &path);
 };

@@ -729,14 +729,14 @@ Properties::Value::Type
 Properties::Item::Type() const
 {
     ASSERT(_node);
-    return _node->_value.GetType();
+    return _node->value.GetType();
 }
 
 Properties::Value
 Properties::Item::Val() const
 {
     ASSERT(_node);
-    return _node->_value;
+    return _node->value;
 }
 
 std::string
@@ -892,7 +892,7 @@ Properties::Transaction::AddItem(const Path &path, const Value &value,
                                  const Item::Options &options)
 {
     Node::Ptr node = _AddItem(path, options);
-    node->Item()._value = value;
+    node->Item().value = value;
     return &node->Item();
 }
 
@@ -901,7 +901,7 @@ Properties::Transaction::AddItem(const Path &path, Value &&value,
                                  const Item::Options &options)
 {
     Node::Ptr node = _AddItem(path, options);
-    node->Item()._value = std::move(value);
+    node->Item().value = std::move(value);
     return &node->Item();
 }
 
@@ -930,32 +930,44 @@ Properties::Transaction::DeleteAll()
 void
 Properties::Transaction::Modify(const Path &path, const Value &value)
 {
-    Value *v = _Modify(path, value.GetType());
-    *v = value;
+    Node::Ptr node = _Modify(path, value.GetType());
+    //XXX
+    if (node->IsItem()) {
+        node->Item().value = value;
+    }
 }
 
 void
 Properties::Transaction::Modify(const Path &path, Value &&value)
 {
-    Value *v = _Modify(path, value.GetType());
-    *v = std::move(value);
+    Node::Ptr node = _Modify(path, value.GetType());
+    if (node->IsItem()) {
+        node->Item().value = std::move(value);
+    }
 }
 
-Properties::Value *
+Properties::Node::Ptr
 Properties::Transaction::_Modify(const Path &path, Value::Type newType)
 {
-    Value *v = _CheckModification(path, newType);
-    if (v) {
-        return v;
+    Node::Ptr node = _CheckModification(path, newType);
+    if (node) {
+        return node;
     }
+    node = ItemNode::Create();
     _log.emplace_back();
     Record &rec = _log.back();
     rec.type = Record::Type::MODIFY;
     rec.path = path;
-    return &rec.newValue;
+    if (path.Size()) {
+        rec.nodeName = path.Last();
+    }
+    rec.newNode = node;
+    rec.path = path;
+    node->_name = &rec.nodeName;
+    return node;
 }
 
-Properties::Value *
+Properties::Node::Ptr
 Properties::Transaction::_CheckModification(const Path &path, Value::Type newType)
 {
     for (auto it = _log.begin(); it != _log.end();) {
@@ -978,21 +990,18 @@ Properties::Transaction::_CheckModification(const Path &path, Value::Type newTyp
                     node = rec.newNode->Category().Find(parentSubpath, true);
                 }
                 if (node) {
-                    if (node->IsCategory()) {
+                    if (node->IsItem() && node->Item().value.GetType() != newType) {
                         ADK_EXCEPTION(InvalidOpException,
-                                      "Cannot modify node - category node exists in the "
-                                      "existing addition record");
+                                      "Cannot modify node - the value type does not "
+                                      "match previously specified value type in "
+                                      "found addition record");
                     }
-                    return &node->Item()._value;
+                    return node;
                 } else {
                     ADK_EXCEPTION(InvalidOpException,
                                   "Cannot modify node - not found in "
                                   "existing addition record");
                 }
-            } else if (len == path.Size()) {
-                ADK_EXCEPTION(InvalidOpException,
-                              "Cannot modify node - the specified path "
-                              "included in addition record");
             }
 
         } else if (rec.type == Record::Type::DELETE) {
@@ -1000,24 +1009,15 @@ Properties::Transaction::_CheckModification(const Path &path, Value::Type newTyp
                 ADK_EXCEPTION(InvalidOpException,
                               "Cannot modify node - the specified path previously deleted");
             }
-            if (len == path.Size()) {
-                ADK_EXCEPTION(InvalidOpException,
-                              "Cannot modify node - the specified path exists in "
-                              "pending deletion record");
-            }
 
         } else if (rec.type == Record::Type::MODIFY) {
             if (len == path.Size() && len == rec.path.Size()) {
-                if (rec.newValue.GetType() != newType) {
+                if (rec.newNode->Item().value.GetType() != newType) {
                     ADK_EXCEPTION(InvalidOpException,
                                   "Cannot modify node - the value type does not "
                                   "match previously specified value type");
                 }
-                return &rec.newValue;
-            } else {
-                ADK_EXCEPTION(InvalidOpException,
-                              "Cannot modify node - the specified path "
-                              "intersects with pending modification record");
+                return rec.newNode;
             }
         }
 
@@ -1361,7 +1361,7 @@ Properties::_CommitTransaction(Transaction &trans)
     /* Check operations validity. */
     _CheckDeletions(trans);
     _CheckAdditions(trans);
-    //XXX
+    _CheckModifications(trans);
 
     //XXX set current transaction by guard object
 
@@ -1371,7 +1371,7 @@ Properties::_CommitTransaction(Transaction &trans)
     /* Apply transaction data. */
     _ApplyDeletions(trans);
     _ApplyAdditions(trans);
-    //XXX
+    _ApplyModifications(trans);
 }
 
 void
@@ -1400,6 +1400,36 @@ Properties::_CheckDeletions(Transaction &trans)
         if (!_LookupNode(rec.path)) {
             ADK_EXCEPTION(InvalidOpException,
                           "Cannot delete node - does not exists");
+        }
+    }
+}
+
+void
+Properties::_CheckModifications(Transaction &trans)
+{
+    /* Ensure the referenced nodes existence. Ensure the value type is not
+     * changed.
+     */
+    for (Transaction::Record &rec: trans._log) {
+        if (rec.type != Transaction::Record::Type::MODIFY) {
+            continue;
+        }
+        Node::Ptr node = _LookupNode(rec.path);
+        if (!node) {
+            ADK_EXCEPTION(InvalidOpException,
+                          "Cannot modify node - does not exists");
+        }
+        //XXX
+        if (node->IsItem()) {
+            //XXX
+            if (!rec.newNode->IsItem()) {
+                ADK_EXCEPTION(InvalidOpException,
+                              "Cannot modify node - node type mismatch");
+            }
+            if (node->Item().value.GetType() != rec.newNode->Item().value.GetType()) {
+                ADK_EXCEPTION(InvalidOpException,
+                              "Cannot modify node - time value type mismatch");
+            }
         }
     }
 }
@@ -1474,6 +1504,22 @@ Properties::_ApplyDeletions(Transaction &trans)
             Node::Ptr node = _LookupNode(rec.path);
             ASSERT(node);
             node->Unlink();
+        }
+    }
+}
+
+void
+Properties::_ApplyModifications(Transaction &trans)
+{
+    for (Transaction::Record &rec: trans._log) {
+        if (rec.type != Transaction::Record::Type::MODIFY) {
+            continue;
+        }
+        Node::Ptr node = _LookupNode(rec.path);
+        ASSERT(node);
+        //XXX
+        if (node->IsItem()) {
+            node->Item().value = std::move(rec.newNode->Item().value);
         }
     }
 }
