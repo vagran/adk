@@ -185,7 +185,7 @@ TestMan::Run()
 
     for (TestDesc *t: _tests) {
         g_curTest = t;
-        printf("==== Running test '%s' (%zu of %zu) ====\n(defined at %s:%d)\n\n",
+        printf("\n==== Running test '%s' (%zu of %zu) ====\n(defined at %s:%d)\n\n",
                t->GetName(), testIdx + 1, numTests, t->GetFile(), t->GetLine());
 
         bool failed = true;
@@ -224,7 +224,7 @@ TestMan::Run()
         g_curTest = nullptr;
     }
 
-    printf("======== Testing complete [%s] ========\n"
+    printf("\n======== Testing complete [%s] ========\n"
            "%zu of %zu tests passed\n",
            numPassed == numTests ? "SUCCEEDED" : "FAILED",
            numPassed, numTests);

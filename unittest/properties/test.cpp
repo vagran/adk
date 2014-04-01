@@ -15,11 +15,13 @@
 
 using namespace adk;
 
+#if 0
 UT_TEST("Basic functionality")
 {
     Properties props(Xml().Load(GetResource("test_props.xml").GetString()));
     //XXX
 }
+#endif
 
 UT_TEST("Properties::Value class")
 {
@@ -262,73 +264,84 @@ UT_TEST("Properties::Transaction class")
     Properties props;
     Properties::Transaction::Ptr t = props.OpenTransaction();
 
-    t->AddCategory("a/b/c");
-    UT_THROWS(t->AddCategory("a/b/c"), Properties::InvalidOpException);
-    t->AddCategory("a/b/d");
-    UT_THROWS(t->AddCategory("a/b"), Properties::InvalidOpException);
+    t->Add("a/b/c");
+    UT_THROWS(t->Add("a/b/c"), Properties::InvalidOpException);
+    t->Add("a/b/d");
+    UT_THROWS(t->Add("a/b"), Properties::InvalidOpException);
 
-    t->AddItem("a/b/e", 1);
-    UT_THROWS(t->AddCategory("a/b/e/f"), Properties::InvalidOpException);
-    UT_THROWS(t->AddItem("a/b/e/f", 1), Properties::InvalidOpException);
+    t->Add("a/b/e", 1);
+    t->Add("a/b/e/f");
+    UT_THROWS(t->Add("a/b/e/f", 1), Properties::InvalidOpException);
 
-    t->AddCategory("a/b/c/d");
-    t->AddCategory("a/b/c/e");
-    t->AddCategory("a/b/c/e/f");
-    UT_THROWS(t->AddCategory("a/b/c/e"), Properties::InvalidOpException);
+    t->Add("a/b/c/d");
+    t->Add("a/b/c/e");
+    t->Add("a/b/c/e/f");
+    UT_THROWS(t->Add("a/b/c/e"), Properties::InvalidOpException);
 
     t->Delete("x/y/z");
-    UT_THROWS(t->AddCategory("x/y"), Properties::InvalidOpException);
+    UT_THROWS(t->Add("x/y"), Properties::InvalidOpException);
 
     UT_THROWS(t->Delete("a/b/c/g/g/g"), Properties::InvalidOpException);
     t->Delete("a/b/c/e");
-    UT_THROWS(t->AddCategory("a/b/c/e/f"), Properties::InvalidOpException);
-    t->AddCategory("a/b/c/e");
-    t->AddCategory("a/b/c/e/f");
+    UT_THROWS(t->Add("a/b/c/e/f"), Properties::InvalidOpException);
+    t->Add("a/b/c/e");
+    t->Add("a/b/c/e/f");
+
+    t->Modify("w/a", 1);
+    UT_THROWS(t->Add("w/a"), Properties::InvalidOpException);
+    UT_THROWS(t->Add("w"), Properties::InvalidOpException);
+    t->Add("w/b");
+    t->Add("w/a/b");
 
     t->Delete("a");
     UT_THROWS(t->Delete("a"), Properties::InvalidOpException);
     UT_THROWS(t->Delete("a/b/c"), Properties::InvalidOpException);
 
     t->Cancel();
-    t->AddItem("a/b/c/d", Properties::Value(1));
-    UT_THROWS(t->Modify("a/b", Properties::Value(1)), Properties::InvalidOpException);
-    t->Modify("a/b/c/d", Properties::Value(1));
-    UT_THROWS(t->Modify("a/b/c/d/e", Properties::Value(1)), Properties::InvalidOpException);
-    t->Modify("a/b/f", Properties::Value(1));
+    t->Add("a/b/c/d", 1);
+    t->Modify("a/b", 1);
+    t->Modify("a/b/c/d", 1);
+    UT_THROWS(t->Modify("a/b/c/d", "aaa"), Properties::InvalidOpException);
+    UT_THROWS(t->Modify("a/b/c/d/e", 1), Properties::InvalidOpException);
+    t->Modify("a/b/f", 1);
 
     t->Cancel();
-    t->AddCategory("a/b/c/d");
-    UT_THROWS(t->Modify("a/b", Properties::Value(1)), Properties::InvalidOpException);
-    UT_THROWS(t->Modify("a/b/c/d", Properties::Value(1)), Properties::InvalidOpException);
-    UT_THROWS(t->Modify("a/b/c/d/e", Properties::Value(1)), Properties::InvalidOpException);
-    t->Modify("a/b/f", Properties::Value(1));
+    t->Add("a/b/c/d");
+    t->Modify("a/b", 1);
+    UT_THROWS(t->Modify("a/b/c/d", 1), Properties::InvalidOpException);
+    UT_THROWS(t->Modify("a/b/c/d/e", 1), Properties::InvalidOpException);
+    t->Modify("a/b/f", 1);
 
     t->Cancel();
     t->Delete("a/b/c/d");
-    UT_THROWS(t->Modify("a/b", Properties::Value(1)), Properties::InvalidOpException);
-    UT_THROWS(t->Modify("a/b/c/d", Properties::Value(1)), Properties::InvalidOpException);
-    UT_THROWS(t->Modify("a/b/c/d/e", Properties::Value(1)), Properties::InvalidOpException);
-    t->Modify("a/b/c/e", Properties::Value(1));
+    t->Modify("a/b", 1);
+    UT_THROWS(t->Modify("a/b/c/d", 1), Properties::InvalidOpException);
+    UT_THROWS(t->Modify("a/b/c/d/e", 1), Properties::InvalidOpException);
+    t->Modify("a/b/c/e", 1);
 
     t->Cancel();
-    t->Modify("a/b/c", Properties::Value(1));
-    UT_THROWS(t->Modify("a/b/c/d", Properties::Value(1)), Properties::InvalidOpException);
-    UT_THROWS(t->Modify("a/b", Properties::Value(1)), Properties::InvalidOpException);
-    t->Modify("a/b/c", Properties::Value(2));
-    UT_THROWS(t->Modify("a/b/c", Properties::Value(1.0)), Properties::InvalidOpException);
+    t->Modify("a/b/c", 1);
+    t->Modify("a/b/c/d", 1);
+    t->Modify("a/b", 1);
+    t->Modify("a/b/c", 2);
+    UT_THROWS(t->Modify("a/b/c", 1.0), Properties::InvalidOpException);
 
     t->Cancel();
     t->Delete("a/b");
-    UT_THROWS(t->AddCategory("a/b/c"), Properties::InvalidOpException);
+    UT_THROWS(t->Add("a/b/c"), Properties::InvalidOpException);
+    t->Add("a/b");
 
+#if 0
     t->Cancel();
     t->DeleteAll();
     UT_THROWS(t->AddCategory("a/b/c"), Properties::InvalidOpException);
     UT_THROWS(t->AddCategory("a"), Properties::InvalidOpException);
     t->AddCategory("");
     t->AddCategory("a");
+#endif
 }
 
+#if 0
 UT_TEST("Transaction commit")
 {
     Properties props;
@@ -382,5 +395,20 @@ UT_TEST("Transaction commit")
     t->Delete("a/b2");
     t->Commit();
 
+    props.Clear();
+    UT_THROWS(props.Modify("", Properties::Value(1)), Properties::InvalidOpException);
+    UT_THROWS(props.Modify("a", Properties::Value(1)), Properties::InvalidOpException);
+    t->AddCategory("");
+    t->AddCategory("a");
+    t->AddCategory("a/b");
+    t->AddItem("a/b/c", Properties::Value(1));
+    t->Modify("a/b/c", Properties::Value(2));
+    t->Commit();
+
+    //XXX check a/b/c == 2
+    UT_THROWS(props.Modify("a/b/c", Properties::Value("aaa")), Properties::InvalidOpException);
+
     //XXX
 }
+#endif
+
