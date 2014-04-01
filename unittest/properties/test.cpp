@@ -15,13 +15,11 @@
 
 using namespace adk;
 
-#if 0
 UT_TEST("Basic functionality")
 {
     Properties props(Xml().Load(GetResource("test_props.xml").GetString()));
     //XXX
 }
-#endif
 
 UT_TEST("Properties::Value class")
 {
@@ -330,85 +328,82 @@ UT_TEST("Properties::Transaction class")
     t->Delete("a/b");
     UT_THROWS(t->Add("a/b/c"), Properties::InvalidOpException);
     t->Add("a/b");
+    UT_THROWS(t->Add("a"), Properties::InvalidOpException);
+    UT_THROWS(t->Add(""), Properties::InvalidOpException);
 
-#if 0
     t->Cancel();
     t->DeleteAll();
-    UT_THROWS(t->AddCategory("a/b/c"), Properties::InvalidOpException);
-    UT_THROWS(t->AddCategory("a"), Properties::InvalidOpException);
-    t->AddCategory("");
-    t->AddCategory("a");
-#endif
+    UT_THROWS(t->Add("a/b/c"), Properties::InvalidOpException);
+    UT_THROWS(t->Add("a"), Properties::InvalidOpException);
+    t->Add("");
+    t->Add("a");
 }
 
-#if 0
 UT_TEST("Transaction commit")
 {
     Properties props;
     Properties::Transaction::Ptr t = props.OpenTransaction();
 
-    UT_THROWS(props.AddCategory("a"), Properties::InvalidOpException);
+    UT_THROWS(props.Add("a"), Properties::InvalidOpException);
 
-    UT_THROWS(props.AddCategory("a/b/c"), Properties::InvalidOpException);
+    UT_THROWS(props.Add("a/b/c"), Properties::InvalidOpException);
 
-    t->AddCategory("");
-    t->AddCategory("a");
-    t->AddCategory("a/b");
-    t->AddCategory("a/b/c");
+    t->Add("");
+    t->Add("a");
+    t->Add("a/b");
+    t->Add("a/b/c");
     t->Commit();
 
-    UT_THROWS(props.AddCategory(""), Properties::InvalidOpException);
-    UT_THROWS(props.AddCategory("a/b"), Properties::InvalidOpException);
-    UT_THROWS(props.AddCategory("a/b/c"), Properties::InvalidOpException);
-    props.AddCategory("a/b/c/d");
+    UT_THROWS(props.Add(""), Properties::InvalidOpException);
+    UT_THROWS(props.Add("a/b"), Properties::InvalidOpException);
+    UT_THROWS(props.Add("a/b/c"), Properties::InvalidOpException);
+    props.Add("a/b/c/d");
 
     UT_THROWS(props.Delete("b"), Properties::InvalidOpException);
     props.Delete("a/b/c");
-    props.AddCategory("a/b/c");
+    props.Add("a/b/c");
 
     t->Delete("a/b/c");
-    t->AddCategory("a/b/d");
+    t->Add("a/b/d");
     t->Commit();
 
-    props.AddCategory("a/b/d/c");
+    props.Add("a/b/d/c");
 
     t->DeleteAll();
-    t->AddCategory("");
-    t->AddCategory("a");
-    t->AddCategory("a/b");
-    t->AddCategory("a/b/c");
-    t->AddCategory("a/b2");
-    t->AddCategory("a/b2/c");
-    t->AddCategory("a/b2/c2");
-    t->AddCategory("a/b3");
-    t->AddCategory("a/b3/c");
-    t->AddCategory("a/b3/c2");
+    t->Add("");
+    t->Add("a");
+    t->Add("a/b");
+    t->Add("a/b/c");
+    t->Add("a/b2");
+    t->Add("a/b2/c");
+    t->Add("a/b2/c2");
+    t->Add("a/b3");
+    t->Add("a/b3/c");
+    t->Add("a/b3/c2");
     t->Commit();
 
     t->Delete("a/b2");
-    t->AddCategory("a/b2");
-    t->AddCategory("a/b2/c");
-    t->AddCategory("a/b2/c2");
+    t->Add("a/b2");
+    t->Add("a/b2/c");
+    t->Add("a/b2/c2");
     t->Commit();
 
-    t->AddCategory("a/b2/c3");
+    t->Add("a/b2/c3");
     t->Delete("a/b2");
     t->Commit();
 
     props.Clear();
-    UT_THROWS(props.Modify("", Properties::Value(1)), Properties::InvalidOpException);
-    UT_THROWS(props.Modify("a", Properties::Value(1)), Properties::InvalidOpException);
-    t->AddCategory("");
-    t->AddCategory("a");
-    t->AddCategory("a/b");
-    t->AddItem("a/b/c", Properties::Value(1));
-    t->Modify("a/b/c", Properties::Value(2));
+    UT_THROWS(props.Modify("", 1), Properties::InvalidOpException);
+    UT_THROWS(props.Modify("a", 1), Properties::InvalidOpException);
+    t->Add("");
+    t->Add("a");
+    t->Add("a/b");
+    t->Add("a/b/c", 1);
+    t->Modify("a/b/c", 2);
     t->Commit();
 
     //XXX check a/b/c == 2
-    UT_THROWS(props.Modify("a/b/c", Properties::Value("aaa")), Properties::InvalidOpException);
+    UT_THROWS(props.Modify("a/b/c", "aaa"), Properties::InvalidOpException);
 
     //XXX
 }
-#endif
-

@@ -972,7 +972,7 @@ Properties::Transaction::_CheckAddition(const Path &path)
             }
 
         } else if (rec.type == Record::Type::DELETE) {
-            if (len == path.Size()) {
+            if (len == path.Size() && len < rec.path.Size()) {
                 ADK_EXCEPTION(InvalidOpException,
                               "Cannot add node - same path exists in pending "
                               "deletion record");
