@@ -364,6 +364,22 @@ UT_TEST("Transaction commit")
     t->AddCategory("a");
     t->AddCategory("a/b");
     t->AddCategory("a/b/c");
+    t->AddCategory("a/b2");
+    t->AddCategory("a/b2/c");
+    t->AddCategory("a/b2/c2");
+    t->AddCategory("a/b3");
+    t->AddCategory("a/b3/c");
+    t->AddCategory("a/b3/c2");
+    t->Commit();
+
+    t->Delete("a/b2");
+    t->AddCategory("a/b2");
+    t->AddCategory("a/b2/c");
+    t->AddCategory("a/b2/c2");
+    t->Commit();
+
+    t->AddCategory("a/b2/c3");
+    t->Delete("a/b2");
     t->Commit();
 
     //XXX
