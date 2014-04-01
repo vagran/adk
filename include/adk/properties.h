@@ -503,31 +503,26 @@ public:
     /* ************************************************************************/
 
 private:
-    class ItemNode;
-    class CategoryNode;
 
     /** Represents node in the properties tree. */
-    class Node: public std::enable_shared_from_this<Node> {
+    class _Node: public std::enable_shared_from_this<_Node> {
     public:
-        typedef std::shared_ptr<Node> Ptr;
+        typedef std::shared_ptr<_Node> Ptr;
 
-        virtual
-        ~Node();
+        /** Current value. */
+        Value value;
+        /** Display name, empty if not specified. */
+        Optional<std::string> dispName,
+        /** Description text. */
+                              description,
+        /** Units string, empty if no units specified. */
+                              units;
+
+        static Ptr
+        Create();
 
         Ptr
         GetPtr();
-
-        bool
-        IsItem() const;
-
-        bool
-        IsCategory() const;
-
-        ItemNode &
-        Item();
-
-        CategoryNode &
-        Category();
 
         std::string
         Name() const;
@@ -536,59 +531,9 @@ private:
         void
         Unlink();
 
-    protected:
-        friend class Transaction;
-        friend class Properties;
-
-        Node(bool isItem);
-
-        /** Indicates whether it is item or category. */
-        bool _isItem;
-        /** Internal name. */
-        const std::string *_name = nullptr;
-        /** Parent node, nullptr for root. */
-        Node *_parent = nullptr;
-    };
-
-    /** Leaf (item) node. */
-    class ItemNode: public Node {
-    public:
-        /** Current value. */
-        Value value;
-
-        static Ptr
-        Create();
-
-        ItemNode();
-
-    private:
-        friend class Item;
-        friend class Transaction;
-
-        //XXX min/maxValue, maxLen should attach built-in validators
-
-        /** Display name, empty if not specified. */
-        Optional<std::string> _dispName,
-        /** Description text. */
-                              _description,
-        /** Units string, empty if no units specified. */
-                              _units;
-    };
-
-    /** Non-leaf (category) node. */
-    class CategoryNode: public Node {
-    public:
-        static Ptr
-        Create();
-
-        CategoryNode();
-
-        /** Get child node by path. nullptr is returned if the node not found.
-         * @param itemInPathFatal Throws InvalidOpException if found leaf item
-         *      when searching for a path.
-         */
+        /** Get child node by path. nullptr is returned if the node not found. */
         Ptr
-        Find(const Path &path, bool itemInPathFatal = false);
+        Find(const Path &path);
 
         /** Add new child node. */
         void
@@ -598,23 +543,21 @@ private:
         void
         UnlinkChild(const std::string &name);
 
-    private:
-        friend class Category;
+    protected:
         friend class Transaction;
+        friend class Properties;
 
-        /** Display name, empty if not specified. */
-        Optional<std::string> _dispName,
-        /** Description text. */
-                              _description;
+        /** Internal name. */
+        const std::string *_name = nullptr;
+        /** Parent node, nullptr for root. */
+        _Node *_parent = nullptr;
         /** Child nodes. */
         std::map<std::string, Ptr> _children;
     };
 
 public:
-    /** Represents item handle exposed to user. */
-    class Item {
+    class Node {
     public:
-
         /** Item creation options. */
         class Options {
         public:
@@ -632,7 +575,7 @@ public:
             Units(Optional<std::string> units);
         };
 
-        Item(ItemNode *node = nullptr);
+        Node(_Node::Ptr node = nullptr);
 
         /** Get value type. */
         Value::Type
@@ -662,46 +605,7 @@ public:
         operator bool() const;
 
     private:
-        ItemNode *_node;
-    };
-
-    /** Represents category handle exposed to user. */
-    class Category {
-    public:
-        /** Category creation options. */
-        class Options {
-        public:
-
-            Optional<std::string> dispName,
-                                  description;
-
-            Options &
-            DispName(Optional<std::string> dispName);
-
-            Options &
-            Description(Optional<std::string> description);
-        };
-
-        Category(CategoryNode *node = nullptr);
-
-        /** Get internal name. */
-        std::string
-        Name() const;
-
-        /** Get string to be used as display name. */
-        std::string
-        DispName() const;
-
-        /** Get description string. */
-        std::string
-        Description() const;
-
-        /** Check if the handle is not empty. */
-        operator bool() const;
-
-    private:
-
-        CategoryNode *_node;
+        _Node::Ptr _node;
     };
 
     /** Each sheet modification is done in some transaction context. A
@@ -735,20 +639,35 @@ public:
         void
         Cancel();
 
-        /** Add new category.
+        /** Add new node without value (category).
          *
          * @param path Path of the new category. Last component is the new
          *      category name. All the preceding components should name existing
-         *      categories. Special category path ":" corresponds to root
-         *      category and is a way to specify its options.
+         *      categories. Empty path corresponds to root category and is a way
+         *      to specify its options.
          * @param options Category creation options.
          * @return New category handle.
          * @throws InvalidOpException if the change conflicts with already
          *      queued operations.
          */
-        Category
-        AddCategory(const Path &path,
-                    const Category::Options &options = Category::Options());
+        Node
+        Add(const Path &path,
+            const Node::Options &options = Node::Options());
+
+        /** Add new node with value (item).
+         *
+         * @param path Path of the new item. Last component is the new item
+         *      name. All the preceding components should name existing
+         *      categories.
+         * @param value Value for the item. Should not be empty value.
+         * @param options Item creation options.
+         * @return New item handle.
+         * @throws InvalidOpException if the change conflicts with already
+         *      queued operations.
+         */
+        Node
+        Add(const Path &path, const Value &value,
+            const Node::Options &options = Node::Options());
 
         /** Add new item.
          *
@@ -761,24 +680,9 @@ public:
          * @throws InvalidOpException if the change conflicts with already
          *      queued operations.
          */
-        Item
-        AddItem(const Path &path, const Value &value,
-                const Item::Options &options = Item::Options());
-
-        /** Add new item.
-         *
-         * @param path Path of the new item. Last component is the new item
-         *      name. All the preceding components should name existing
-         *      categories.
-         * @param value Value for the item. Should not be empty value.
-         * @param options Item creation options.
-         * @return New item handle.
-         * @throws InvalidOpException if the change conflicts with already
-         *      queued operations.
-         */
-        Item
-        AddItem(const Path &path, Value &&value,
-                const Item::Options &options = Item::Options());
+        Node
+        Add(const Path &path, Value &&value,
+            const Node::Options &options = Node::Options());
 
         /** Delete a node (either item or category).
          * @param path Node path to delete.
@@ -792,13 +696,19 @@ public:
         void
         DeleteAll();
 
-        /** Modify item value. */
+        /** Modify node options. */
         void
-        Modify(const Path &path, const Value &value);
+        Modify(const Path &path, const Node::Options &options);
 
         /** Modify item value. */
         void
-        Modify(const Path &path, Value &&value);
+        Modify(const Path &path, const Value &value,
+               const Node::Options &options = Node::Options());
+
+        /** Modify item value. */
+        void
+        Modify(const Path &path, Value &&value,
+               const Node::Options &options = Node::Options());
 
     private:
         friend class Properties;
@@ -825,7 +735,7 @@ public:
             /** New node(s) for add operation or temporal node for modify
              * operation. Can be subtree for add operation.
              */
-            Node::Ptr newNode;
+            _Node::Ptr newNode;
             /** New node name. Referenced by Node::_name. */
             std::string nodeName;
         };
@@ -843,7 +753,7 @@ public:
          * @throws InvalidOpException if the addition conflicts with already
          *      queued operations.
          */
-        std::pair<CategoryNode *, Record *>
+        std::pair<_Node::Ptr, Record *>
         _CheckAddition(const Path &path);
 
         /** Check if the path is suitable for node deletion. In case there is
@@ -862,13 +772,13 @@ public:
          * @param path Path for item to modify.
          * @return Existing to modify if any found in the transaction log.
          */
-        Node::Ptr
+        _Node::Ptr
         _CheckModification(const Path &path, Value::Type newType);
 
-        Node::Ptr
-        _AddItem(const Path &path, const Item::Options &options);
+        _Node::Ptr
+        _Add(const Path &path, const Node::Options &options);
 
-        Node::Ptr
+        _Node::Ptr
         _Modify(const Path &path, Value::Type newType);
     };
 
@@ -884,6 +794,9 @@ public:
 
     /** Replaces all the content with new content from the specified XML
       * document.
+      *
+      * @throws InvalidOpException if the change is not legal.
+      * @throws ValidationException if a validator rejected the changes.
       */
     void
     Load(const Xml &xml);
@@ -901,7 +814,7 @@ public:
     Transaction::Ptr
     OpenTransaction();
 
-    /** Add new category.
+    /** Add new node without value (category).
      *
      * @param path Path of the new category. Last component is the new
      *      category name. All the preceding components should name existing
@@ -909,14 +822,13 @@ public:
      *      category and is a way to specify its options.
      * @param options Category creation options.
      * @return New category handle.
-     * @throws InvalidOpException if the change conflicts is not legal.
+     * @throws InvalidOpException if the change is not legal.
      * @throws ValidationException if a validator rejected the changes.
      */
-    Category
-    AddCategory(const Path &path,
-                const Category::Options &options = Category::Options());
+    Node
+    Add(const Path &path, const Node::Options &options = Node::Options());
 
-    /** Add new item.
+    /** Add new node with value (item).
      *
      * @param path Path of the new item. Last component is the new item
      *      name. All the preceding components should name existing
@@ -924,14 +836,14 @@ public:
      * @param value Value for the item. Should not be empty value.
      * @param options Item creation options.
      * @return New item handle.
-     * @throws InvalidOpException if the change conflicts is not legal.
+     * @throws InvalidOpException if the change is not legal.
      * @throws ValidationException if a validator rejected the changes.
      */
-    Item
-    AddItem(const Path &path, const Value &value,
-            const Item::Options &options = Item::Options());
+    Node
+    Add(const Path &path, const Value &value,
+        const Node::Options &options = Node::Options());
 
-    /** Add new item.
+    /** Add new node with value (item).
      *
      * @param path Path of the new item. Last component is the new item
      *      name. All the preceding components should name existing
@@ -939,12 +851,12 @@ public:
      * @param value Value for the item. Should not be empty value.
      * @param options Item creation options.
      * @return New item handle.
-     * @throws InvalidOpException if the change conflicts is not legal.
+     * @throws InvalidOpException if the change is not legal.
      * @throws ValidationException if a validator rejected the changes.
      */
-    Item
-    AddItem(const Path &path, Value &&value,
-            const Item::Options &options = Item::Options());
+    Node
+    Add(const Path &path, Value &&value,
+        const Node::Options &options = Node::Options());
 
     /** Delete a node (either item or category).
      * @param path Node path to delete.
@@ -954,26 +866,35 @@ public:
     void
     Delete(const Path &path);
 
-    /** Modify item value.
-     * @throws InvalidOpException if the change conflicts is not legal.
+    /** Modify node options.
+     * @throws InvalidOpException if the change is not legal.
      * @throws ValidationException if a validator rejected the changes.
      */
     void
-    Modify(const Path &path, const Value &value);
+    Modify(const Path &path, const Node::Options &options = Node::Options());
 
-    /** Modify item value.
-     * @throws InvalidOpException if the change conflicts is not legal.
+    /** Modify node value.
+     * @throws InvalidOpException if the change is not legal.
      * @throws ValidationException if a validator rejected the changes.
      */
     void
-    Modify(const Path &path, Value &&value);
+    Modify(const Path &path, const Value &value,
+           const Node::Options &options = Node::Options());
+
+    /** Modify node value.
+     * @throws InvalidOpException if the change is not legal.
+     * @throws ValidationException if a validator rejected the changes.
+     */
+    void
+    Modify(const Path &path, Value &&value,
+           const Node::Options &options = Node::Options());
 
 private:
     /** Root category. Its display name contains optional title for the whole
      * properties sheet. Description corresponds to the whole properties sheet
      * optional description.
      */
-    Node::Ptr _root;
+    _Node::Ptr _root;
     /** Mutex for properties tree modification. */
     std::mutex _mutex;
 
@@ -1029,7 +950,7 @@ private:
     _ApplyModifications(Transaction &trans);
 
     /** Find node if exists. */
-    Node::Ptr
+    _Node::Ptr
     _LookupNode(const Path &path);
 };
 

@@ -542,112 +542,51 @@ Properties::Path::Parent() &&
 /* ****************************************************************************/
 /* Properties::Node class. */
 
-Properties::Node::Node(bool isItem):
-    _isItem(isItem)
-{}
+Properties::_Node::Ptr
+Properties::_Node::Create()
+{
+    return std::make_shared<_Node>();
+}
 
-Properties::Node::~Node()
-{}
-
-Properties::Node::Ptr
-Properties::Node::GetPtr()
+Properties::_Node::Ptr
+Properties::_Node::GetPtr()
 {
     return shared_from_this();
 }
 
-bool
-Properties::Node::IsItem() const
-{
-    return _isItem;
-}
-
-bool
-Properties::Node::IsCategory() const
-{
-    return !_isItem;
-}
-
-Properties::ItemNode &
-Properties::Node::Item()
-{
-    ASSERT(_isItem);
-    return reinterpret_cast<ItemNode &>(*this);
-}
-
-Properties::CategoryNode &
-Properties::Node::Category()
-{
-    ASSERT(!_isItem);
-    return reinterpret_cast<CategoryNode &>(*this);
-}
-
 std::string
-Properties::Node::Name() const
+Properties::_Node::Name() const
 {
     return *_name;
 }
 
 void
-Properties::Node::Unlink()
+Properties::_Node::Unlink()
 {
     if (!_parent) {
         return;
     }
-    _parent->Category().UnlinkChild(*_name);
+    _parent->UnlinkChild(*_name);
     _parent = nullptr;
     _name = nullptr;
 }
 
-/* Properties::ItemNode class. */
-
-Properties::ItemNode::Ptr
-Properties::ItemNode::Create()
+Properties::_Node::Ptr
+Properties::_Node::Find(const Path &path)
 {
-    return std::make_shared<ItemNode>();
-}
-
-Properties::ItemNode::ItemNode():
-    Node(true)
-{}
-
-/* Properties::CategoryNode class. */
-
-Properties::CategoryNode::Ptr
-Properties::CategoryNode::Create()
-{
-    return std::make_shared<CategoryNode>();
-}
-
-Properties::CategoryNode::CategoryNode():
-    Node(false)
-{}
-
-Properties::Node::Ptr
-Properties::CategoryNode::Find(const Path &path, bool itemInPathFatal)
-{
-    CategoryNode *node = this;
+    _Node *node = this;
     for (size_t idx = 0; idx < path.Size(); idx++) {
         auto it = node->_children.find(path[idx]);
         if (it == node->_children.end()) {
             return nullptr;
         }
-        if (it->second->IsItem()) {
-            if (idx < path.Size() - 1) {
-                if (itemInPathFatal) {
-                    ADK_EXCEPTION(InvalidOpException,
-                                  "Item found during path lookup");
-                }
-                return nullptr;
-            }
-            return it->second;
-        }
-        node = &it->second->Category();
+        node = it->second.get();
     }
     return node->GetPtr();
 }
 
 void
-Properties::CategoryNode::AddChild(const std::string &name, Ptr node)
+Properties::_Node::AddChild(const std::string &name, Ptr node)
 {
     ASSERT(_children.find(name) == _children.end());
     auto res = _children.emplace(name, node);
@@ -656,7 +595,7 @@ Properties::CategoryNode::AddChild(const std::string &name, Ptr node)
 }
 
 void
-Properties::CategoryNode::UnlinkChild(const std::string &name)
+Properties::_Node::UnlinkChild(const std::string &name)
 {
     auto it = _children.find(name);
     ASSERT(it != _children.end());
@@ -666,137 +605,84 @@ Properties::CategoryNode::UnlinkChild(const std::string &name)
 }
 
 /* ****************************************************************************/
-/* Properties::Category class. */
+/* Properties::Node::Options class. */
 
-Properties::Category::Category(CategoryNode *node):
-    _node(node)
-{}
-
-std::string
-Properties::Category::Name() const
-{
-    ASSERT(_node);
-    return _node->Name();
-}
-
-std::string
-Properties::Category::DispName() const
-{
-    ASSERT(_node);
-    if (!_node->_dispName) {
-        return _node->Name();
-    }
-    return *_node->_dispName;
-}
-
-std::string
-Properties::Category::Description() const
-{
-    ASSERT(_node);
-    return _node->_description ? *_node->_description : std::string();
-}
-
-Properties::Category::operator bool() const
-{
-    return _node != nullptr;
-}
-
-/* ****************************************************************************/
-/* Properties::Category::Options class. */
-
-Properties::Category::Options &
-Properties::Category::Options::DispName(Optional<std::string> dispName)
+Properties::Node::Options &
+Properties::Node::Options::DispName(Optional<std::string> dispName)
 {
     this->dispName = dispName;
     return *this;
 }
 
-Properties::Category::Options &
-Properties::Category::Options::Description(Optional<std::string> description)
+Properties::Node::Options &
+Properties::Node::Options::Description(Optional<std::string> description)
 {
     this->description = description;
+    return *this;
+}
+
+Properties::Node::Options &
+Properties::Node::Options::Units(Optional<std::string> units)
+{
+    this->units = units;
     return *this;
 }
 
 /* ****************************************************************************/
 /* Properties::Item class. */
 
-Properties::Item::Item(ItemNode *node):
+Properties::Node::Node(_Node::Ptr node):
     _node(node)
 {}
 
 Properties::Value::Type
-Properties::Item::Type() const
+Properties::Node::Type() const
 {
     ASSERT(_node);
     return _node->value.GetType();
 }
 
 Properties::Value
-Properties::Item::Val() const
+Properties::Node::Val() const
 {
     ASSERT(_node);
     return _node->value;
 }
 
 std::string
-Properties::Item::Name() const
+Properties::Node::Name() const
 {
     ASSERT(_node);
     return _node->Name();
 }
 
 std::string
-Properties::Item::DispName() const
+Properties::Node::DispName() const
 {
     ASSERT(_node);
-    if (!_node->_dispName) {
+    if (!_node->dispName) {
         return _node->Name();
     }
-    return *_node->_dispName;
+    return *_node->dispName;
 }
 
 std::string
-Properties::Item::Description() const
+Properties::Node::Description() const
 {
     ASSERT(_node);
-    return _node->_description ? *_node->_description : std::string();
+    return _node->description ? *_node->description : std::string();
 }
 
 std::string
-Properties::Item::Units() const
+Properties::Node::Units() const
 {
     ASSERT(_node);
-    return _node->_units ? *_node->_units : std::string();
+    return _node->units ? *_node->units : std::string();
 }
 
-Properties::Item::operator bool() const
+Properties::Node::operator bool() const
 {
     return _node != nullptr;
-}
-
-/* ****************************************************************************/
-/* Properties::Item::Options class. */
-
-Properties::Item::Options &
-Properties::Item::Options::DispName(Optional<std::string> dispName)
-{
-    this->dispName = dispName;
-    return *this;
-}
-
-Properties::Item::Options &
-Properties::Item::Options::Description(Optional<std::string> description)
-{
-    this->description = description;
-    return *this;
-}
-
-Properties::Item::Options &
-Properties::Item::Options::Units(Optional<std::string> units)
-{
-    this->description = units;
-    return *this;
 }
 
 /* ****************************************************************************/
@@ -834,17 +720,41 @@ Properties::Transaction::Cancel()
     _log.clear();
 }
 
-Properties::Category
-Properties::Transaction::AddCategory(const Path &path,
-                                     const Category::Options &options __UNUSED)
+Properties::Node
+Properties::Transaction::Add(const Path &path,
+                             const Node::Options &options)
+{
+    return _Add(path, options);
+}
+
+Properties::Node
+Properties::Transaction::Add(const Path &path, const Value &value,
+                             const Node::Options &options)
+{
+    _Node::Ptr node = _Add(path, options);
+    node->value = value;
+    return node;
+}
+
+Properties::Node
+Properties::Transaction::Add(const Path &path, Value &&value,
+                             const Node::Options &options)
+{
+    _Node::Ptr node = _Add(path, options);
+    node->value = std::move(value);
+    return node;
+}
+
+Properties::_Node::Ptr
+Properties::Transaction::_Add(const Path &path, const Node::Options &options __UNUSED)
 {
     auto res = _CheckAddition(path);
-    CategoryNode *cn = res.first;
-    Node::Ptr node = CategoryNode::Create();
+    _Node::Ptr cn = res.first;
+    _Node::Ptr node = _Node::Create();
     if (cn) {
         cn->AddChild(path.Last(), node);
         //XXX
-        return &node->Category();
+        return node;
     }
     _log.emplace_back();
     Record &rec = _log.back();
@@ -856,53 +766,7 @@ Properties::Transaction::AddCategory(const Path &path,
     rec.path = path;
     node->_name = &rec.nodeName;
     //XXX
-    return &node->Category();
-}
-
-Properties::Node::Ptr
-Properties::Transaction::_AddItem(const Path &path, const Item::Options &options __UNUSED)
-{
-    if (path.Size() == 0) {
-        ADK_EXCEPTION(InvalidOpException, "Cannot add item - root should be category");
-    }
-    auto res = _CheckAddition(path);
-    CategoryNode *cn = res.first;
-    Node::Ptr node = ItemNode::Create();
-    if (cn) {
-        //XXX
-        auto res = cn->_children.emplace(path.Last(), node);
-        node->_name = &res.first->first;
-        node->_parent = cn;
-        //XXX
-        return node;
-    }
-    _log.emplace_back();
-    Record &rec = _log.back();
-    rec.type = Record::Type::ADD;
-    rec.nodeName = path.Last();
-    rec.newNode = node;
-    rec.path = path;
-    node->_name = &rec.nodeName;
-    //XXX
     return node;
-}
-
-Properties::Item
-Properties::Transaction::AddItem(const Path &path, const Value &value,
-                                 const Item::Options &options)
-{
-    Node::Ptr node = _AddItem(path, options);
-    node->Item().value = value;
-    return &node->Item();
-}
-
-Properties::Item
-Properties::Transaction::AddItem(const Path &path, Value &&value,
-                                 const Item::Options &options)
-{
-    Node::Ptr node = _AddItem(path, options);
-    node->Item().value = std::move(value);
-    return &node->Item();
 }
 
 void
@@ -928,32 +792,40 @@ Properties::Transaction::DeleteAll()
 }
 
 void
-Properties::Transaction::Modify(const Path &path, const Value &value)
+Properties::Transaction::Modify(const Path &path,
+                                const Node::Options &options __UNUSED)
 {
-    Node::Ptr node = _Modify(path, value.GetType());
-    //XXX
-    if (node->IsItem()) {
-        node->Item().value = value;
-    }
+    //_Node::Ptr node =
+        _Modify(path, Value::Type::NONE);
+    //XXX options
 }
 
 void
-Properties::Transaction::Modify(const Path &path, Value &&value)
+Properties::Transaction::Modify(const Path &path, const Value &value,
+                                const Node::Options &options __UNUSED)
 {
-    Node::Ptr node = _Modify(path, value.GetType());
-    if (node->IsItem()) {
-        node->Item().value = std::move(value);
-    }
+    _Node::Ptr node = _Modify(path, value.GetType());
+    node->value = value;
+    //XXX options
 }
 
-Properties::Node::Ptr
+void
+Properties::Transaction::Modify(const Path &path, Value &&value,
+                                const Node::Options &options __UNUSED)
+{
+    _Node::Ptr node = _Modify(path, value.GetType());
+    node->value = std::move(value);
+    //XXX options
+}
+
+Properties::_Node::Ptr
 Properties::Transaction::_Modify(const Path &path, Value::Type newType)
 {
-    Node::Ptr node = _CheckModification(path, newType);
+    _Node::Ptr node = _CheckModification(path, newType);
     if (node) {
         return node;
     }
-    node = ItemNode::Create();
+    node = _Node::Create();
     _log.emplace_back();
     Record &rec = _log.back();
     rec.type = Record::Type::MODIFY;
@@ -967,7 +839,7 @@ Properties::Transaction::_Modify(const Path &path, Value::Type newType)
     return node;
 }
 
-Properties::Node::Ptr
+Properties::_Node::Ptr
 Properties::Transaction::_CheckModification(const Path &path, Value::Type newType)
 {
     for (auto it = _log.begin(); it != _log.end();) {
@@ -976,21 +848,16 @@ Properties::Transaction::_CheckModification(const Path &path, Value::Type newTyp
 
         if (rec.type == Record::Type::ADD) {
             if (len == rec.path.Size()) {
-                Node::Ptr node;
+                _Node::Ptr node;
                 if (len == path.Size()) {
                     node = rec.newNode;
                 } else {
-                    if (rec.newNode->IsItem()) {
-                        ADK_EXCEPTION(InvalidOpException,
-                                      "Cannot modify node - item node in preceding "
-                                      "path in addition record");
-                    }
                     Path parentSubpath = path.SubPath(rec.path.Size(),
                                                       path.Size() - rec.path.Size());
-                    node = rec.newNode->Category().Find(parentSubpath, true);
+                    node = rec.newNode->Find(parentSubpath);
                 }
                 if (node) {
-                    if (node->IsItem() && node->Item().value.GetType() != newType) {
+                    if (node->value.GetType() != newType) {
                         ADK_EXCEPTION(InvalidOpException,
                                       "Cannot modify node - the value type does not "
                                       "match previously specified value type in "
@@ -1012,7 +879,7 @@ Properties::Transaction::_CheckModification(const Path &path, Value::Type newTyp
 
         } else if (rec.type == Record::Type::MODIFY) {
             if (len == path.Size() && len == rec.path.Size()) {
-                if (rec.newNode->Item().value.GetType() != newType) {
+                if (rec.newNode->value.GetType() != newType) {
                     ADK_EXCEPTION(InvalidOpException,
                                   "Cannot modify node - the value type does not "
                                   "match previously specified value type");
@@ -1048,6 +915,7 @@ Properties::Transaction::_CheckDeletion(const Path &path, bool apply)
                 }
             }
             /* else unrelated deletion, should create separate record */
+
         } else if (rec.type == Record::Type::MODIFY) {
             if (len == path.Size()) {
                 /* Modified node is deleted so delete the record. */
@@ -1055,11 +923,8 @@ Properties::Transaction::_CheckDeletion(const Path &path, bool apply)
                     it = _log.erase(it);
                     continue;
                 }
-            } else {
-                ADK_EXCEPTION(InvalidOpException,
-                              "Cannot delete node - have pending item "
-                              "modification record with the same prefix");
             }
+
         } else if (rec.type == Record::Type::ADD) {
             if (len == path.Size()) {
                 /* Added subtree deleted. */
@@ -1074,12 +939,7 @@ Properties::Transaction::_CheckDeletion(const Path &path, bool apply)
             } else if (len == rec.path.Size()) {
                 needRec = false;
                 /* Deleted node should be one of the previously added. */
-                if (rec.newNode->IsItem()) {
-                    ADK_EXCEPTION(InvalidOpException,
-                                  "Cannot delete node - added item node exists "
-                                  "in the preceding path");
-                }
-                Node::Ptr node = rec.newNode->Category().Find(
+                _Node::Ptr node = rec.newNode->Find(
                     path.SubPath(rec.path.Size(), path.Size() - rec.path.Size()));
                 if (!node) {
                     ADK_EXCEPTION(InvalidOpException,
@@ -1091,35 +951,33 @@ Properties::Transaction::_CheckDeletion(const Path &path, bool apply)
                 }
             }
             /* else unrelated node deleted, just place the record. */
+
         }
         it++;
     }
     return needRec;
 }
 
-std::pair<Properties::CategoryNode *, Properties::Transaction::Record *>
+std::pair<Properties::_Node::Ptr, Properties::Transaction::Record *>
 Properties::Transaction::_CheckAddition(const Path &path)
 {
     for (Record &rec: _log) {
         size_t len = path.HasCommonPrefix(rec.path);
 
-        if (rec.type == Record::Type::DELETE) {
-            if (len == path.Size() && len < rec.path.Size()) {
-                ADK_EXCEPTION(InvalidOpException,
-                              "Cannot add node - same path exists in pending "
-                              "delete record");
-            }
-        } else if (rec.type == Record::Type::MODIFY) {
-            if (len == rec.path.Size()) {
-                ADK_EXCEPTION(InvalidOpException,
-                              "Cannot add node - have pending item modification "
-                              "record with the same prefix");
-            }
-            if (len == path.Size() && len < rec.path.Size()) {
+        if (rec.type == Record::Type::MODIFY) {
+            if (len == path.Size()) {
                 ADK_EXCEPTION(InvalidOpException,
                               "Cannot add node - same path exists in pending "
                               "modification record");
             }
+
+        } else if (rec.type == Record::Type::DELETE) {
+            if (len == path.Size()) {
+                ADK_EXCEPTION(InvalidOpException,
+                              "Cannot add node - same path exists in pending "
+                              "deletion record");
+            }
+
         } else if (rec.type == Record::Type::ADD) {
             if (len == path.Size()) {
                 ADK_EXCEPTION(InvalidOpException,
@@ -1127,27 +985,18 @@ Properties::Transaction::_CheckAddition(const Path &path)
                               "addition record");
             }
             if (len == rec.path.Size()) {
-                /* Adding child to previous added node. */
-                if (rec.newNode->IsItem()) {
-                    ADK_EXCEPTION(InvalidOpException,
-                                  "Cannot add node - item node exists in the "
-                                  "preceding path");
-                }
-                /* Find node to insert the new one to. */
+                /* Adding child to a previous added node. Find node to insert
+                 * the new one into.
+                 */
                 Path parentSubpath = path.SubPath(rec.path.Size(),
                                                   path.Size() - rec.path.Size() - 1);
-                Node::Ptr node = rec.newNode->Category().Find(parentSubpath);
+                _Node::Ptr node = rec.newNode->Find(parentSubpath);
                 if (node) {
-                    if (node->IsItem()) {
-                        ADK_EXCEPTION(InvalidOpException,
-                                      "Cannot add node - item node exists in the "
-                                      "preceding path");
-                    }
-                    if (node->Category().Find(path.SubPath(path.Size() - 1, 1))) {
+                    if (node->Find(path.SubPath(path.Size() - 1, 1))) {
                         ADK_EXCEPTION(InvalidOpException,
                                       "Cannot add node - same node already added");
                     }
-                    return {&node->Category(), &rec};
+                    return {node, &rec};
                 } else {
                     ADK_EXCEPTION(InvalidOpException,
                                   "Cannot add node - parent node not found in "
@@ -1157,7 +1006,7 @@ Properties::Transaction::_CheckAddition(const Path &path)
         }
     }
 
-    /* Check once more if not found existing added subtree. */
+    /* Check for deletion if not found existing added subtree. */
     for (Record &rec: _log) {
         size_t len = path.HasCommonPrefix(rec.path);
         if (rec.type == Record::Type::DELETE) {
@@ -1190,30 +1039,30 @@ Properties::Clear()
     t->Commit();
 }
 
-Properties::Category
-Properties::AddCategory(const Path &path, const Category::Options &options)
+Properties::Node
+Properties::Add(const Path &path, const Node::Options &options)
 {
     Transaction::Ptr t = OpenTransaction();
-    Category res = t->AddCategory(path, options);
+    Node res = t->Add(path, options);
     t->Commit();
     return res;
 }
 
-Properties::Item
-Properties::AddItem(const Path &path, const Value &value,
-                    const Item::Options &options)
+Properties::Node
+Properties::Add(const Path &path, const Value &value,
+                const Node::Options &options)
 {
     Transaction::Ptr t = OpenTransaction();
-    Item res = t->AddItem(path, value, options);
+    Node res = t->Add(path, value, options);
     t->Commit();
     return res;
 }
 
-Properties::Item
-Properties::AddItem(const Path &path, Value &&value, const Item::Options &options)
+Properties::Node
+Properties::Add(const Path &path, Value &&value, const Node::Options &options)
 {
     Transaction::Ptr t = OpenTransaction();
-    Item res = t->AddItem(path, std::move(value), options);
+    Node res = t->Add(path, std::move(value), options);
     t->Commit();
     return res;
 }
@@ -1227,18 +1076,28 @@ Properties::Delete(const Path &path)
 }
 
 void
-Properties::Modify(const Path &path, const Value &value)
+Properties::Modify(const Path &path, const Node::Options &options)
 {
     Transaction::Ptr t = OpenTransaction();
-    t->Modify(path, value);
+    t->Modify(path, options);
     t->Commit();
 }
 
 void
-Properties::Modify(const Path &path, Value &&value)
+Properties::Modify(const Path &path, const Value &value,
+                   const Node::Options &options)
 {
     Transaction::Ptr t = OpenTransaction();
-    t->Modify(path, std::move(value));
+    t->Modify(path, value, options);
+    t->Commit();
+}
+
+void
+Properties::Modify(const Path &path, Value &&value,
+                   const Node::Options &options)
+{
+    Transaction::Ptr t = OpenTransaction();
+    t->Modify(path, std::move(value), options);
     t->Commit();
 }
 
@@ -1256,7 +1115,7 @@ Properties::_LoadCategory(Transaction::Ptr trans, Xml::Element catEl,
                           const Path &path, bool isRoot)
 {
     std::string name;
-    Category::Options opts;
+    Node::Options opts;
 
     if (isRoot) {
         Xml::Element e = catEl.Child("title");
@@ -1283,7 +1142,7 @@ Properties::_LoadCategory(Transaction::Ptr trans, Xml::Element catEl,
         opts.Description(e.Value());
     }
 
-    trans->AddCategory(isRoot ? Path() : path + name, opts);
+    trans->Add(isRoot ? Path() : path + name, opts);
 
     for (Xml::Element e: catEl.Children("item")) {
         _LoadItem(trans, e, isRoot ? Path() : path + name);
@@ -1298,7 +1157,7 @@ void
 Properties::_LoadItem(Transaction::Ptr trans, Xml::Element itemEl,
                       const Path &path)
 {
-    Item::Options opts;
+    Node::Options opts;
 
     auto nameAttr = itemEl.Attr("name");
     if (!nameAttr) {
@@ -1350,7 +1209,7 @@ Properties::_LoadItem(Transaction::Ptr trans, Xml::Element itemEl,
     }
     Value value = Value::FromString(type, valueStr);
 
-    trans->AddItem(path + name, std::move(value), opts);
+    trans->Add(path + name, std::move(value), opts);
 }
 
 void
@@ -1414,22 +1273,17 @@ Properties::_CheckModifications(Transaction &trans)
         if (rec.type != Transaction::Record::Type::MODIFY) {
             continue;
         }
-        Node::Ptr node = _LookupNode(rec.path);
+        _Node::Ptr node = _LookupNode(rec.path);
         if (!node) {
             ADK_EXCEPTION(InvalidOpException,
                           "Cannot modify node - does not exists");
         }
         //XXX
-        if (node->IsItem()) {
-            //XXX
-            if (!rec.newNode->IsItem()) {
-                ADK_EXCEPTION(InvalidOpException,
-                              "Cannot modify node - node type mismatch");
-            }
-            if (node->Item().value.GetType() != rec.newNode->Item().value.GetType()) {
-                ADK_EXCEPTION(InvalidOpException,
-                              "Cannot modify node - time value type mismatch");
-            }
+        if (!rec.newNode->value.IsNone() &&
+            node->value.GetType() != rec.newNode->value.GetType()) {
+
+            ADK_EXCEPTION(InvalidOpException,
+                          "Cannot modify node - time value type mismatch");
         }
     }
 }
@@ -1447,10 +1301,6 @@ Properties::_CheckAdditions(Transaction &trans)
             if (!node) {
                 ADK_EXCEPTION(InvalidOpException,
                               "Cannot add node - parent does not exist");
-            }
-            if (!node->IsCategory()) {
-                ADK_EXCEPTION(InvalidOpException,
-                              "Cannot add node - parent is not category");
             }
         }
         if (_LookupNode(rec.path)) {
@@ -1484,9 +1334,9 @@ Properties::_ApplyAdditions(Transaction &trans)
             _root = rec.newNode;
             _root->_name = nullptr;
         } else {
-            Node::Ptr parent = _LookupNode(rec.path.Parent());
+            _Node::Ptr parent = _LookupNode(rec.path.Parent());
             ASSERT(parent);
-            parent->Category().AddChild(rec.nodeName, rec.newNode);
+            parent->AddChild(rec.nodeName, rec.newNode);
         }
     }
 }
@@ -1501,7 +1351,7 @@ Properties::_ApplyDeletions(Transaction &trans)
         if (rec.path.Size() == 0) {
             _root = nullptr;
         } else {
-            Node::Ptr node = _LookupNode(rec.path);
+            _Node::Ptr node = _LookupNode(rec.path);
             ASSERT(node);
             node->Unlink();
         }
@@ -1515,21 +1365,21 @@ Properties::_ApplyModifications(Transaction &trans)
         if (rec.type != Transaction::Record::Type::MODIFY) {
             continue;
         }
-        Node::Ptr node = _LookupNode(rec.path);
+        _Node::Ptr node = _LookupNode(rec.path);
         ASSERT(node);
         //XXX
-        if (node->IsItem()) {
-            node->Item().value = std::move(rec.newNode->Item().value);
+        if (!rec.newNode->value.IsNone()) {
+            node->value = std::move(rec.newNode->value);
         }
     }
 }
 
-Properties::Node::Ptr
+Properties::_Node::Ptr
 Properties::_LookupNode(const Path &path)
 {
     //XXX current transaction
     if (!_root) {
         return nullptr;
     }
-    return _root->Category().Find(path);
+    return _root->Find(path);
 }
