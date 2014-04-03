@@ -202,7 +202,7 @@ bool
 Properties::Value::GetBoolean() &&
 {
     ENSURE(_type == Type::BOOLEAN);
-    bool result = _value.i;
+    bool result = _value.b;
     _type = Type::NONE;
     return result;
 }
