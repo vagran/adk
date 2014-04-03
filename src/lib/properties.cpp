@@ -543,10 +543,14 @@ Properties::Path::Parent() &&
 /* Properties::Node class. */
 
 Properties::_Node::Ptr
-Properties::_Node::Create()
+Properties::_Node::Create(Properties *props)
 {
-    return std::make_shared<_Node>();
+    return std::make_shared<_Node>(props);
 }
+
+Properties::_Node::_Node(Properties *props):
+    _props(props)
+{}
 
 Properties::_Node::Ptr
 Properties::_Node::GetPtr()
@@ -604,6 +608,19 @@ Properties::_Node::UnlinkChild(const std::string &name)
     _children.erase(it);
 }
 
+Properties::Lock
+Properties::_Node::LockProps()
+{
+    return _props->_Lock();
+}
+
+Properties::Path
+Properties::_Node::GetPath()
+{
+    //XXX
+    return Path();
+}
+
 /* ****************************************************************************/
 /* Properties::Node::Options class. */
 
@@ -639,6 +656,7 @@ Properties::Value::Type
 Properties::Node::Type() const
 {
     ASSERT(_node);
+    Lock lock = _node->LockProps();
     return _node->value.GetType();
 }
 
@@ -646,6 +664,7 @@ Properties::Value
 Properties::Node::Val() const
 {
     ASSERT(_node);
+    Lock lock = _node->LockProps();
     return _node->value;
 }
 
@@ -653,6 +672,7 @@ std::string
 Properties::Node::Name() const
 {
     ASSERT(_node);
+    Lock lock = _node->LockProps();
     return _node->Name();
 }
 
@@ -660,6 +680,7 @@ std::string
 Properties::Node::DispName() const
 {
     ASSERT(_node);
+    Lock lock = _node->LockProps();
     if (!_node->dispName) {
         return _node->Name();
     }
@@ -670,6 +691,7 @@ std::string
 Properties::Node::Description() const
 {
     ASSERT(_node);
+    Lock lock = _node->LockProps();
     return _node->description ? *_node->description : std::string();
 }
 
@@ -677,12 +699,51 @@ std::string
 Properties::Node::Units() const
 {
     ASSERT(_node);
+    Lock lock = _node->LockProps();
     return _node->units ? *_node->units : std::string();
 }
 
 Properties::Node::operator bool() const
 {
     return _node != nullptr;
+}
+
+Properties::Value
+Properties::Node::operator *() const
+{
+    return Val();
+}
+
+Properties::Node
+Properties::Node::operator [](const Path &path) const
+{
+    ASSERT(_node);
+    Lock lock = _node->LockProps();
+    return _node->Find(path);
+}
+
+Properties::Node
+Properties::Node::operator =(const Value &value)
+{
+    ASSERT(_node);
+    _node->_props->Modify(GetPath(), value);
+    return *this;
+}
+
+Properties::Node
+Properties::Node::operator =(Value &&value)
+{
+    ASSERT(_node);
+    _node->_props->Modify(GetPath(), value);
+    return *this;
+}
+
+Properties::Path
+Properties::Node::GetPath() const
+{
+    ASSERT(_node);
+    Lock lock = _node->LockProps();
+    return _node->GetPath();
 }
 
 /* ****************************************************************************/
@@ -750,7 +811,7 @@ Properties::Transaction::_Add(const Path &path, const Node::Options &options __U
 {
     auto res = _CheckAddition(path);
     _Node::Ptr cn = res.first;
-    _Node::Ptr node = _Node::Create();
+    _Node::Ptr node = _Node::Create(_props);
     if (cn) {
         cn->AddChild(path.Last(), node);
         //XXX
@@ -825,7 +886,7 @@ Properties::Transaction::_Modify(const Path &path, Value::Type newType)
     if (node) {
         return node;
     }
-    node = _Node::Create();
+    node = _Node::Create(_props);
     _log.emplace_back();
     Record &rec = _log.back();
     rec.type = Record::Type::MODIFY;
@@ -1018,6 +1079,24 @@ Properties::Transaction::_CheckAddition(const Path &path)
         }
     }
     return {nullptr, nullptr};
+}
+
+/* ****************************************************************************/
+/* Properties::TransactionGuard class. */
+
+Properties::TransactionGuard::TransactionGuard(Properties *props, Transaction *trans):
+    _props(props)
+{
+    Lock lock = Lock(_props->_transMutex);
+    ASSERT(!props->_curTrans);
+    props->_curTrans = trans;
+    _lock = Lock(_props->_mutex);
+}
+
+Properties::TransactionGuard::~TransactionGuard()
+{
+    ASSERT(_props->_curTrans);
+    _props->_curTrans = nullptr;
 }
 
 /* ****************************************************************************/
@@ -1215,7 +1294,7 @@ Properties::_LoadItem(Transaction::Ptr trans, Xml::Element itemEl,
 void
 Properties::_CommitTransaction(Transaction &trans)
 {
-    std::unique_lock<std::mutex> lock(_mutex);
+    TransactionGuard tg(this, &trans);
 
     /* Check operations validity. */
     _CheckDeletions(trans);
@@ -1375,11 +1454,37 @@ Properties::_ApplyModifications(Transaction &trans)
 }
 
 Properties::_Node::Ptr
-Properties::_LookupNode(const Path &path)
+Properties::_LookupNode(const Path &path) const
 {
     //XXX current transaction
     if (!_root) {
         return nullptr;
     }
     return _root->Find(path);
+}
+
+Properties::Lock
+Properties::_Lock() const
+{
+    Lock lock = Lock(_transMutex);
+    if (_curTrans) {
+        return Lock();
+    }
+    return Lock(_mutex);
+}
+
+Properties::Node
+Properties::Get(const Path &path) const
+{
+    Lock lock = _Lock();
+    return _LookupNode(path);
+}
+
+/** Get node by path. Empty path corresponds to the root node. Empty node
+ * is returned if the node is not found.
+ */
+Properties::Node
+Properties::operator [](const Path &path) const
+{
+    return Get(path);
 }

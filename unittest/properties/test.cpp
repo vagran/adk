@@ -18,7 +18,23 @@ using namespace adk;
 UT_TEST("Basic functionality")
 {
     Properties props(Xml().Load(GetResource("test_props.xml").GetString()));
-    //XXX
+
+    UT_BOOL(props["Item1"]) == UT_TRUE;
+    UT_BOOL(props["Item2"]) == UT_TRUE;
+    UT_BOOL(props["Item3"]) == UT_FALSE;
+    UT_BOOL(props["sample/Item3"]) == UT_TRUE;
+
+    UT_INT((*props["Item1"]).GetType()) == UT_INT(Properties::Value::Type::INTEGER);
+    UT_INT(*props["Item1"]) == UT(20);
+    UT_FLOAT(*props["Item2"]) == UT(120.5);
+    UT((*props["sample/Item3"]).GetString().c_str()) == UT_CSTR("Test string");
+    UT_BOOL(*props["sample/Item4"]) == UT_TRUE;
+    UT_BOOL(*props["sample/Item5"]) == UT_TRUE;
+
+    //UT(props["Item2"].DispName().c_str()) == UT_CSTR("Item 2");
+    UT(props["Item2"].Name().c_str()) == UT_CSTR("Item2");
+    UT(props["Item2"].GetPath().Str().c_str()) == UT_CSTR("Item2");
+    UT(props["sample/Item3"].GetPath().Str().c_str()) == UT_CSTR("sample/Item3");
 }
 
 UT_TEST("Properties::Value class")

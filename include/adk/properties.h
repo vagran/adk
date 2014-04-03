@@ -503,6 +503,8 @@ public:
     /* ************************************************************************/
 
 private:
+    /** Lock object for properties sheet locking. */
+    typedef std::unique_lock<std::mutex> Lock;
 
     /** Represents node in the properties tree. */
     class _Node: public std::enable_shared_from_this<_Node> {
@@ -519,7 +521,9 @@ private:
                               units;
 
         static Ptr
-        Create();
+        Create(Properties *props);
+
+        _Node(Properties *props);
 
         Ptr
         GetPtr();
@@ -543,10 +547,20 @@ private:
         void
         UnlinkChild(const std::string &name);
 
+        /** Lock related properties sheet. */
+        Lock
+        LockProps();
+
+        /** Get this node path. */
+        Path
+        GetPath();
+
     protected:
         friend class Transaction;
         friend class Properties;
 
+        /** Related properties sheet. */
+        Properties *_props;
         /** Internal name. */
         const std::string *_name = nullptr;
         /** Parent node, nullptr for root. */
@@ -581,7 +595,7 @@ public:
         Value::Type
         Type() const;
 
-        /** Get value. */
+        /** Get value. It returns a copy. */
         Value
         Val() const;
 
@@ -603,6 +617,26 @@ public:
 
         /** Check if the handle is not empty. */
         operator bool() const;
+
+        /** Get value. */
+        Value
+        operator *() const;
+
+        /** Get child node with the specified subpath. */
+        Node
+        operator [](const Path &path) const;
+
+        /** Create and commit transaction for this node value modification. */
+        Node
+        operator =(const Value &value);
+
+        /** Create and commit transaction for this node value modification. */
+        Node
+        operator =(Value &&value);
+
+        /** Get this node path. */
+        Path
+        GetPath() const;
 
     private:
         _Node::Ptr _node;
@@ -889,14 +923,41 @@ public:
     Modify(const Path &path, Value &&value,
            const Node::Options &options = Node::Options());
 
+    /** Get node by path. Empty path corresponds to the root node. Empty node
+     * is returned if the node is not found.
+     */
+    Node
+    Get(const Path &path = Path()) const;
+
+    /** Get node by path. Empty path corresponds to the root node. Empty node
+     * is returned if the node is not found.
+     */
+    Node
+    operator [](const Path &path) const;
+
 private:
+    /** Helper class for setting and unsetting current transaction. */
+    class TransactionGuard {
+    public:
+        TransactionGuard(Properties *props, Transaction *trans);
+        ~TransactionGuard();
+
+    private:
+        Properties *_props;
+        Lock _lock;
+    };
+
     /** Root category. Its display name contains optional title for the whole
      * properties sheet. Description corresponds to the whole properties sheet
      * optional description.
      */
     _Node::Ptr _root;
     /** Mutex for properties tree modification. */
-    std::mutex _mutex;
+    mutable std::mutex _mutex,
+    /** Mutex for current transaction access. */
+                       _transMutex;
+    /** Current transaction. */
+    Transaction *_curTrans = nullptr;
 
     /** Load category from XML element.
      *
@@ -951,7 +1012,11 @@ private:
 
     /** Find node if exists. */
     _Node::Ptr
-    _LookupNode(const Path &path);
+    _LookupNode(const Path &path) const;
+
+    /** Obtain lock if necessary. */
+    Lock
+    _Lock() const;
 };
 
 } /* namespace adk */
