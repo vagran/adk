@@ -417,7 +417,7 @@ public:
          * character is preserved).
          */
         Path(const std::string &path, char separator = '/');
-        Path(const char *path);
+        Path(const char *path, char separator = '/');
         Path() = default;
         Path(const Path &) = default;
         Path(Path &&) = default;
@@ -506,11 +506,30 @@ private:
     /** Lock object for properties sheet locking. */
     typedef std::unique_lock<std::mutex> Lock;
 
+    /** Item creation options. */
+    class NodeOptions {
+    public:
+        Optional<std::string> dispName,
+                              description,
+                              units;
+
+        NodeOptions &
+        DispName(Optional<std::string> dispName);
+
+        NodeOptions &
+        Description(Optional<std::string> description);
+
+        NodeOptions &
+        Units(Optional<std::string> units);
+    };
+
     /** Represents node in the properties tree. */
     class _Node: public std::enable_shared_from_this<_Node> {
     public:
         typedef std::shared_ptr<_Node> Ptr;
 
+        /** Options attached in transaction nodes. */
+        std::unique_ptr<NodeOptions> options;
         /** Current value. */
         Value value;
         /** Display name, empty if not specified. */
@@ -555,6 +574,17 @@ private:
         Path
         GetPath();
 
+        /** Apply options to this node. */
+        void
+        ApplyOptions(NodeOptions &options);
+
+        /** Traverse this and all children nodes recursively. The visitor
+         * function can return false to stop traversal.
+         * @return false if traversal was stopped by visitor.
+         */
+        bool
+        Traverse(std::function<bool(_Node &)> visitor);
+
     protected:
         friend class Transaction;
         friend class Properties;
@@ -572,23 +602,6 @@ private:
 public:
     class Node {
     public:
-        /** Item creation options. */
-        class Options {
-        public:
-            Optional<std::string> dispName,
-                                  description,
-                                  units;
-
-            Options &
-            DispName(Optional<std::string> dispName);
-
-            Options &
-            Description(Optional<std::string> description);
-
-            Options &
-            Units(Optional<std::string> units);
-        };
-
         Node(_Node::Ptr node = nullptr);
 
         /** Get value type. */
@@ -686,7 +699,7 @@ public:
          */
         Node
         Add(const Path &path,
-            const Node::Options &options = Node::Options());
+            const NodeOptions &options = NodeOptions());
 
         /** Add new node with value (item).
          *
@@ -701,7 +714,7 @@ public:
          */
         Node
         Add(const Path &path, const Value &value,
-            const Node::Options &options = Node::Options());
+            const NodeOptions &options = NodeOptions());
 
         /** Add new item.
          *
@@ -716,7 +729,7 @@ public:
          */
         Node
         Add(const Path &path, Value &&value,
-            const Node::Options &options = Node::Options());
+            const NodeOptions &options = NodeOptions());
 
         /** Delete a node (either item or category).
          * @param path Node path to delete.
@@ -732,17 +745,17 @@ public:
 
         /** Modify node options. */
         void
-        Modify(const Path &path, const Node::Options &options);
+        Modify(const Path &path, const NodeOptions &options);
 
         /** Modify item value. */
         void
         Modify(const Path &path, const Value &value,
-               const Node::Options &options = Node::Options());
+               const NodeOptions &options = NodeOptions());
 
         /** Modify item value. */
         void
         Modify(const Path &path, Value &&value,
-               const Node::Options &options = Node::Options());
+               const NodeOptions &options = NodeOptions());
 
     private:
         friend class Properties;
@@ -810,7 +823,7 @@ public:
         _CheckModification(const Path &path, Value::Type newType);
 
         _Node::Ptr
-        _Add(const Path &path, const Node::Options &options);
+        _Add(const Path &path, const NodeOptions &options);
 
         _Node::Ptr
         _Modify(const Path &path, Value::Type newType);
@@ -860,7 +873,7 @@ public:
      * @throws ValidationException if a validator rejected the changes.
      */
     Node
-    Add(const Path &path, const Node::Options &options = Node::Options());
+    Add(const Path &path, const NodeOptions &options = NodeOptions());
 
     /** Add new node with value (item).
      *
@@ -875,7 +888,7 @@ public:
      */
     Node
     Add(const Path &path, const Value &value,
-        const Node::Options &options = Node::Options());
+        const NodeOptions &options = NodeOptions());
 
     /** Add new node with value (item).
      *
@@ -890,7 +903,7 @@ public:
      */
     Node
     Add(const Path &path, Value &&value,
-        const Node::Options &options = Node::Options());
+        const NodeOptions &options = NodeOptions());
 
     /** Delete a node (either item or category).
      * @param path Node path to delete.
@@ -905,7 +918,7 @@ public:
      * @throws ValidationException if a validator rejected the changes.
      */
     void
-    Modify(const Path &path, const Node::Options &options = Node::Options());
+    Modify(const Path &path, const NodeOptions &options = NodeOptions());
 
     /** Modify node value.
      * @throws InvalidOpException if the change is not legal.
@@ -913,7 +926,7 @@ public:
      */
     void
     Modify(const Path &path, const Value &value,
-           const Node::Options &options = Node::Options());
+           const NodeOptions &options = NodeOptions());
 
     /** Modify node value.
      * @throws InvalidOpException if the change is not legal.
@@ -921,7 +934,7 @@ public:
      */
     void
     Modify(const Path &path, Value &&value,
-           const Node::Options &options = Node::Options());
+           const NodeOptions &options = NodeOptions());
 
     /** Get node by path. Empty path corresponds to the root node. Empty node
      * is returned if the node is not found.
@@ -942,6 +955,10 @@ private:
         TransactionGuard(Properties *props, Transaction *trans);
         ~TransactionGuard();
 
+        /** Activate pending transaction. */
+        void
+        Activate();
+
     private:
         Properties *_props;
         Lock _lock;
@@ -957,7 +974,11 @@ private:
     /** Mutex for current transaction access. */
                        _transMutex;
     /** Current transaction. */
-    Transaction *_curTrans = nullptr;
+    Transaction *_curTrans = nullptr,
+    /** Pending transaction, will be current after initial validation. */
+                *_pendingTrans = nullptr;
+    /** Thread ID of the transaction owner. */
+    std::thread::id _transThread;
 
     /** Load category from XML element.
      *

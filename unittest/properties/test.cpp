@@ -33,10 +33,14 @@ UT_TEST("Basic functionality")
     UT_BOOL(*props["sample/Item4"]) == UT_TRUE;
     UT_BOOL(*props["sample/Item5"]) == UT_TRUE;
 
-    //UT(props["Item2"].DispName().c_str()) == UT_CSTR("Item 2");
+    UT(props[Properties::Path()].DispName().c_str()) == UT_CSTR("Test properties");
+    //UT(props[Properties::Path()].Description().c_str()) == UT_CSTR("Root element description.");
+    //UT(props["Item2"].Description().c_str()) == UT_CSTR("Optional long description.");
+    UT(props["Item2"].DispName().c_str()) == UT_CSTR("Item 2");
     UT(props["Item2"].Name().c_str()) == UT_CSTR("Item2");
-    //UT(props["Item2"].GetPath().Str().c_str()) == UT_CSTR("Item2");
-    //UT(props["sample/Item3"].GetPath().Str().c_str()) == UT_CSTR("sample/Item3");
+    UT(props["Item2"].GetPath().Str().c_str()) == UT_CSTR("Item2");
+    UT(props["sample/Item3"].GetPath().Str().c_str()) == UT_CSTR("sample/Item3");
+    UT(props[""].GetPath().Str().c_str()) == UT_CSTR("");
 }
 
 UT_TEST("Properties::Value class")

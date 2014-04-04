@@ -197,6 +197,9 @@ public:
         if (isValid) {
             (**this).~T();
             isValid = false;
+#           ifdef DEBUG
+            memset(storage, 0xfe, sizeof(storage));
+#           endif
         }
     }
 

@@ -353,8 +353,8 @@ Properties::Path::Path(const std::string &path, char separator)
     }
 }
 
-Properties::Path::Path(const char *path):
-    Path(std::string(path))
+Properties::Path::Path(const char *path, char separator):
+    Path(std::string(path), separator)
 {}
 
 size_t
@@ -561,7 +561,11 @@ Properties::_Node::GetPtr()
 std::string
 Properties::_Node::Name() const
 {
-    return *_name;
+    ASSERT((_name && _parent) || (!_name && !_parent));
+    if (_name) {
+        return *_name;
+    }
+    return std::string();
 }
 
 void
@@ -617,29 +621,64 @@ Properties::_Node::LockProps()
 Properties::Path
 Properties::_Node::GetPath()
 {
-    //XXX
-    return Path();
+    _Node *node = this;
+    Path path;
+    while (node && node->_name) {
+        Path suffix(std::move(path));
+        path = Path(node->_name, 0);
+        path += std::move(suffix);
+        node = node->_parent;
+    }
+    return path;
+}
+
+void
+Properties::_Node::ApplyOptions(NodeOptions &options)
+{
+    if (options.dispName) {
+        dispName = options.dispName;
+    }
+    if (options.description) {
+        description = options.description;
+    }
+    if (options.units) {
+        units = options.units;
+    }
+}
+
+bool
+Properties::_Node::Traverse(std::function<bool(_Node &)> visitor)
+{
+    if (!visitor(*this)) {
+        return false;
+    }
+    for (auto child: _children) {
+        if (!visitor(*child.second)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 /* ****************************************************************************/
-/* Properties::Node::Options class. */
+/* Properties::NodeOptions class. */
 
-Properties::Node::Options &
-Properties::Node::Options::DispName(Optional<std::string> dispName)
+Properties::NodeOptions &
+Properties::NodeOptions::DispName(Optional<std::string> dispName)
 {
     this->dispName = dispName;
     return *this;
 }
 
-Properties::Node::Options &
-Properties::Node::Options::Description(Optional<std::string> description)
+Properties::NodeOptions &
+Properties::NodeOptions::Description(Optional<std::string> description)
 {
     this->description = description;
     return *this;
 }
 
-Properties::Node::Options &
-Properties::Node::Options::Units(Optional<std::string> units)
+Properties::NodeOptions &
+Properties::NodeOptions::Units(Optional<std::string> units)
 {
     this->units = units;
     return *this;
@@ -783,14 +822,14 @@ Properties::Transaction::Cancel()
 
 Properties::Node
 Properties::Transaction::Add(const Path &path,
-                             const Node::Options &options)
+                             const NodeOptions &options)
 {
     return _Add(path, options);
 }
 
 Properties::Node
 Properties::Transaction::Add(const Path &path, const Value &value,
-                             const Node::Options &options)
+                             const NodeOptions &options)
 {
     _Node::Ptr node = _Add(path, options);
     node->value = value;
@@ -799,7 +838,7 @@ Properties::Transaction::Add(const Path &path, const Value &value,
 
 Properties::Node
 Properties::Transaction::Add(const Path &path, Value &&value,
-                             const Node::Options &options)
+                             const NodeOptions &options)
 {
     _Node::Ptr node = _Add(path, options);
     node->value = std::move(value);
@@ -807,14 +846,14 @@ Properties::Transaction::Add(const Path &path, Value &&value,
 }
 
 Properties::_Node::Ptr
-Properties::Transaction::_Add(const Path &path, const Node::Options &options __UNUSED)
+Properties::Transaction::_Add(const Path &path, const NodeOptions &options)
 {
     auto res = _CheckAddition(path);
     _Node::Ptr cn = res.first;
     _Node::Ptr node = _Node::Create(_props);
+    node->options.reset(new NodeOptions(options));
     if (cn) {
         cn->AddChild(path.Last(), node);
-        //XXX
         return node;
     }
     _log.emplace_back();
@@ -826,7 +865,6 @@ Properties::Transaction::_Add(const Path &path, const Node::Options &options __U
     rec.newNode = node;
     rec.path = path;
     node->_name = &rec.nodeName;
-    //XXX
     return node;
 }
 
@@ -853,30 +891,28 @@ Properties::Transaction::DeleteAll()
 }
 
 void
-Properties::Transaction::Modify(const Path &path,
-                                const Node::Options &options __UNUSED)
+Properties::Transaction::Modify(const Path &path, const NodeOptions &options)
 {
-    //_Node::Ptr node =
-        _Modify(path, Value::Type::NONE);
-    //XXX options
+    _Node::Ptr node = _Modify(path, Value::Type::NONE);
+    node->options.reset(new NodeOptions(options));
 }
 
 void
 Properties::Transaction::Modify(const Path &path, const Value &value,
-                                const Node::Options &options __UNUSED)
+                                const NodeOptions &options)
 {
     _Node::Ptr node = _Modify(path, value.GetType());
     node->value = value;
-    //XXX options
+    node->options.reset(new NodeOptions(options));
 }
 
 void
 Properties::Transaction::Modify(const Path &path, Value &&value,
-                                const Node::Options &options __UNUSED)
+                                const NodeOptions &options __UNUSED)
 {
     _Node::Ptr node = _Modify(path, value.GetType());
     node->value = std::move(value);
-    //XXX options
+    node->options.reset(new NodeOptions(options));
 }
 
 Properties::_Node::Ptr
@@ -1087,16 +1123,28 @@ Properties::Transaction::_CheckAddition(const Path &path)
 Properties::TransactionGuard::TransactionGuard(Properties *props, Transaction *trans):
     _props(props)
 {
-    Lock lock = Lock(_props->_transMutex);
-    ASSERT(!props->_curTrans);
-    props->_curTrans = trans;
     _lock = Lock(_props->_mutex);
+    Lock lock(_props->_transMutex);
+    ASSERT(!props->_pendingTrans && !props->_curTrans);
+    ASSERT(props->_transThread == std::thread::id());
+    props->_transThread = std::this_thread::get_id();
+    props->_pendingTrans = trans;
 }
 
 Properties::TransactionGuard::~TransactionGuard()
 {
-    ASSERT(_props->_curTrans);
+    ASSERT(_props->_pendingTrans || _props->_curTrans);
+    Lock lock(_props->_transMutex);
+    _props->_pendingTrans = nullptr;
     _props->_curTrans = nullptr;
+    _props->_transThread = std::thread::id();
+}
+
+void
+Properties::TransactionGuard::Activate()
+{
+    _props->_curTrans = _props->_pendingTrans;
+    _props->_pendingTrans = nullptr;
 }
 
 /* ****************************************************************************/
@@ -1119,7 +1167,7 @@ Properties::Clear()
 }
 
 Properties::Node
-Properties::Add(const Path &path, const Node::Options &options)
+Properties::Add(const Path &path, const NodeOptions &options)
 {
     Transaction::Ptr t = OpenTransaction();
     Node res = t->Add(path, options);
@@ -1129,7 +1177,7 @@ Properties::Add(const Path &path, const Node::Options &options)
 
 Properties::Node
 Properties::Add(const Path &path, const Value &value,
-                const Node::Options &options)
+                const NodeOptions &options)
 {
     Transaction::Ptr t = OpenTransaction();
     Node res = t->Add(path, value, options);
@@ -1138,7 +1186,7 @@ Properties::Add(const Path &path, const Value &value,
 }
 
 Properties::Node
-Properties::Add(const Path &path, Value &&value, const Node::Options &options)
+Properties::Add(const Path &path, Value &&value, const NodeOptions &options)
 {
     Transaction::Ptr t = OpenTransaction();
     Node res = t->Add(path, std::move(value), options);
@@ -1155,7 +1203,7 @@ Properties::Delete(const Path &path)
 }
 
 void
-Properties::Modify(const Path &path, const Node::Options &options)
+Properties::Modify(const Path &path, const NodeOptions &options)
 {
     Transaction::Ptr t = OpenTransaction();
     t->Modify(path, options);
@@ -1164,7 +1212,7 @@ Properties::Modify(const Path &path, const Node::Options &options)
 
 void
 Properties::Modify(const Path &path, const Value &value,
-                   const Node::Options &options)
+                   const NodeOptions &options)
 {
     Transaction::Ptr t = OpenTransaction();
     t->Modify(path, value, options);
@@ -1173,7 +1221,7 @@ Properties::Modify(const Path &path, const Value &value,
 
 void
 Properties::Modify(const Path &path, Value &&value,
-                   const Node::Options &options)
+                   const NodeOptions &options)
 {
     Transaction::Ptr t = OpenTransaction();
     t->Modify(path, std::move(value), options);
@@ -1194,7 +1242,7 @@ Properties::_LoadCategory(Transaction::Ptr trans, Xml::Element catEl,
                           const Path &path, bool isRoot)
 {
     std::string name;
-    Node::Options opts;
+    NodeOptions opts;
 
     if (isRoot) {
         Xml::Element e = catEl.Child("title");
@@ -1236,7 +1284,7 @@ void
 Properties::_LoadItem(Transaction::Ptr trans, Xml::Element itemEl,
                       const Path &path)
 {
-    Node::Options opts;
+    NodeOptions opts;
 
     auto nameAttr = itemEl.Attr("name");
     if (!nameAttr) {
@@ -1301,7 +1349,7 @@ Properties::_CommitTransaction(Transaction &trans)
     _CheckAdditions(trans);
     _CheckModifications(trans);
 
-    //XXX set current transaction by guard object
+    tg.Activate();
 
     /* Run validators. */
     //XXX
@@ -1417,6 +1465,13 @@ Properties::_ApplyAdditions(Transaction &trans)
             ASSERT(parent);
             parent->AddChild(rec.nodeName, rec.newNode);
         }
+
+        /* Recursively apply options. */
+        rec.newNode->Traverse([](_Node &node) {
+            node.ApplyOptions(*node.options);
+            node.options = nullptr;
+            return true;
+        });
     }
 }
 
@@ -1446,10 +1501,10 @@ Properties::_ApplyModifications(Transaction &trans)
         }
         _Node::Ptr node = _LookupNode(rec.path);
         ASSERT(node);
-        //XXX
         if (!rec.newNode->value.IsNone()) {
             node->value = std::move(rec.newNode->value);
         }
+        node->ApplyOptions(*rec.newNode->options);
     }
 }
 
@@ -1467,9 +1522,10 @@ Properties::Lock
 Properties::_Lock() const
 {
     Lock lock = Lock(_transMutex);
-    if (_curTrans) {
+    if (_transThread == std::this_thread::get_id()) {
         return Lock();
     }
+    lock.unlock();
     return Lock(_mutex);
 }
 
