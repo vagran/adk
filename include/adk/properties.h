@@ -1038,6 +1038,16 @@ private:
     /** Obtain lock if necessary. */
     Lock
     _Lock() const;
+
+    /** Reformat input text.
+     * * Leading and trailing whitespaces are trimmed.
+     * * Whitespaces sequence which has less than two new line characters is
+     *   replaced by single space.
+     * * Whitespaces sequence which has more than one new line characters is
+     *   replaced by single new line character.
+     */
+    std::string
+    ReformatText(const std::string &text);
 };
 
 } /* namespace adk */

@@ -34,9 +34,16 @@ UT_TEST("Basic functionality")
     UT_BOOL(*props["sample/Item5"]) == UT_TRUE;
 
     UT(props[Properties::Path()].DispName().c_str()) == UT_CSTR("Test properties");
-    //UT(props[Properties::Path()].Description().c_str()) == UT_CSTR("Root element description.");
-    //UT(props["Item2"].Description().c_str()) == UT_CSTR("Optional long description.");
+    UT(props[Properties::Path()].Description().c_str()) == UT_CSTR("Root element description.");
+    UT(props["sample"].Description().c_str()) == UT_CSTR(
+        "Place long description here. It is automatically re-formatted.\n"
+        "Empty line before new paragraph.");
+    UT(props["Item1"].Description().c_str()) == UT_CSTR("Optional long description.");
+
     UT(props["Item2"].DispName().c_str()) == UT_CSTR("Item 2");
+    UT(props["Item2"].Description().c_str()) == UT_CSTR("");
+    UT(props["Item2"].Units().c_str()) == UT_CSTR("mA*h");
+    UT(props["Item1"].Units().c_str()) == UT_CSTR("");
     UT(props["Item2"].Name().c_str()) == UT_CSTR("Item2");
     UT(props["Item2"].GetPath().Str().c_str()) == UT_CSTR("Item2");
     UT(props["sample/Item3"].GetPath().Str().c_str()) == UT_CSTR("sample/Item3");

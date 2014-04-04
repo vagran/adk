@@ -21,10 +21,13 @@ See COPYING file for copyright details.
     <item name="Item2" dispName="Item 2" type="float" units="mA*h">120.5</item>
     <category name="sample" dispName="Sample category">
         <description>
-            Place long description here. It is automatically
-            re-formatted.
+        
+            Place long description here.    It is automatically  
+            re-formatted.  
             
-            Empty line before new paragraph.
+            Empty line before new paragraph.   
+            
+            
         </description>
         <item name="Item3" type="string" maxLen="200">Test string</item>
         <item name="Item4" type="boolean">true</item>

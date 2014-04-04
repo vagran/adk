@@ -625,7 +625,7 @@ Properties::_Node::GetPath()
     Path path;
     while (node && node->_name) {
         Path suffix(std::move(path));
-        path = Path(node->_name, 0);
+        path = Path(*node->_name, 0);
         path += std::move(suffix);
         node = node->_parent;
     }
@@ -1266,7 +1266,7 @@ Properties::_LoadCategory(Transaction::Ptr trans, Xml::Element catEl,
 
     Xml::Element e = catEl.Child("description");
     if (e) {
-        opts.Description(e.Value());
+        opts.Description(ReformatText(e.Value()));
     }
 
     trans->Add(isRoot ? Path() : path + name, opts);
@@ -1306,7 +1306,7 @@ Properties::_LoadItem(Transaction::Ptr trans, Xml::Element itemEl,
 
     Xml::Element e = itemEl.Child("description");
     if (e) {
-        opts.Description(e.Value());
+        opts.Description(ReformatText(e.Value()));
     }
 
     a = itemEl.Attr("type");
@@ -1405,7 +1405,6 @@ Properties::_CheckModifications(Transaction &trans)
             ADK_EXCEPTION(InvalidOpException,
                           "Cannot modify node - does not exists");
         }
-        //XXX
         if (!rec.newNode->value.IsNone() &&
             node->value.GetType() != rec.newNode->value.GetType()) {
 
@@ -1543,4 +1542,34 @@ Properties::Node
 Properties::operator [](const Path &path) const
 {
     return Get(path);
+}
+
+std::string
+Properties::ReformatText(const std::string &text)
+{
+    std::string out;
+
+    bool skipping = false;
+    int numNewLines = -1;
+
+    for (int c: text) {
+        if (isspace(c)) {
+            skipping = true;
+            if (c == '\n' && numNewLines != -1) {
+                numNewLines++;
+            }
+            continue;
+        }
+        if (skipping) {
+            if (numNewLines >= 0 && numNewLines < 2) {
+                out += ' ';
+            } else if (numNewLines >= 2) {
+                out += '\n';
+            }
+            numNewLines = 0;
+            skipping = false;
+        }
+        out += c;
+    }
+    return out;
 }
