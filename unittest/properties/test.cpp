@@ -442,14 +442,18 @@ UT_TEST("Validators")
     Properties props;
     Properties::Transaction::Ptr t = props.OpenTransaction();
 
+    Properties::NodeHandler blocker = Properties::NodeHandler::Make([]() {
+        ADK_EXCEPTION(Properties::ValidationException, "test validation");
+    });
+
     props.Add("");
-    t->Modify("", Properties::NodeOptions().Validator(
-        Properties::NodeHandler::Make([]() {
-            ADK_EXCEPTION(Properties::ValidationException, "test validation");
-        })));
+    t->Modify("", Properties::NodeOptions().Validator(blocker));
     UT_THROWS(t->Commit(), Properties::ValidationException);
+    UT_THROWS(props.Add("a",  Properties::NodeOptions().Validator(blocker)),
+              Properties::ValidationException);
 
     Properties::NodeHandler gt10 = Properties::NodeHandler::Make([](Properties::Node node) {
+        UT_BOOL(node) == UT_TRUE;
         UT(node.Type() == Properties::Value::Type::INTEGER) == UT_TRUE;
         if (node.Val().Get<int>() <= 10) {
             ADK_EXCEPTION(Properties::ValidationException, "Should be greater than 10");
@@ -457,6 +461,7 @@ UT_TEST("Validators")
     }, std::placeholders::_1);
 
     Properties::NodeHandler lt20 = Properties::NodeHandler::Make([](Properties::Node node) {
+        UT_BOOL(node) == UT_TRUE;
         UT(node.Type() == Properties::Value::Type::INTEGER) == UT_TRUE;
         if (node.Val().Get<int>() >= 20) {
             ADK_EXCEPTION(Properties::ValidationException, "Should be less than 20");
@@ -468,13 +473,16 @@ UT_TEST("Validators")
     UT_BOOL(props["x"]) == UT_FALSE;
     props.Add("x", 20, Properties::NodeOptions().Validator(gt10));
     UT_BOOL(props["x"]) == UT_TRUE;
-    UT_INT(props["x"]) == UT(10);
+    UT_INT(props["x"].Val().Get<int>()) == UT(20);
+    UT_THROWS(props.Modify("x", 10), Properties::ValidationException);
+    UT_INT(props["x"].Val().Get<int>()) == UT(20);
     UT_THROWS(props.Modify("x", Properties::NodeOptions().Validator(lt20)),
               Properties::ValidationException);
     props.Modify("x", 19);
     props.Modify("x", Properties::NodeOptions().Validator(lt20));
+    UT_THROWS(props.Modify("x", 10), Properties::ValidationException);
     UT_THROWS(props.Modify("x", 20), Properties::ValidationException);
-    UT_INT(props["x"]) == UT(19);
+    UT_INT(props["x"].Val().Get<int>()) == UT(19);
 }
 
 UT_TEST("Listeners")

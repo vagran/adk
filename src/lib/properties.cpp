@@ -621,14 +621,33 @@ Properties::_Node::LockProps()
 Properties::Path
 Properties::_Node::GetPath()
 {
-    _Node *node = this;
+    _Node *node = this, *rootNode = this;
     Path path;
     while (node && node->_name) {
+        /* Skip leading component for transaction node. */
+        if (_isTransaction && !node->_parent) {
+            break;
+        }
         Path suffix(std::move(path));
         path = Path(*node->_name, 0);
         path += std::move(suffix);
+        rootNode = node;
         node = node->_parent;
     }
+    if (!_isTransaction || !_props->_curTrans) {
+        return path;
+    }
+    /* Transaction node. Find it in a record and get full path. */
+    for (Transaction::Record rec: _props->_curTrans->_log) {
+        if ((rec.type == Transaction::Record::Type::ADD ||
+            rec.type == Transaction::Record::Type::MODIFY) &&
+            rec.newNode.get() == rootNode) {
+
+            return rec.path + std::move(path);
+        }
+    }
+    /* NOT REACHED */
+    ASSERT(false);
     return path;
 }
 
@@ -643,6 +662,10 @@ Properties::_Node::ApplyOptions(NodeOptions &options)
     }
     if (options.units) {
         units = options.units;
+    }
+    for (NodeHandler &validator: options.validators) {
+        //XXX save connection
+        _validators.Connect(validator);
     }
 }
 
@@ -728,7 +751,20 @@ Properties::Node::Val() const
 {
     ASSERT(_node);
     Lock lock = _node->LockProps();
-    //XXX transaction
+    if (_node->_props->_curTrans) {
+        _Node *propsNode, *transNode;
+        if (_node->_isTransaction) {
+            transNode = _node.get();
+            propsNode = _node->_props->_LookupNode(_node->GetPath(), false).get();
+        } else {
+            propsNode = _node.get();
+            transNode = _node->_props->_LookupNode(_node->GetPath(), true).get();
+        }
+        if (transNode->value.IsNone() && propsNode) {
+            return propsNode->value;
+        }
+        return transNode->value;
+    }
     return _node->value;
 }
 
@@ -1163,26 +1199,18 @@ Properties::TransactionGuard::TransactionGuard(Properties *props, Transaction *t
 {
     _lock = Lock(_props->_mutex);
     Lock lock(_props->_transMutex);
-    ASSERT(!props->_pendingTrans && !props->_curTrans);
+    ASSERT(!props->_curTrans);
     ASSERT(props->_transThread == std::thread::id());
     props->_transThread = std::this_thread::get_id();
-    props->_pendingTrans = trans;
+    props->_curTrans = trans;
 }
 
 Properties::TransactionGuard::~TransactionGuard()
 {
-    ASSERT(_props->_pendingTrans || _props->_curTrans);
+    ASSERT(_props->_curTrans);
     Lock lock(_props->_transMutex);
-    _props->_pendingTrans = nullptr;
     _props->_curTrans = nullptr;
     _props->_transThread = std::thread::id();
-}
-
-void
-Properties::TransactionGuard::Activate()
-{
-    _props->_curTrans = _props->_pendingTrans;
-    _props->_pendingTrans = nullptr;
 }
 
 /* ****************************************************************************/
@@ -1387,11 +1415,15 @@ Properties::_CommitTransaction(Transaction &trans)
     _CheckAdditions(trans);
     _CheckModifications(trans);
 
-
-
     /* Run validators.
      * Firstly traverse and mark up to root along paths of all changed nodes.
      */
+    if (_root) {
+        _root->Traverse([](_Node &node) {
+            node._isChanged = false;
+            return true;
+        });
+    }
     for (Transaction::Record &rec: trans._log) {
         Path path;
         if (rec.type == Transaction::Record::Type::MODIFY) {
@@ -1402,7 +1434,7 @@ Properties::_CommitTransaction(Transaction &trans)
             }
             path = rec.path.Parent();
         }
-        _Node::Ptr node = _LookupNode(path);
+        _Node::Ptr node = _LookupNode(path, false);
         ASSERT(node);
 
         while (node) {
@@ -1411,8 +1443,35 @@ Properties::_CommitTransaction(Transaction &trans)
         }
     }
 
-    tg.Activate();
-    //XXX
+    if (_root) {
+        _root->Traverse([&trans](_Node &node) {
+            if (node._isChanged) {
+                node._isChanged = false;
+                node._validators.Emit(Node(node.GetPtr()));
+                /* Additional validators in modify record. */
+                for (Transaction::Record &rec: trans._log) {
+                    if (rec.type == Transaction::Record::Type::MODIFY &&
+                        rec.path == node.GetPath()) {
+
+                        for (NodeHandler &validator: rec.newNode->options->validators) {
+                            validator(Node(node.GetPtr()));
+                        }
+                    }
+                }
+            }
+            return true;
+        });
+    }
+    for (Transaction::Record &rec: trans._log) {
+        if (rec.type == Transaction::Record::Type::ADD) {
+            rec.newNode->Traverse([](_Node &node) {
+                for (NodeHandler &validator: node.options->validators) {
+                    validator(Node(node.GetPtr()));
+                }
+                return true;
+            });
+        }
+    }
 
     /* Apply transaction data. */
     _ApplyDeletions(trans);
@@ -1443,7 +1502,7 @@ Properties::_CheckDeletions(Transaction &trans)
         if (rec.path.Size() == 0) {
             continue;
         }
-        if (!_LookupNode(rec.path)) {
+        if (!_LookupNode(rec.path, false)) {
             ADK_EXCEPTION(InvalidOpException,
                           "Cannot delete node - does not exists");
         }
@@ -1460,7 +1519,7 @@ Properties::_CheckModifications(Transaction &trans)
         if (rec.type != Transaction::Record::Type::MODIFY) {
             continue;
         }
-        _Node::Ptr node = _LookupNode(rec.path);
+        _Node::Ptr node = _LookupNode(rec.path, false);
         if (!node) {
             ADK_EXCEPTION(InvalidOpException,
                           "Cannot modify node - does not exists");
@@ -1483,13 +1542,13 @@ Properties::_CheckAdditions(Transaction &trans)
         }
         /* Parent node should exist, the added one should not. */
         if (rec.path.Size() > 0) {
-            auto node = _LookupNode(rec.path.Parent());
+            auto node = _LookupNode(rec.path.Parent(), false);
             if (!node) {
                 ADK_EXCEPTION(InvalidOpException,
                               "Cannot add node - parent does not exist");
             }
         }
-        if (_LookupNode(rec.path)) {
+        if (_LookupNode(rec.path, false)) {
             /* Check whether it was deleted in this transaction. */
             bool found = false;
             for (Transaction::Record &drec: trans._log) {
@@ -1520,13 +1579,14 @@ Properties::_ApplyAdditions(Transaction &trans)
             _root = rec.newNode;
             _root->_name = nullptr;
         } else {
-            _Node::Ptr parent = _LookupNode(rec.path.Parent());
+            _Node::Ptr parent = _LookupNode(rec.path.Parent(), false);
             ASSERT(parent);
             parent->AddChild(rec.nodeName, rec.newNode);
         }
 
         /* Recursively apply options. */
         rec.newNode->Traverse([](_Node &node) {
+            node._isTransaction = false;
             node.ApplyOptions(*node.options);
             node.options = nullptr;
             return true;
@@ -1544,7 +1604,7 @@ Properties::_ApplyDeletions(Transaction &trans)
         if (rec.path.Size() == 0) {
             _root = nullptr;
         } else {
-            _Node::Ptr node = _LookupNode(rec.path);
+            _Node::Ptr node = _LookupNode(rec.path, false);
             ASSERT(node);
             node->Unlink();
         }
@@ -1558,7 +1618,7 @@ Properties::_ApplyModifications(Transaction &trans)
         if (rec.type != Transaction::Record::Type::MODIFY) {
             continue;
         }
-        _Node::Ptr node = _LookupNode(rec.path);
+        _Node::Ptr node = _LookupNode(rec.path, false);
         ASSERT(node);
         if (!rec.newNode->value.IsNone()) {
             node->value = std::move(rec.newNode->value);
@@ -1568,9 +1628,28 @@ Properties::_ApplyModifications(Transaction &trans)
 }
 
 Properties::_Node::Ptr
-Properties::_LookupNode(const Path &path, bool useTransaction __UNUSED) const
+Properties::_LookupNode(const Path &path, bool useTransaction) const
 {
-    //XXX current transaction
+    if (useTransaction && _curTrans) {
+        bool deleted = false;
+        for (Transaction::Record &rec: _curTrans->_log) {
+            if (rec.type == Transaction::Record::Type::MODIFY) {
+                if (rec.path == path) {
+                    return rec.newNode;
+                }
+            } else if (rec.type == Transaction::Record::Type::ADD) {
+                size_t len = rec.path.HasCommonPrefix(path);
+                if (len == rec.path.Size()) {
+                    return rec.newNode->Find(path.SubPath(len, path.Size() - len));
+                }
+            } else if (rec.type == Transaction::Record::Type::DELETE) {
+                deleted = rec.path.HasCommonPrefix(path) == rec.path.Size();
+            }
+        }
+        if (deleted) {
+            return nullptr;
+        }
+    }
     if (!_root) {
         return nullptr;
     }

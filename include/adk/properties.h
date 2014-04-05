@@ -615,7 +615,13 @@ private:
         /** Child nodes. */
         std::map<std::string, Ptr> _children;
         /** Indicates that the node is affected by current transaction. */
-        bool _isChanged = false;
+        bool _isChanged = false,
+        /** Indicates that node is not committed. */
+             _isTransaction = true;
+        /** Attached validators. */
+        Signal <void(Node)> _validators,
+        /** Attached listeners. */
+                            _listeners;
     };
 
 public:
@@ -978,10 +984,6 @@ private:
         TransactionGuard(Properties *props, Transaction *trans);
         ~TransactionGuard();
 
-        /** Activate pending transaction. */
-        void
-        Activate();
-
     private:
         Properties *_props;
         Lock _lock;
@@ -997,9 +999,7 @@ private:
     /** Mutex for current transaction access. */
                        _transMutex;
     /** Current transaction. */
-    Transaction *_curTrans = nullptr,
-    /** Pending transaction, will be current after initial validation. */
-                *_pendingTrans = nullptr;
+    Transaction *_curTrans = nullptr;
     /** Thread ID of the transaction owner. */
     std::thread::id _transThread;
 

@@ -559,7 +559,7 @@ public:
     {
         auto slots = BaseType::_GetEmitSlots();
         for (auto &slot: slots) {
-            if (!resultMapper.ProcessResult(slot(std::forward<Args>(args)...))) {
+            if (!resultMapper.ProcessResult(slot(args...))) {
                 break;
             }
         }
@@ -596,11 +596,11 @@ public:
 
     template <typename... Args>
     void
-    Emit(Args &&... args)
+    Emit(Args ... args)
     {
         auto slots = BaseType::_GetEmitSlots();
         for (auto &slot: slots) {
-            slot(std::forward<Args>(args)...);
+            slot(args...);
         }
     }
 };
