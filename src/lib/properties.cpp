@@ -660,6 +660,15 @@ Properties::_Node::Traverse(std::function<bool(_Node &)> visitor)
     return true;
 }
 
+Properties::_Node::Ptr
+Properties::_Node::Parent() const
+{
+    if (!_parent) {
+        return Ptr();
+    }
+    return _parent->GetPtr();
+}
+
 /* ****************************************************************************/
 /* Properties::NodeOptions class. */
 
@@ -684,6 +693,20 @@ Properties::NodeOptions::Units(Optional<std::string> units)
     return *this;
 }
 
+Properties::NodeOptions &
+Properties::NodeOptions::Validator(const NodeHandler &validator)
+{
+    validators.emplace_back(validator);
+    return *this;
+}
+
+Properties::NodeOptions &
+Properties::NodeOptions::Validator(NodeHandler &&validator)
+{
+    validators.emplace_back(std::move(validator));
+    return *this;
+}
+
 /* ****************************************************************************/
 /* Properties::Item class. */
 
@@ -696,6 +719,7 @@ Properties::Node::Type() const
 {
     ASSERT(_node);
     Lock lock = _node->LockProps();
+    //XXX transaction
     return _node->value.GetType();
 }
 
@@ -704,6 +728,7 @@ Properties::Node::Val() const
 {
     ASSERT(_node);
     Lock lock = _node->LockProps();
+    //XXX transaction
     return _node->value;
 }
 
@@ -720,6 +745,7 @@ Properties::Node::DispName() const
 {
     ASSERT(_node);
     Lock lock = _node->LockProps();
+    //XXX transaction
     if (!_node->dispName) {
         return _node->Name();
     }
@@ -731,6 +757,7 @@ Properties::Node::Description() const
 {
     ASSERT(_node);
     Lock lock = _node->LockProps();
+    //XXX transaction
     return _node->description ? *_node->description : std::string();
 }
 
@@ -739,6 +766,7 @@ Properties::Node::Units() const
 {
     ASSERT(_node);
     Lock lock = _node->LockProps();
+    //XXX transaction
     return _node->units ? *_node->units : std::string();
 }
 
@@ -782,7 +810,17 @@ Properties::Node::GetPath() const
 {
     ASSERT(_node);
     Lock lock = _node->LockProps();
+    //XXX transaction
     return _node->GetPath();
+}
+
+Properties::Node
+Properties::Node::Parent() const
+{
+    ASSERT(_node);
+    Lock lock = _node->LockProps();
+    //XXX transaction
+    return _node->Parent();
 }
 
 /* ****************************************************************************/
@@ -1349,9 +1387,31 @@ Properties::_CommitTransaction(Transaction &trans)
     _CheckAdditions(trans);
     _CheckModifications(trans);
 
-    tg.Activate();
 
-    /* Run validators. */
+
+    /* Run validators.
+     * Firstly traverse and mark up to root along paths of all changed nodes.
+     */
+    for (Transaction::Record &rec: trans._log) {
+        Path path;
+        if (rec.type == Transaction::Record::Type::MODIFY) {
+            path = rec.path;
+        } else {
+            if (path.Size() == 0) {
+                continue;
+            }
+            path = rec.path.Parent();
+        }
+        _Node::Ptr node = _LookupNode(path);
+        ASSERT(node);
+
+        while (node) {
+            node->_isChanged = true;
+            node = node->Parent();
+        }
+    }
+
+    tg.Activate();
     //XXX
 
     /* Apply transaction data. */
@@ -1508,7 +1568,7 @@ Properties::_ApplyModifications(Transaction &trans)
 }
 
 Properties::_Node::Ptr
-Properties::_LookupNode(const Path &path) const
+Properties::_LookupNode(const Path &path, bool useTransaction __UNUSED) const
 {
     //XXX current transaction
     if (!_root) {

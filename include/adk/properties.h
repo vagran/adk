@@ -241,10 +241,6 @@ public:
     /** The requested operation is invalid. */
     ADK_DEFINE_DERIVED_EXCEPTION(InvalidOpException, Exception);
 
-    class Item;
-    class Category;
-    class Transaction;
-
     /* ************************************************************************/
     /** Stored value wrapper. The value has dynamic type which is defined when
      * the value is assigned.
@@ -502,9 +498,10 @@ public:
     };
     /* ************************************************************************/
 
-private:
-    /** Lock object for properties sheet locking. */
-    typedef std::unique_lock<std::mutex> Lock;
+    class Node;
+
+    /** Validator callback. */
+    typedef Slot<void(Node)> NodeHandler;
 
     /** Item creation options. */
     class NodeOptions {
@@ -512,6 +509,7 @@ private:
         Optional<std::string> dispName,
                               description,
                               units;
+        std::list<NodeHandler> validators;
 
         NodeOptions &
         DispName(Optional<std::string> dispName);
@@ -521,7 +519,22 @@ private:
 
         NodeOptions &
         Units(Optional<std::string> units);
+
+        /** Add validator. It should throw ValidationException if the validation
+         * fails.
+         */
+        NodeOptions &
+        Validator(const NodeHandler &validator);
+
+        NodeOptions &
+        Validator(NodeHandler &&validator);
     };
+
+    /* ************************************************************************/
+
+private:
+    /** Lock object for properties sheet locking. */
+    typedef std::unique_lock<std::mutex> Lock;
 
     /** Represents node in the properties tree. */
     class _Node: public std::enable_shared_from_this<_Node> {
@@ -585,6 +598,10 @@ private:
         bool
         Traverse(std::function<bool(_Node &)> visitor);
 
+        /** Get parent node. */
+        Ptr
+        Parent() const;
+
     protected:
         friend class Transaction;
         friend class Properties;
@@ -597,6 +614,8 @@ private:
         _Node *_parent = nullptr;
         /** Child nodes. */
         std::map<std::string, Ptr> _children;
+        /** Indicates that the node is affected by current transaction. */
+        bool _isChanged = false;
     };
 
 public:
@@ -650,6 +669,10 @@ public:
         /** Get this node path. */
         Path
         GetPath() const;
+
+        /** Get parent node. Empty node returned for root. */
+        Node
+        Parent() const;
 
     private:
         _Node::Ptr _node;
@@ -1033,7 +1056,7 @@ private:
 
     /** Find node if exists. */
     _Node::Ptr
-    _LookupNode(const Path &path) const;
+    _LookupNode(const Path &path, bool useTransaction = true) const;
 
     /** Obtain lock if necessary. */
     Lock

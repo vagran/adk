@@ -436,3 +436,48 @@ UT_TEST("Transaction commit")
 
     //XXX
 }
+
+UT_TEST("Validators")
+{
+    Properties props;
+    Properties::Transaction::Ptr t = props.OpenTransaction();
+
+    props.Add("");
+    t->Modify("", Properties::NodeOptions().Validator(
+        Properties::NodeHandler::Make([]() {
+            ADK_EXCEPTION(Properties::ValidationException, "test validation");
+        })));
+    UT_THROWS(t->Commit(), Properties::ValidationException);
+
+    Properties::NodeHandler gt10 = Properties::NodeHandler::Make([](Properties::Node node) {
+        UT(node.Type() == Properties::Value::Type::INTEGER) == UT_TRUE;
+        if (node.Val().Get<int>() <= 10) {
+            ADK_EXCEPTION(Properties::ValidationException, "Should be greater than 10");
+        }
+    }, std::placeholders::_1);
+
+    Properties::NodeHandler lt20 = Properties::NodeHandler::Make([](Properties::Node node) {
+        UT(node.Type() == Properties::Value::Type::INTEGER) == UT_TRUE;
+        if (node.Val().Get<int>() >= 20) {
+            ADK_EXCEPTION(Properties::ValidationException, "Should be less than 20");
+        }
+    }, std::placeholders::_1);
+
+    UT_THROWS(props.Add("x", 10, Properties::NodeOptions().Validator(gt10)),
+              Properties::ValidationException);
+    UT_BOOL(props["x"]) == UT_FALSE;
+    props.Add("x", 20, Properties::NodeOptions().Validator(gt10));
+    UT_BOOL(props["x"]) == UT_TRUE;
+    UT_INT(props["x"]) == UT(10);
+    UT_THROWS(props.Modify("x", Properties::NodeOptions().Validator(lt20)),
+              Properties::ValidationException);
+    props.Modify("x", 19);
+    props.Modify("x", Properties::NodeOptions().Validator(lt20));
+    UT_THROWS(props.Modify("x", 20), Properties::ValidationException);
+    UT_INT(props["x"]) == UT(19);
+}
+
+UT_TEST("Listeners")
+{
+    //XXX
+}
