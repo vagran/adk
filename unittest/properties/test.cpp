@@ -481,26 +481,44 @@ UT_TEST("Validators")
     UT_BOOL(props["x"]) == UT_FALSE;
     props.Add("x", 20, Properties::NodeOptions().Validator(gt10));
     UT_BOOL(props["x"]) == UT_TRUE;
-    UT_INT(props["x"].Val().Get<int>()) == UT(20);
+    UT_INT(props["x"].Val()) == UT(20);
     UT_THROWS(props.Modify("x", 10), Properties::ValidationException);
-    UT_INT(props["x"].Val().Get<int>()) == UT(20);
+    UT_INT(props["x"].Val()) == UT(20);
     UT_THROWS(props.Modify("x", Properties::NodeOptions().Validator(lt20)),
               Properties::ValidationException);
     props.Modify("x", 19);
     props.Modify("x", Properties::NodeOptions().Validator(lt20));
     UT_THROWS(props.Modify("x", 10), Properties::ValidationException);
     UT_THROWS(props.Modify("x", 20), Properties::ValidationException);
-    UT_INT(props["x"].Val().Get<int>()) == UT(19);
+    UT_INT(props["x"].Val()) == UT(19);
 
     Properties::NodeHandlerConnection con;
     props.Modify("x", Properties::NodeOptions().Validator(ne15, &con));
     UT_THROWS(props.Modify("x", 15), Properties::ValidationException);
-    UT_INT(props["x"].Val().Get<int>()) == UT(19);
+    UT_INT(props["x"].Val()) == UT(19);
     con.Disconnect();
     props.Modify("x", 15);
-    UT_INT(props["x"].Val().Get<int>()) == UT(15);
+    UT_INT(props["x"].Val()) == UT(15);
 
+    t->Cancel();
+    t->Add("sum");
+    t->Add("sum/a", 2);
+    t->Add("sum/b", 3);
+    t->Add("sum/c", 5);
+    t->Commit();
 
+    auto Sum = [](Properties::Node node) {
+        int sum = 0;
+        for (Properties::Node summant: node) {
+            if (summant.Type() != Properties::Value::Type::INTEGER) {
+                ADK_EXCEPTION(Properties::ValidationException, "Should be integer");
+            }
+            sum += summant.Val().Get<int>();
+        }
+        return sum;
+    };
+
+    UT(Sum(props["sum"])) == UT(10);
 }
 
 UT_TEST("Listeners")

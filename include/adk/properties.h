@@ -643,6 +643,37 @@ private:
 public:
     class Node {
     public:
+        class Iterator {
+        public:
+            Iterator() = default;
+
+            Iterator(_Node::Ptr node);
+
+            bool
+            operator ==(const Iterator &it) const;
+
+            bool
+            operator !=(const Iterator &it) const;
+
+            void
+            operator ++();
+
+            void
+            operator ++(int);
+
+            Node
+            operator *() const;
+
+            Node *
+            operator ->() const;
+
+        private:
+            std::unique_ptr<Node> _node;
+
+            void
+            Next();
+        };
+
         Node(_Node::Ptr node = nullptr);
 
         /** Get value type. */
@@ -668,6 +699,12 @@ public:
         /** Get units string. */
         std::string
         Units() const;
+
+        bool
+        operator ==(const Node &node);
+
+        bool
+        operator !=(const Node &node);
 
         /** Check if the handle is not empty. */
         operator bool() const;
@@ -695,6 +732,14 @@ public:
         /** Get parent node. Empty node returned for root. */
         Node
         Parent() const;
+
+        /** Child nodes iteration (non-recursive). */
+        Iterator
+        begin() const;
+
+        /** Child nodes iteration (non-recursive). */
+        Iterator
+        end() const;
 
     private:
         _Node::Ptr _node;

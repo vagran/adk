@@ -823,6 +823,18 @@ Properties::Node::Units() const
     return _node->units ? *_node->units : std::string();
 }
 
+bool
+Properties::Node::operator ==(const Node &node)
+{
+    return _node == node._node;
+}
+
+bool
+Properties::Node::operator !=(const Node &node)
+{
+    return _node != node._node;
+}
+
 Properties::Node::operator bool() const
 {
     return _node != nullptr;
@@ -882,6 +894,104 @@ Properties::Node::Parent() const
     return _node->Parent();
 }
 
+Properties::Node::Iterator
+Properties::Node::begin() const
+{
+    ASSERT(_node);
+    Lock lock = _node->LockProps();
+    if (_node->_children.size() == 0) {
+        //XXX transaction
+        return Iterator();
+    }
+    return Iterator(_node->_children.begin()->second);
+}
+
+Properties::Node::Iterator
+Properties::Node::end() const
+{
+    return Iterator();
+}
+
+/* ****************************************************************************/
+/* Properties::Node::Iterator class. */
+
+Properties::Node::Iterator::Iterator(_Node::Ptr node):
+    _node(new Node(node))
+{}
+
+bool
+Properties::Node::Iterator::operator ==(const Iterator &it) const
+{
+    if (!!_node != !!it._node) {
+        return false;
+    }
+    if (!_node && !it._node) {
+        return true;
+    }
+    return *_node == *it._node;
+}
+
+bool
+Properties::Node::Iterator::operator !=(const Iterator &it) const
+{
+    return !(*this == it);
+}
+
+void
+Properties::Node::Iterator::operator ++()
+{
+    Next();
+}
+
+void
+Properties::Node::Iterator::operator ++(int)
+{
+    Next();
+}
+
+Properties::Node
+Properties::Node::Iterator::operator *() const
+{
+    ASSERT(_node);
+    return *_node;
+}
+
+Properties::Node *
+Properties::Node::Iterator::operator ->() const
+{
+    ASSERT(_node);
+    return _node.get();
+}
+
+void
+Properties::Node::Iterator::Next()
+{
+    ASSERT(_node);
+    Lock lock = _node->_node->LockProps();
+    _Node &node = *_node->_node;
+    Path path = node.GetPath();
+    if (path.Size() == 0) {
+        _node.reset();
+        return;
+    }
+    std::string name = node.Name();
+    _Node::Ptr parent = _node->_node->_props->_LookupNode(path.Parent(), true);
+    if (!parent) {
+        _node.reset();
+        return;
+    }
+    auto it = parent->_children.find(name);
+    if (it != parent->_children.end()) {
+        it++;
+    }
+    if (it == parent->_children.end()) {
+        //XXX transaction
+        _node.reset();
+        return;
+    }
+    _node->_node = it->second;
+}
+
 /* ****************************************************************************/
 /* Properties::NodeHandlerConnection class. */
 
@@ -889,7 +999,7 @@ void
 Properties::NodeHandlerConnection::Disconnect()
 {
     if (_node) {
-        Lock lock = _node->_props->_Lock();
+        Lock lock = _node->LockProps();
         _con.Disconnect();
     }
 }
@@ -897,7 +1007,7 @@ Properties::NodeHandlerConnection::Disconnect()
 Properties::NodeHandlerConnection::operator bool()
 {
     if (_node) {
-        Lock lock = _node->_props->_Lock();
+        Lock lock = _node->LockProps();
         return _con;
     }
     return false;
