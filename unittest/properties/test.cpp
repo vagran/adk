@@ -502,9 +502,9 @@ UT_TEST("Validators")
 
     t->Cancel();
     t->Add("sum");
-    t->Add("sum/a", 2);
-    t->Add("sum/b", 3);
-    t->Add("sum/c", 5);
+    t->Add("sum/a", 1);
+    t->Add("sum/b", 2);
+    t->Add("sum/c", 4);
     t->Commit();
 
     auto Sum = [](Properties::Node node) {
@@ -518,7 +518,22 @@ UT_TEST("Validators")
         return sum;
     };
 
-    UT(Sum(props["sum"])) == UT(10);
+    UT(Sum(props["sum"])) == UT(7);
+
+    Properties::NodeHandler sum15 = Properties::NodeHandler::Make([&Sum](Properties::Node node) {
+        UT_BOOL(node) == UT_TRUE;
+        if (Sum(node) != 15) {
+            ADK_EXCEPTION(Properties::ValidationException, "Sum should be 15");
+        }
+    }, std::placeholders::_1);
+
+    UT_THROWS(props.Modify("sum", Properties::NodeOptions().Validator(sum15)),
+              Properties::ValidationException);
+    t->Modify("sum", Properties::NodeOptions().Validator(sum15));
+    t->Add("sum/d", 8);
+    t->Commit();
+
+    UT(Sum(props["sum"])) == UT(15);
 }
 
 UT_TEST("Listeners")
