@@ -746,7 +746,20 @@ Properties::Node::Type() const
 {
     ASSERT(_node);
     Lock lock = _node->LockProps();
-    //XXX transaction
+    if (_node->_props->_curTrans) {
+        _Node *propsNode, *transNode;
+        if (_node->_isTransaction) {
+            transNode = _node.get();
+            propsNode = _node->_props->_LookupNode(_node->GetPath(), false).get();
+        } else {
+            propsNode = _node.get();
+            transNode = _node->_props->_LookupNode(_node->GetPath(), true).get();
+        }
+        if (transNode->value.IsNone() && propsNode) {
+            return propsNode->value.GetType();
+        }
+        return transNode->value.GetType();
+    }
     return _node->value.GetType();
 }
 
@@ -826,6 +839,7 @@ Properties::Node::operator [](const Path &path) const
 {
     ASSERT(_node);
     Lock lock = _node->LockProps();
+    //XXX transaction
     return _node->Find(path);
 }
 
@@ -850,7 +864,6 @@ Properties::Node::GetPath() const
 {
     ASSERT(_node);
     Lock lock = _node->LockProps();
-    //XXX transaction
     return _node->GetPath();
 }
 
@@ -859,15 +872,18 @@ Properties::Node::Parent() const
 {
     ASSERT(_node);
     Lock lock = _node->LockProps();
-    //XXX transaction
+    if (_node->_props->_curTrans) {
+        Path path = _node->GetPath();
+        if (path.Size() == 0) {
+            return Node();
+        }
+        return _node->_props->_LookupNode(path.Parent(), true);
+    }
     return _node->Parent();
 }
 
 /* ****************************************************************************/
 /* Properties::NodeHandlerConnection class. */
-
-Properties::NodeHandlerConnection::NodeHandlerConnection()
-{}
 
 void
 Properties::NodeHandlerConnection::Disconnect()
@@ -885,6 +901,12 @@ Properties::NodeHandlerConnection::operator bool()
         return _con;
     }
     return false;
+}
+
+Properties::Node
+Properties::NodeHandlerConnection::GetNode()
+{
+    return _node;
 }
 
 void

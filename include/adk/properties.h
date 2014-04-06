@@ -599,7 +599,7 @@ private:
         Lock
         LockProps();
 
-        /** Get this node path. */
+        /** Get this node path. Returns full path for a transaction node. */
         Path
         GetPath();
 
@@ -703,14 +703,16 @@ public:
     /** Connection object for handlers disconnecting. */
     class NodeHandlerConnection {
     public:
-        NodeHandlerConnection();
-
         /** Disconnect the associated handler. */
         void
         Disconnect();
 
         /** Check if currently associated with a connected handler. */
         operator bool();
+
+        /** Get associated node. */
+        Node
+        GetNode();
     private:
         friend class Properties;
 
