@@ -468,6 +468,14 @@ UT_TEST("Validators")
         }
     }, std::placeholders::_1);
 
+    Properties::NodeHandler ne15 = Properties::NodeHandler::Make([](Properties::Node node) {
+        UT_BOOL(node) == UT_TRUE;
+        UT(node.Type() == Properties::Value::Type::INTEGER) == UT_TRUE;
+        if (node.Val().Get<int>() == 15) {
+            ADK_EXCEPTION(Properties::ValidationException, "Should not be equal 15");
+        }
+    }, std::placeholders::_1);
+
     UT_THROWS(props.Add("x", 10, Properties::NodeOptions().Validator(gt10)),
               Properties::ValidationException);
     UT_BOOL(props["x"]) == UT_FALSE;
@@ -483,6 +491,14 @@ UT_TEST("Validators")
     UT_THROWS(props.Modify("x", 10), Properties::ValidationException);
     UT_THROWS(props.Modify("x", 20), Properties::ValidationException);
     UT_INT(props["x"].Val().Get<int>()) == UT(19);
+
+    Properties::NodeHandlerConnection con;
+    props.Modify("x", Properties::NodeOptions().Validator(ne15, &con));
+    UT_THROWS(props.Modify("x", 15), Properties::ValidationException);
+    UT_INT(props["x"].Val().Get<int>()) == UT(19);
+    con.Disconnect();
+    props.Modify("x", 15);
+    UT_INT(props["x"].Val().Get<int>()) == UT(15);
 }
 
 UT_TEST("Listeners")

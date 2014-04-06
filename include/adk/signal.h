@@ -372,6 +372,8 @@ private:
 public:
     class Connection {
     public:
+        Connection() = default;
+
         void
         Disconnect()
         {

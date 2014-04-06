@@ -503,13 +503,26 @@ public:
     /** Validator callback. */
     typedef Slot<void(Node)> NodeHandler;
 
+    class NodeHandlerConnection;
+
     /** Item creation options. */
     class NodeOptions {
     public:
         Optional<std::string> dispName,
                               description,
                               units;
-        std::list<NodeHandler> validators;
+
+        class HandlerEntry {
+        public:
+            NodeHandler handler;
+            NodeHandlerConnection *con;
+
+            HandlerEntry(NodeHandler handler, NodeHandlerConnection *con):
+                handler(handler), con(con)
+            {}
+        };
+
+        std::list<HandlerEntry> validators;
 
         NodeOptions &
         DispName(Optional<std::string> dispName);
@@ -521,13 +534,16 @@ public:
         Units(Optional<std::string> units);
 
         /** Add validator. It should throw ValidationException if the validation
-         * fails.
+         * fails. If connection pointer is provided the object is associated
+         * with the handler and can be used to disconnect it later.
          */
         NodeOptions &
-        Validator(const NodeHandler &validator);
+        Validator(const NodeHandler &validator,
+                  NodeHandlerConnection *con = nullptr);
 
         NodeOptions &
-        Validator(NodeHandler &&validator);
+        Validator(NodeHandler &&validator,
+                  NodeHandlerConnection *con = nullptr);
     };
 
     /* ************************************************************************/
@@ -681,6 +697,27 @@ public:
         Parent() const;
 
     private:
+        _Node::Ptr _node;
+    };
+
+    /** Connection object for handlers disconnecting. */
+    class NodeHandlerConnection {
+    public:
+        NodeHandlerConnection();
+
+        /** Disconnect the associated handler. */
+        void
+        Disconnect();
+
+        /** Check if currently associated with a connected handler. */
+        operator bool();
+    private:
+        friend class Properties;
+
+        void
+        Set(_Node::Ptr node, SignalConnection<void(Node)> con);
+
+        SignalConnection<void(Node)> _con;
         _Node::Ptr _node;
     };
 

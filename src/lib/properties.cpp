@@ -663,9 +663,11 @@ Properties::_Node::ApplyOptions(NodeOptions &options)
     if (options.units) {
         units = options.units;
     }
-    for (NodeHandler &validator: options.validators) {
-        //XXX save connection
-        _validators.Connect(validator);
+    for (NodeOptions::HandlerEntry &e: options.validators) {
+        auto con = _validators.Connect(e.handler);
+        if (e.con) {
+            e.con->Set(GetPtr(), con);
+        }
     }
 }
 
@@ -717,16 +719,18 @@ Properties::NodeOptions::Units(Optional<std::string> units)
 }
 
 Properties::NodeOptions &
-Properties::NodeOptions::Validator(const NodeHandler &validator)
+Properties::NodeOptions::Validator(const NodeHandler &validator,
+                                   NodeHandlerConnection *con)
 {
-    validators.emplace_back(validator);
+    validators.emplace_back(validator, con);
     return *this;
 }
 
 Properties::NodeOptions &
-Properties::NodeOptions::Validator(NodeHandler &&validator)
+Properties::NodeOptions::Validator(NodeHandler &&validator,
+                                   NodeHandlerConnection *con)
 {
-    validators.emplace_back(std::move(validator));
+    validators.emplace_back(std::move(validator), con);
     return *this;
 }
 
@@ -857,6 +861,38 @@ Properties::Node::Parent() const
     Lock lock = _node->LockProps();
     //XXX transaction
     return _node->Parent();
+}
+
+/* ****************************************************************************/
+/* Properties::NodeHandlerConnection class. */
+
+Properties::NodeHandlerConnection::NodeHandlerConnection()
+{}
+
+void
+Properties::NodeHandlerConnection::Disconnect()
+{
+    if (_node) {
+        Lock lock = _node->_props->_Lock();
+        _con.Disconnect();
+    }
+}
+
+Properties::NodeHandlerConnection::operator bool()
+{
+    if (_node) {
+        Lock lock = _node->_props->_Lock();
+        return _con;
+    }
+    return false;
+}
+
+void
+Properties::NodeHandlerConnection::Set(_Node::Ptr node,
+                                       SignalConnection<void(Node)> con)
+{
+    _node = node;
+    _con = con;
 }
 
 /* ****************************************************************************/
@@ -1453,8 +1489,8 @@ Properties::_CommitTransaction(Transaction &trans)
                     if (rec.type == Transaction::Record::Type::MODIFY &&
                         rec.path == node.GetPath()) {
 
-                        for (NodeHandler &validator: rec.newNode->options->validators) {
-                            validator(Node(node.GetPtr()));
+                        for (NodeOptions::HandlerEntry &e: rec.newNode->options->validators) {
+                            e.handler(Node(node.GetPtr()));
                         }
                     }
                 }
@@ -1465,8 +1501,8 @@ Properties::_CommitTransaction(Transaction &trans)
     for (Transaction::Record &rec: trans._log) {
         if (rec.type == Transaction::Record::Type::ADD) {
             rec.newNode->Traverse([](_Node &node) {
-                for (NodeHandler &validator: node.options->validators) {
-                    validator(Node(node.GetPtr()));
+                for (NodeOptions::HandlerEntry &e: node.options->validators) {
+                    e.handler(Node(node.GetPtr()));
                 }
                 return true;
             });
