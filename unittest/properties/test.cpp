@@ -513,6 +513,7 @@ UT_TEST("Validators")
             if (summant.Type() != Properties::Value::Type::INTEGER) {
                 ADK_EXCEPTION(Properties::ValidationException, "Should be integer");
             }
+            UT_TRACE("sum %s %d", summant.Name().c_str(), summant.Val().Get<int>());//XXX
             sum += summant.Val().Get<int>();
         }
         return sum;
@@ -522,21 +523,68 @@ UT_TEST("Validators")
 
     Properties::NodeHandler sum15 = Properties::NodeHandler::Make([&Sum](Properties::Node node) {
         UT_BOOL(node) == UT_TRUE;
-        if (Sum(node) != 15) {
-            ADK_EXCEPTION(Properties::ValidationException, "Sum should be 15");
+        int sum = Sum(node);
+        if (sum != 15) {
+            ADK_EXCEPTION(Properties::ValidationException,
+                          "Sum should be 15, have " << sum);
+        }
+    }, std::placeholders::_1);
+
+    Properties::NodeHandler sum31 = Properties::NodeHandler::Make([&Sum](Properties::Node node) {
+        UT_BOOL(node) == UT_TRUE;
+        int sum = Sum(node);
+        if (sum != 31) {
+            ADK_EXCEPTION(Properties::ValidationException,
+                          "Sum should be 31, have " << sum);
         }
     }, std::placeholders::_1);
 
     UT_THROWS(props.Modify("sum", Properties::NodeOptions().Validator(sum15)),
               Properties::ValidationException);
 
-    t->Modify("sum", Properties::NodeOptions().Validator(sum15));
+    t->Modify("sum", Properties::NodeOptions().Validator(sum15, &con));
     t->Add("sum/d", 8);
     t->Commit();
 
     UT(Sum(props["sum"])) == UT(15);
 
-    //XXX readded
+    t->Modify("sum/a", 3);
+    t->Modify("sum/b", 0);
+    t->Commit();
+
+    t->Delete("sum/a");
+    t->Add("sum/a", 1);
+    t->Modify("sum/b", 2);
+    t->Commit();
+
+    t->Delete("sum/a");
+    UT_THROWS(t->Commit(), Properties::ValidationException);
+
+    t->Cancel();
+    t->Delete("sum/a");
+    t->Add("sum/e", 2);
+    UT_THROWS(t->Commit(), Properties::ValidationException);
+
+    t->Cancel();
+    t->Delete("sum/a");
+    t->Add("sum/e", 1);
+    t->Commit();
+
+    con.Disconnect();
+    t->Cancel();
+    t->Modify("sum", Properties::NodeOptions().Validator(sum31));
+    t->Modify("sum/e", 4);
+    t->Add("sum/f", 3);
+    UT_THROWS(t->Commit(), Properties::ValidationException);
+
+    t->Cancel();
+    t->Modify("sum", Properties::NodeOptions().Validator(sum31));
+    t->Modify("sum/e", 4);
+    t->Delete("sum/b");
+    t->Add("sum/f", 15);
+    t->Commit();
+
+    t->Delete("sum");
 }
 
 UT_TEST("Listeners")

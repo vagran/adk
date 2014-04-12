@@ -720,11 +720,11 @@ Properties::_Node::NextChild(Ptr cur)
             if (node->_isTransaction) {
                 return node;
             }
-            Ptr readded = _props->_LookupNode(node->GetPath());
-            if (readded) {
+            Ptr readded = _props->_LookupNode(node->GetPath(), true, false);
+            if (readded == node) {
                 return readded;
             }
-            /* Node was deleted. */
+            /* Node was deleted or re-added. */
             it++;
         }
         /* Get the first addition record node. */
@@ -785,9 +785,9 @@ Properties::_Node::NextChild(Ptr cur)
             }
             /* Check if it was not deleted or re-added. */
             Ptr node = it->second;
-            Ptr readded = _props->_LookupNode(node->GetPath());
-            if (!readded) {
-                /* Node was deleted. */
+            Ptr readded = _props->_LookupNode(node->GetPath(), true, false);
+            if (readded != node) {
+                /* Node was deleted or re-added. */
                 continue;
             }
             return readded;
@@ -1008,7 +1008,7 @@ Properties::Node::begin() const
     Lock lock = _node->LockProps();
     if (_HasTransaction()) {
         /* Check if was not deleted or re-added. */
-        _Node::Ptr node = _node->_props->_LookupNode(_node->GetPath());
+        _Node::Ptr node = _node->_props->_LookupNode(_node->GetPath(), true, false);
         if (!node) {
             return Iterator();
         }
@@ -1701,10 +1701,8 @@ Properties::_CommitTransaction(Transaction &trans)
         });
     }
     for (Transaction::Record &rec: trans._log) {
-        Path path;
-        if (rec.type == Transaction::Record::Type::MODIFY) {
-            path = rec.path;
-        } else {
+        Path path = rec.path;
+        if (rec.type != Transaction::Record::Type::MODIFY) {
             if (path.Size() == 0) {
                 continue;
             }
