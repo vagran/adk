@@ -561,7 +561,8 @@ Properties::_Node::GetPtr()
 std::string
 Properties::_Node::Name() const
 {
-    ASSERT((_name && _parent) || (!_name && !_parent));
+    ASSERT((_name && _parent) || (!_name && !_parent) ||
+           (_name && !_parent && _isTransaction));
     if (_name) {
         return *_name;
     }
@@ -634,7 +635,7 @@ Properties::_Node::GetPath()
         rootNode = node;
         node = node->_parent;
     }
-    if (!_isTransaction || !_props->_curTrans) {
+    if (!_isTransaction || !HasTransaction()) {
         return path;
     }
     /* Transaction node. Find it in a record and get full path. */
@@ -694,6 +695,106 @@ Properties::_Node::Parent() const
     return _parent->GetPtr();
 }
 
+bool
+Properties::_Node::HasTransaction() const
+{
+    return _props->_curTrans;
+}
+
+Properties::_Node::Ptr
+Properties::_Node::NextChild(Ptr cur)
+{
+    Path parentPath = GetPath();
+    Ptr parent = _props->_LookupNode(parentPath, true, false);
+    if (!parent) {
+        return nullptr;
+    }
+    if (!cur) {
+        /* Get the first child. */
+        auto it = parent->_children.begin();
+        while (true) {
+            if (it == parent->_children.end()) {
+                break;
+            }
+            Ptr node = it->second;
+            if (node->_isTransaction) {
+                return node;
+            }
+            Ptr readded = _props->_LookupNode(node->GetPath());
+            if (readded) {
+                return readded;
+            }
+            /* Node was deleted. */
+            it++;
+        }
+        /* Get the first addition record node. */
+        if (_props->_curTrans) {
+            for (Transaction::Record rec: _props->_curTrans->_log) {
+               if (rec.type == Transaction::Record::Type::ADD &&
+                   rec.path.Size() > 0 && rec.path.Parent() == parentPath) {
+
+                   return rec.newNode;
+               }
+            }
+        }
+        return nullptr;
+    }
+
+    Path path = cur->GetPath();
+    if (path.Size() == 0) {
+        return nullptr;
+    }
+    std::string name = cur->Name();
+    if (cur->_isTransaction && !parent->_isTransaction) {
+        /* Was the added one. Search for next added node. */
+        if (_props->_curTrans) {
+            bool found = false;
+            for (Transaction::Record rec: _props->_curTrans->_log) {
+               if (rec.type == Transaction::Record::Type::ADD &&
+                   rec.path.Size() > 0 && rec.path.Parent() == parentPath) {
+
+                   if (!found && rec.nodeName == name) {
+                       found = true;
+                       continue;
+                   }
+                   return rec.newNode;
+               }
+            }
+        }
+        return nullptr;
+    } else {
+        auto it = parent->_children.find(name);
+        ASSERT(it != parent->_children.end());
+        while(true) {
+            it++;
+            if (it == parent->_children.end()) {
+                if (cur->_isTransaction) {
+                    return nullptr;
+                }
+                /* Check for the first addition record in the transaction. */
+                if (_props->_curTrans) {
+                    for (Transaction::Record rec: _props->_curTrans->_log) {
+                       if (rec.type == Transaction::Record::Type::ADD &&
+                           rec.path.Size() > 0 && rec.path.Parent() == parentPath) {
+
+                           return rec.newNode;
+                       }
+                    }
+                }
+                return nullptr;
+            }
+            /* Check if it was not deleted or re-added. */
+            Ptr node = it->second;
+            Ptr readded = _props->_LookupNode(node->GetPath());
+            if (!readded) {
+                /* Node was deleted. */
+                continue;
+            }
+            return readded;
+        }
+    }
+}
+
 /* ****************************************************************************/
 /* Properties::NodeOptions class. */
 
@@ -746,7 +847,7 @@ Properties::Node::Type() const
 {
     ASSERT(_node);
     Lock lock = _node->LockProps();
-    if (_node->_props->_curTrans) {
+    if (_node->HasTransaction()) {
         _Node *propsNode, *transNode;
         if (_node->_isTransaction) {
             transNode = _node.get();
@@ -768,7 +869,7 @@ Properties::Node::Val() const
 {
     ASSERT(_node);
     Lock lock = _node->LockProps();
-    if (_node->_props->_curTrans) {
+    if (_node->HasTransaction()) {
         _Node *propsNode, *transNode;
         if (_node->_isTransaction) {
             transNode = _node.get();
@@ -884,7 +985,7 @@ Properties::Node::Parent() const
 {
     ASSERT(_node);
     Lock lock = _node->LockProps();
-    if (_node->_props->_curTrans) {
+    if (_HasTransaction()) {
         Path path = _node->GetPath();
         if (path.Size() == 0) {
             return Node();
@@ -894,13 +995,26 @@ Properties::Node::Parent() const
     return _node->Parent();
 }
 
+bool
+Properties::Node::_HasTransaction() const
+{
+    return _node->HasTransaction();
+}
+
 Properties::Node::Iterator
 Properties::Node::begin() const
 {
     ASSERT(_node);
     Lock lock = _node->LockProps();
+    if (_HasTransaction()) {
+        /* Check if was not deleted or re-added. */
+        _Node::Ptr node = _node->_props->_LookupNode(_node->GetPath());
+        if (!node) {
+            return Iterator();
+        }
+        return Iterator(node->NextChild());
+    }
     if (_node->_children.size() == 0) {
-        //XXX transaction
         return Iterator();
     }
     return Iterator(_node->_children.begin()->second);
@@ -968,28 +1082,22 @@ Properties::Node::Iterator::Next()
 {
     ASSERT(_node);
     Lock lock = _node->_node->LockProps();
-    _Node &node = *_node->_node;
-    Path path = node.GetPath();
+    Path path = _node->_node->GetPath();
     if (path.Size() == 0) {
         _node.reset();
         return;
     }
-    std::string name = node.Name();
-    _Node::Ptr parent = _node->_node->_props->_LookupNode(path.Parent(), true);
+    _Node::Ptr parent = _node->_node->_props->_LookupNode(path.Parent());
     if (!parent) {
         _node.reset();
         return;
     }
-    auto it = parent->_children.find(name);
-    if (it != parent->_children.end()) {
-        it++;
-    }
-    if (it == parent->_children.end()) {
-        //XXX transaction
+    _Node::Ptr node = parent->NextChild(_node->_node);
+    if (node) {
+        _node->_node = node;
+    } else {
         _node.reset();
-        return;
     }
-    _node->_node = it->second;
 }
 
 /* ****************************************************************************/
@@ -1796,13 +1904,14 @@ Properties::_ApplyModifications(Transaction &trans)
 }
 
 Properties::_Node::Ptr
-Properties::_LookupNode(const Path &path, bool useTransaction) const
+Properties::_LookupNode(const Path &path, bool useTransaction,
+                        bool findModified) const
 {
     if (useTransaction && _curTrans) {
         bool deleted = false;
         for (Transaction::Record &rec: _curTrans->_log) {
             if (rec.type == Transaction::Record::Type::MODIFY) {
-                if (rec.path == path) {
+                if (findModified && rec.path == path) {
                     return rec.newNode;
                 }
             } else if (rec.type == Transaction::Record::Type::ADD) {

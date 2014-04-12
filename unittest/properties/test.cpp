@@ -529,11 +529,14 @@ UT_TEST("Validators")
 
     UT_THROWS(props.Modify("sum", Properties::NodeOptions().Validator(sum15)),
               Properties::ValidationException);
+
     t->Modify("sum", Properties::NodeOptions().Validator(sum15));
     t->Add("sum/d", 8);
     t->Commit();
 
     UT(Sum(props["sum"])) == UT(15);
+
+    //XXX readded
 }
 
 UT_TEST("Listeners")

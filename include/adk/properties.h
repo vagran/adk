@@ -618,6 +618,16 @@ private:
         Ptr
         Parent() const;
 
+        /** Has active transaction. */
+        bool
+        HasTransaction() const;
+
+        /** Return next child for this node. This also accounts active
+         * transaction if any.
+         */
+        Ptr
+        NextChild(Ptr cur = nullptr);
+
     protected:
         friend class Transaction;
         friend class Properties;
@@ -743,6 +753,9 @@ public:
 
     private:
         _Node::Ptr _node;
+
+        bool
+        _HasTransaction() const;
     };
 
     /** Connection object for handlers disconnecting. */
@@ -1140,7 +1153,8 @@ private:
 
     /** Find node if exists. */
     _Node::Ptr
-    _LookupNode(const Path &path, bool useTransaction = true) const;
+    _LookupNode(const Path &path, bool useTransaction = true,
+                bool findModified = true) const;
 
     /** Obtain lock if necessary. */
     Lock
