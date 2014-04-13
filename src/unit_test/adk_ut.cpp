@@ -294,8 +294,7 @@ TestValueBase::Describe(UtString &_s)
 {
     ut_string &s = GetUtString(_s);
     ut_stringstream ss;
-    ss << "Value: " << _name << " [" << GetUtString(_value) << "]" <<
-        " (defined at " << _file << ":" << _line << ")";
+    ss << "Value: " << _name << " [" << GetUtString(_value) << "]";
     s = ss.str();
 }
 
@@ -308,14 +307,17 @@ TestException::Describe(UtString &_s)
     ut_stringstream ss;
     switch (_type) {
     case BINARY_ASSERT:
-        ss << "Assertion failed: " << _value1.GetName() << " " << _op <<
+        ss << "[" << _value1.GetFile() << ":" << _value1.GetLine() <<
+            "] Assertion failed: " << _value1.GetName() << " " << _op <<
             " " << _value2.GetName();
         break;
     case UNARY_ASSERT:
-        ss << "Assertion failed: " << _op << " " << _value1.GetName();
+        ss << "[" << _value1.GetFile() << ":" << _value1.GetLine() <<
+            "] Assertion failed: " << _op << " " << _value1.GetName();
         break;
     case USER_FAILURE:
-        ss << "Fault occurred: " << _op;
+        ss << "[" << _value1.GetFile() << ":" << _value1.GetLine() <<
+            "] Fault occurred: " << _op;
         break;
     }
     ss << "\n";
@@ -328,10 +330,10 @@ TestException::Describe(UtString &_s)
         ss << value;
         break;
     case UNARY_ASSERT:
-    case USER_FAILURE:
         TestValueBase_Describe(_value1, value);
         ss << value;
         break;
+    default:;
     }
     s = ss.str();
 }

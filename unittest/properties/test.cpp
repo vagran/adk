@@ -455,7 +455,7 @@ UT_TEST("Validators")
     Properties::NodeHandler gt10 = Properties::NodeHandler::Make([](Properties::Node node) {
         UT_BOOL(node) == UT_TRUE;
         UT(node.Type() == Properties::Value::Type::INTEGER) == UT_TRUE;
-        if (node.Val().Get<int>() <= 10) {
+        if (node.Val<int>() <= 10) {
             ADK_EXCEPTION(Properties::ValidationException, "Should be greater than 10");
         }
     }, std::placeholders::_1);
@@ -463,7 +463,7 @@ UT_TEST("Validators")
     Properties::NodeHandler lt20 = Properties::NodeHandler::Make([](Properties::Node node) {
         UT_BOOL(node) == UT_TRUE;
         UT(node.Type() == Properties::Value::Type::INTEGER) == UT_TRUE;
-        if (node.Val().Get<int>() >= 20) {
+        if (node.Val<int>() >= 20) {
             ADK_EXCEPTION(Properties::ValidationException, "Should be less than 20");
         }
     }, std::placeholders::_1);
@@ -471,7 +471,7 @@ UT_TEST("Validators")
     Properties::NodeHandler ne15 = Properties::NodeHandler::Make([](Properties::Node node) {
         UT_BOOL(node) == UT_TRUE;
         UT(node.Type() == Properties::Value::Type::INTEGER) == UT_TRUE;
-        if (node.Val().Get<int>() == 15) {
+        if (node.Val<int>() == 15) {
             ADK_EXCEPTION(Properties::ValidationException, "Should not be equal 15");
         }
     }, std::placeholders::_1);
@@ -513,8 +513,7 @@ UT_TEST("Validators")
             if (summant.Type() != Properties::Value::Type::INTEGER) {
                 ADK_EXCEPTION(Properties::ValidationException, "Should be integer");
             }
-            UT_TRACE("sum %s %d", summant.Name().c_str(), summant.Val().Get<int>());//XXX
-            sum += summant.Val().Get<int>();
+            sum += summant.Val<int>();
         }
         return sum;
     };
@@ -589,5 +588,45 @@ UT_TEST("Validators")
 
 UT_TEST("Listeners")
 {
-    //XXX
+    Properties props;
+    Properties::Transaction::Ptr t = props.OpenTransaction();
+
+    int sum = 0;
+
+    Properties::NodeHandler listener = Properties::NodeHandler::Make([&sum](Properties::Node node) {
+        UT_BOOL(node) == UT_TRUE;
+        UT(node.Type() == Properties::Value::Type::INTEGER) == UT_TRUE;
+        sum += node.Val<int>();
+        //UT_TRACE("value %s %d", node.Name().c_str(), node.Val<int>());//XXX
+    }, std::placeholders::_1);
+
+    props.Add("", 0x1, Properties::NodeOptions().Listener(listener));
+    UT(sum) == UT(0x1);
+
+    sum = 0;
+    t->Add("a1", 0x2, Properties::NodeOptions().Listener(listener));
+    t->Add("b1", 0x4, Properties::NodeOptions().Listener(listener));
+    t->Add("c1", 0x8, Properties::NodeOptions().Listener(listener));
+    t->Add("a1/a2", 0x10, Properties::NodeOptions().Listener(listener));
+    t->Add("a1/a2/a3", 0x20, Properties::NodeOptions().Listener(listener));
+    t->Modify("x", 1);
+    UT_THROWS(t->Commit(), Properties::InvalidOpException);
+    UT(sum) == UT(0);
+
+    t->Cancel();
+    t->Add("a1", 0x2, Properties::NodeOptions().Listener(listener));
+    t->Add("b1", 0x4, Properties::NodeOptions().Listener(listener));
+    t->Add("c1", 0x8, Properties::NodeOptions().Listener(listener));
+    t->Add("a1/a2", 0x10, Properties::NodeOptions().Listener(listener));
+    t->Add("a1/a2/a3", 0x20, Properties::NodeOptions().Listener(listener));
+    t->Commit();
+    UT(sum) == UT(0x3f);
+
+    sum = 0;
+    props.Modify("a1/a2", 0x10);
+    UT(sum) == UT(0x13);
+
+    sum = 0;
+    props.Modify("a1/a2/a3", 0x20);
+    UT(sum) == UT(0x33);
 }

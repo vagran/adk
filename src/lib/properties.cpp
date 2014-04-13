@@ -670,6 +670,12 @@ Properties::_Node::ApplyOptions(NodeOptions &options)
             e.con->Set(GetPtr(), con);
         }
     }
+    for (NodeOptions::HandlerEntry &e: options.listeners) {
+        auto con = _listeners.Connect(e.handler);
+        if (e.con) {
+            e.con->Set(GetPtr(), con);
+        }
+    }
 }
 
 bool
@@ -679,7 +685,7 @@ Properties::_Node::Traverse(std::function<bool(_Node &)> visitor)
         return false;
     }
     for (auto child: _children) {
-        if (!visitor(*child.second)) {
+        if (!child.second->Traverse(visitor)) {
             return false;
         }
     }
@@ -832,6 +838,22 @@ Properties::NodeOptions::Validator(NodeHandler &&validator,
                                    NodeHandlerConnection *con)
 {
     validators.emplace_back(std::move(validator), con);
+    return *this;
+}
+
+Properties::NodeOptions &
+Properties::NodeOptions::Listener(const NodeHandler &listener,
+                                  NodeHandlerConnection *con)
+{
+    listeners.emplace_back(listener, con);
+    return *this;
+}
+
+Properties::NodeOptions &
+Properties::NodeOptions::Listener(NodeHandler &&listener,
+                                  NodeHandlerConnection *con)
+{
+    listeners.emplace_back(std::move(listener), con);
     return *this;
 }
 
@@ -1483,10 +1505,20 @@ Properties::TransactionGuard::TransactionGuard(Properties *props, Transaction *t
 
 Properties::TransactionGuard::~TransactionGuard()
 {
+    if (_props) {
+        Release();
+    }
+}
+
+void
+Properties::TransactionGuard::Release()
+{
     ASSERT(_props->_curTrans);
     Lock lock(_props->_transMutex);
     _props->_curTrans = nullptr;
     _props->_transThread = std::thread::id();
+    _lock.unlock();
+    _props = nullptr;
 }
 
 /* ****************************************************************************/
@@ -1717,18 +1749,26 @@ Properties::_CommitTransaction(Transaction &trans)
         }
     }
 
+    std::list<std::pair<NodeHandler, _Node::Ptr>> listeners;
     if (_root) {
-        _root->Traverse([&trans](_Node &node) {
+        _root->Traverse([&trans, &listeners](_Node &node) {
             if (node._isChanged) {
                 node._isChanged = false;
                 node._validators.Emit(Node(node.GetPtr()));
-                /* Additional validators in modify record. */
+                auto handlers = node._listeners.GetEmitSlots();
+                for (NodeHandler h: handlers) {
+                    listeners.emplace_back(h, node.GetPtr());
+                }
+                /* Additional validators and listeners in modify record. */
                 for (Transaction::Record &rec: trans._log) {
                     if (rec.type == Transaction::Record::Type::MODIFY &&
                         rec.path == node.GetPath()) {
 
                         for (NodeOptions::HandlerEntry &e: rec.newNode->options->validators) {
                             e.handler(Node(node.GetPtr()));
+                        }
+                        for (NodeOptions::HandlerEntry &e: rec.newNode->options->listeners) {
+                            listeners.emplace_back(e.handler, node.GetPtr());
                         }
                     }
                 }
@@ -1738,9 +1778,12 @@ Properties::_CommitTransaction(Transaction &trans)
     }
     for (Transaction::Record &rec: trans._log) {
         if (rec.type == Transaction::Record::Type::ADD) {
-            rec.newNode->Traverse([](_Node &node) {
+            rec.newNode->Traverse([&listeners](_Node &node) {
                 for (NodeOptions::HandlerEntry &e: node.options->validators) {
                     e.handler(Node(node.GetPtr()));
+                }
+                for (NodeOptions::HandlerEntry &e: node.options->listeners) {
+                    listeners.emplace_back(e.handler, node.GetPtr());
                 }
                 return true;
             });
@@ -1751,6 +1794,12 @@ Properties::_CommitTransaction(Transaction &trans)
     _ApplyDeletions(trans);
     _ApplyAdditions(trans);
     _ApplyModifications(trans);
+
+    /* Invoke listeners. */
+    tg.Release();
+    for (std::pair<NodeHandler, _Node::Ptr> handler: listeners) {
+        handler.first(handler.second);
+    }
 }
 
 void

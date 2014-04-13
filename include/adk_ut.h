@@ -361,6 +361,10 @@ public:
 
     const char *GetName() { return _name; }
 
+    const char *GetFile() { return _file; }
+
+    int GetLine() { return _line; }
+
     void Describe(UtString &_s);
 
 protected:

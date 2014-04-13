@@ -522,7 +522,8 @@ public:
             {}
         };
 
-        std::list<HandlerEntry> validators;
+        std::list<HandlerEntry> validators,
+                                listeners;
 
         NodeOptions &
         DispName(Optional<std::string> dispName);
@@ -544,6 +545,14 @@ public:
         NodeOptions &
         Validator(NodeHandler &&validator,
                   NodeHandlerConnection *con = nullptr);
+
+        NodeOptions &
+        Listener(const NodeHandler &listener,
+                 NodeHandlerConnection *con = nullptr);
+
+        NodeOptions &
+        Listener(NodeHandler &&listener,
+                 NodeHandlerConnection *con = nullptr);
     };
 
     /* ************************************************************************/
@@ -693,6 +702,14 @@ public:
         /** Get value. It returns a copy. */
         Value
         Val() const;
+
+        /** Get value of the specified type. */
+        template <typename T>
+        T
+        Val() const
+        {
+            return Val().Get<T>();
+        }
 
         /** Get internal name. */
         std::string
@@ -1079,7 +1096,11 @@ private:
     class TransactionGuard {
     public:
         TransactionGuard(Properties *props, Transaction *trans);
+
         ~TransactionGuard();
+
+        void
+        Release();
 
     private:
         Properties *_props;

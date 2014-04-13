@@ -448,10 +448,9 @@ public:
         }
     }
 
-protected:
     /** Get list of slots for signal emission. */
     std::list<SlotType>
-    _GetEmitSlots()
+    GetEmitSlots()
     {
         std::list<std::shared_ptr<SlotEntry>> entries;
         {
@@ -559,7 +558,7 @@ public:
     decltype(std::declval<ResultMapper>().GetResult())
     EmitMap(ResultMapper &&resultMapper, Args &&...args)
     {
-        auto slots = BaseType::_GetEmitSlots();
+        auto slots = BaseType::GetEmitSlots();
         for (auto &slot: slots) {
             if (!resultMapper.ProcessResult(slot(args...))) {
                 break;
@@ -600,7 +599,7 @@ public:
     void
     Emit(Args ... args)
     {
-        auto slots = BaseType::_GetEmitSlots();
+        auto slots = BaseType::GetEmitSlots();
         for (auto &slot: slots) {
             slot(args...);
         }
