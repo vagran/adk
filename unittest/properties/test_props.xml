@@ -16,7 +16,7 @@ See COPYING file for copyright details.
         <description>
             Optional long description.
         </description>
-        <value>20</value>
+        <value>25</value>
     </item>
     <item name="Item2" dispName="Item 2" type="float" units="mA*h">120.5</item>
     <category name="sample" dispName="Sample category">
@@ -29,7 +29,7 @@ See COPYING file for copyright details.
             
             
         </description>
-        <item name="Item3" type="string" maxLen="200">Test string</item>
+        <item name="Item3" type="string" maxLen="20">Test string</item>
         <item name="Item4" type="boolean">true</item>
         <item name="Item5" type="boolean" value="true" />
     </category>

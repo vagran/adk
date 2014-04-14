@@ -25,7 +25,7 @@ UT_TEST("Basic functionality")
     UT_BOOL(props["sample/Item3"]) == UT_TRUE;
 
     UT_INT((*props["Item1"]).GetType()) == UT_INT(Properties::Value::Type::INTEGER);
-    UT_INT(*props["Item1"]) == UT(20);
+    UT_INT(*props["Item1"]) == UT(25);
     UT_FLOAT(*props["Item2"]) == UT(120.5);
     UT((*props["sample/Item3"]).GetString().c_str()) == UT_CSTR("Test string");
     UT_INT((*props["sample/Item4"]).GetType()) == UT_INT(Properties::Value::Type::BOOLEAN);
@@ -48,6 +48,15 @@ UT_TEST("Basic functionality")
     UT(props["Item2"].GetPath().Str().c_str()) == UT_CSTR("Item2");
     UT(props["sample/Item3"].GetPath().Str().c_str()) == UT_CSTR("sample/Item3");
     UT(props[""].GetPath().Str().c_str()) == UT_CSTR("");
+
+    props.Modify("sample/Item3", "01234567890123456789");
+    UT_THROWS(props.Modify("sample/Item3", "01234567890123456789_"),
+              Properties::ValidationException);
+
+    props.Modify("Item1", 20);
+    UT_THROWS(props.Modify("Item1", 19), Properties::ValidationException);
+    props.Modify("Item1", 30);
+    UT_THROWS(props.Modify("Item1", 31), Properties::ValidationException);
 }
 
 UT_TEST("Properties::Value class")
@@ -597,7 +606,6 @@ UT_TEST("Listeners")
         UT_BOOL(node) == UT_TRUE;
         UT(node.Type() == Properties::Value::Type::INTEGER) == UT_TRUE;
         sum += node.Val<int>();
-        //UT_TRACE("value %s %d", node.Name().c_str(), node.Val<int>());//XXX
     }, std::placeholders::_1);
 
     props.Add("", 0x1, Properties::NodeOptions().Listener(listener));

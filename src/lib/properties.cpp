@@ -627,6 +627,9 @@ Properties::_Node::GetPath()
     while (node && node->_name) {
         /* Skip leading component for transaction node. */
         if (_isTransaction && !node->_parent) {
+            if (node->_name->size() == 0) {
+                rootNode = node;
+            }
             break;
         }
         Path suffix(std::move(path));
@@ -1710,6 +1713,60 @@ Properties::_LoadItem(Transaction::Ptr trans, Xml::Element itemEl,
     }
     Value value = Value::FromString(type, valueStr);
 
+    a = itemEl.Attr("maxLen");
+    if (a) {
+        if (type != Value::Type::STRING) {
+            ADK_EXCEPTION(ParseException,
+                          "maxLen constraint is valid only for string type; at " <<
+                          itemEl.GetLocation().Str());
+        }
+        Value limit = Value::FromString(Value::Type::INTEGER, a.Value());
+        opts.Validator(NodeHandler::Make(&Properties::_Validator_StringMaxLen,
+                                         this,
+                                         std::placeholders::_1,
+                                         limit.Get<int>()));
+    }
+
+    a = itemEl.Attr("minValue");
+    Value minValue;
+    if (a) {
+        if (type != Value::Type::INTEGER && type != Value::Type::FLOAT) {
+            ADK_EXCEPTION(ParseException,
+                          "minValue constraint is valid only for number types; at " <<
+                          itemEl.GetLocation().Str());
+        }
+        minValue = Value::FromString(type, a.Value());
+    }
+    a = itemEl.Attr("maxValue");
+    Value maxValue;
+    if (a) {
+        if (type != Value::Type::INTEGER && type != Value::Type::FLOAT) {
+            ADK_EXCEPTION(ParseException,
+                          "maxValue constraint is valid only for number types; at " <<
+                          itemEl.GetLocation().Str());
+        }
+        maxValue = Value::FromString(type, a.Value());
+    }
+    if (!minValue.IsNone() || !maxValue.IsNone()) {
+        if (type == Value::Type::INTEGER) {
+            opts.Validator(NodeHandler::Make(&Properties::_Validator_IntegerMinMax,
+                                             this,
+                                             std::placeholders::_1,
+                                             minValue.IsNone() ? Optional<long>() :
+                                                                 Optional<long>(minValue.Get<long>()),
+                                             maxValue.IsNone() ? Optional<long>() :
+                                                                 Optional<long>(maxValue.Get<long>())));
+        } else {
+            opts.Validator(NodeHandler::Make(&Properties::_Validator_FloatMinMax,
+                                             this,
+                                             std::placeholders::_1,
+                                             minValue.IsNone() ? Optional<double>() :
+                                                                 Optional<double>(minValue.Get<double>()),
+                                             maxValue.IsNone() ? Optional<double>() :
+                                                                 Optional<double>(maxValue.Get<double>())));
+        }
+    }
+
     trans->Add(path + name, std::move(value), opts);
 }
 
@@ -2035,4 +2092,52 @@ Properties::ReformatText(const std::string &text)
         out += c;
     }
     return out;
+}
+
+void
+Properties::_Validator_StringMaxLen(Node node, size_t maxLen)
+{
+    ASSERT(node.Type() == Value::Type::STRING);
+    std::string s = node.Val<std::string>();
+    if (s.size() > maxLen) {
+        ADK_EXCEPTION(ValidationException,
+                      "String size exceeds the maximum: " << s.size() << "/" <<
+                      maxLen);
+    }
+}
+
+void
+Properties::_Validator_IntegerMinMax(Node node, Optional<long> minValue,
+                                     Optional<long> maxValue)
+{
+    ASSERT(node.Type() == Value::Type::INTEGER);
+    long x = node.Val<long>();
+    if (minValue && x < *minValue) {
+        ADK_EXCEPTION(ValidationException,
+                      "Integer value is under the minimum: " << x << "/" <<
+                      *minValue);
+    }
+    if (maxValue && x > *maxValue) {
+        ADK_EXCEPTION(ValidationException,
+                      "Integer value is above the maximum: " << x << "/" <<
+                      *maxValue);
+    }
+}
+
+void
+Properties::_Validator_FloatMinMax(Node node, Optional<double> minValue,
+                                   Optional<double> maxValue)
+{
+    ASSERT(node.Type() == Value::Type::FLOAT);
+    long x = node.Val<double>();
+    if (minValue && x < *minValue) {
+        ADK_EXCEPTION(ValidationException,
+                      "Float value is under the minimum: " << x << "/" <<
+                      *minValue);
+    }
+    if (maxValue && x > *maxValue) {
+        ADK_EXCEPTION(ValidationException,
+                      "Float value is above the maximum: " << x << "/" <<
+                      *maxValue);
+    }
 }

@@ -1190,6 +1190,17 @@ private:
      */
     std::string
     ReformatText(const std::string &text);
+
+    void
+    _Validator_StringMaxLen(Node node, size_t maxLen);
+
+    void
+    _Validator_IntegerMinMax(Node node, Optional<long> minValue,
+                             Optional<long> maxValue);
+
+    void
+    _Validator_FloatMinMax(Node node, Optional<double> minValue,
+                           Optional<double> maxValue);
 };
 
 } /* namespace adk */
