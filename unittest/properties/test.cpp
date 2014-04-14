@@ -57,6 +57,11 @@ UT_TEST("Basic functionality")
     UT_THROWS(props.Modify("Item1", 19), Properties::ValidationException);
     props.Modify("Item1", 30);
     UT_THROWS(props.Modify("Item1", 31), Properties::ValidationException);
+
+    props.Modify("sample/Item6", 10.5);
+    UT_THROWS(props.Modify("sample/Item6", 9.5), Properties::ValidationException);
+    props.Modify("sample/Item6", 19.5);
+    UT_THROWS(props.Modify("sample/Item6", 20.5), Properties::ValidationException);
 }
 
 UT_TEST("Properties::Value class")

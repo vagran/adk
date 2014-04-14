@@ -1932,7 +1932,7 @@ Properties::_CheckModifications(Transaction &trans)
             node->value.GetType() != rec.newNode->value.GetType()) {
 
             ADK_EXCEPTION(InvalidOpException,
-                          "Cannot modify node - time value type mismatch");
+                          "Cannot modify node - value type mismatch");
         }
     }
 }
@@ -2150,7 +2150,7 @@ Properties::_Validator_FloatMinMax(Node node, Optional<double> minValue,
                                    Optional<double> maxValue)
 {
     ASSERT(node.Type() == Value::Type::FLOAT);
-    long x = node.Val<double>();
+    double x = node.Val<double>();
     if (minValue && x < *minValue) {
         ADK_PROPS_INVALID(node, "Float value is under the minimum: " <<
                           x << "/" << *minValue);

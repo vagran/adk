@@ -32,5 +32,6 @@ See COPYING file for copyright details.
         <item name="Item3" type="string" maxLen="20">Test string</item>
         <item name="Item4" type="boolean">true</item>
         <item name="Item5" type="boolean" value="true" />
+        <item name="Item6" type="float" maxValue="20" minValue="10" value="15.5" />
     </category>
 </properties>
