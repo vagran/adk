@@ -26,6 +26,7 @@ UT_TEST("Basic functionality")
 
     UT_INT((*props["Item1"]).GetType()) == UT_INT(Properties::Value::Type::INTEGER);
     UT_INT(*props["Item1"]) == UT(25);
+    UT(props["Item1"].Val<int>()) == UT(25);
     UT_FLOAT(*props["Item2"]) == UT(120.5);
     UT((*props["sample/Item3"]).GetString().c_str()) == UT_CSTR("Test string");
     UT_INT((*props["sample/Item4"]).GetType()) == UT_INT(Properties::Value::Type::BOOLEAN);
@@ -445,10 +446,8 @@ UT_TEST("Transaction commit")
     t->Modify("a/b/c", 2);
     t->Commit();
 
-    //XXX check a/b/c == 2
+    UT(props["a/b/c"].Val<int>()) == UT(2);
     UT_THROWS(props.Modify("a/b/c", "aaa"), Properties::InvalidOpException);
-
-    //XXX
 }
 
 UT_TEST("Validators")
@@ -640,4 +639,39 @@ UT_TEST("Listeners")
     sum = 0;
     props.Modify("a1/a2/a3", 0x20);
     UT(sum) == UT(0x33);
+
+    sum = 0;
+    props.Delete("a1/a2");
+    UT(sum) == UT(0x3);
+
+    sum = 0;
+    props.Add("a1/a2", 0x10, Properties::NodeOptions().Listener(listener));
+    UT(sum) == UT(0x13);
+
+    Properties::NodeHandlerConnection con;
+    bool fired = false;
+    Properties::NodeHandler listener2 =
+        Properties::NodeHandler::Make([&fired](Properties::Node node) {
+
+        UT_BOOL(node) == UT_TRUE;
+        fired = true;
+    }, std::placeholders::_1);
+    sum = 0;
+    props.Add("a1/a2/a3", 0x20,
+              Properties::NodeOptions().Listener(listener).Listener(listener2, &con));
+    UT(sum) == UT(0x33);
+    UT(fired) == UT_TRUE;
+
+    sum = 0;
+    fired = false;
+    props.Modify("a1/a2/a3", 0x40);
+    UT(sum) == UT(0x53);
+    UT(fired) == UT_TRUE;
+
+    con.Disconnect();
+    sum = 0;
+    fired = false;
+    props.Modify("a1/a2/a3", 0x20);
+    UT(sum) == UT(0x33);
+    UT(fired) == UT_FALSE;
 }

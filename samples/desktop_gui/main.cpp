@@ -135,6 +135,9 @@ main(int argc, char **argv)
     Glib::RefPtr<Gtk::Builder> builder = g_sampleLib.Test();
     MainWindow *mainWindow = 0;
     builder->get_widget_derived("main_wnd", mainWindow);
+
+    adk::Properties props(adk::Xml().Load(adk::GetResource("props.xml").GetString()));
+
     app->run(*mainWindow);
     delete mainWindow;
     return 0;
