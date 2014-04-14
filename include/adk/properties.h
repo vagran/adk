@@ -386,6 +386,10 @@ public:
         Value &
         operator =(Value &&value);
 
+        /** Get human-readable string representation. */
+        std::string
+        Str();
+
     private:
         Type _type;
 
@@ -1202,6 +1206,11 @@ private:
     _Validator_FloatMinMax(Node node, Optional<double> minValue,
                            Optional<double> maxValue);
 };
+
+#define ADK_PROPS_INVALID(__node, __msg) \
+    ADK_EXCEPTION(adk::Properties::ValidationException, \
+                  "[" << __node.GetPath().Str() << ": " << \
+                  __node.Val().Str() << "] " << __msg)
 
 } /* namespace adk */
 
