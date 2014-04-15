@@ -241,6 +241,9 @@ public:
     /** The requested operation is invalid. */
     ADK_DEFINE_DERIVED_EXCEPTION(InvalidOpException, Exception);
 
+    /** Properties change notification handler slot. */
+    typedef Slot<void(Properties &)> ChangedHandler;
+
     /* ************************************************************************/
     /** Stored value wrapper. The value has dynamic type which is defined when
      * the value is assigned.
@@ -1099,6 +1102,10 @@ public:
     Node
     operator [](const Path &path) const;
 
+    /** Signal which is fired when the property sheet is changed. */
+    SignalProxy<ChangedHandler::SignatureType>
+    SignalChanged();
+
 private:
     /** Helper class for setting and unsetting current transaction. */
     class TransactionGuard {
@@ -1128,6 +1135,8 @@ private:
     Transaction *_curTrans = nullptr;
     /** Thread ID of the transaction owner. */
     std::thread::id _transThread;
+    /** Signal which is fired when properties changed. */
+    Signal<ChangedHandler::SignatureType> _sigChanged;
 
     /** Load category from XML element.
      *

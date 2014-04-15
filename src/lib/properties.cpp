@@ -1909,6 +1909,7 @@ Properties::_CommitTransaction(Transaction &trans)
     for (std::pair<NodeHandler, _Node::Ptr> handler: listeners) {
         handler.first(handler.second);
     }
+    _sigChanged.Emit(std::ref(*this));
 }
 
 void
@@ -2114,6 +2115,12 @@ Properties::Node
 Properties::operator [](const Path &path) const
 {
     return Get(path);
+}
+
+SignalProxy<Properties::ChangedHandler::SignatureType>
+Properties::SignalChanged()
+{
+    return _sigChanged;
 }
 
 std::string

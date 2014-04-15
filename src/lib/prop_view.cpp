@@ -17,6 +17,8 @@ using namespace adk;
 PropView::PropView(Properties &props, bool haveButtons):
     props(props), haveButtons(haveButtons)
 {
+    props.SignalChanged().Connect(Properties::ChangedHandler::Make(
+        &PropView::OnPropsChanged, this));
     tlWidget = new Gtk::Label("test");
 }
 
@@ -29,4 +31,11 @@ Gtk::Widget *
 PropView::GetWidget()
 {
     return tlWidget;
+}
+
+void
+PropView::OnPropsChanged()
+{
+    //XXX
+    ADK_INFO("props changed");
 }

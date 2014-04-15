@@ -124,7 +124,7 @@ UT_TEST("Basic functionality")
 
     auto con1 = sig.Connect(slot1);
     auto con2 = sig.Connect(slot2);
-    auto con3 = sig.Connect(slot3);
+    auto con3 = SignalProxy<int(int)>(sig).Connect(slot3);
 
     nt->lastResult = 0;
     t->lastResult = 0;

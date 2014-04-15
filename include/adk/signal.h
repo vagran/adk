@@ -289,6 +289,8 @@ class Slot: public adk_internal::SlotBase {
 public:
     Slot() = default;
 
+    /** Invocation signature. */
+    typedef Signature SignatureType;
     /** Underlying function type. */
     typedef std::function<Signature> FunctionType;
     /** Invocation result type. */
@@ -346,6 +348,8 @@ namespace adk_internal {
 template <typename Signature>
 class SignalBaseSpec: public adk_internal::SignalBase {
 public:
+    /** Invocation signature. */
+    typedef Signature SignatureType;
     /** Corresponding slot type. */
     typedef Slot<Signature> SlotType;
     /** Emission result type. */
@@ -608,7 +612,37 @@ public:
 
 /** Signal connection represents connected slot. */
 template <typename Signature>
-using SignalConnection = typename adk_internal::SignalBaseSpec<Signature>::Connection;
+using SignalConnection = typename Signal<Signature>::Connection;
+
+/** Class which only allows connecting slots to an associated signal. */
+template <typename Signature>
+class SignalProxy {
+public:
+
+    typedef Signal<Signature> SignalType;
+    typedef typename SignalType::Connection ConnectionType;
+    typedef typename SignalType::SlotType SlotType;
+
+    SignalProxy(SignalType &signal):
+        _signal(signal)
+    {}
+
+    ConnectionType
+    Connect(const SlotType &slot)
+    {
+        return _signal.Connect(slot);
+    }
+
+    ConnectionType
+    Connect(SlotType &&slot)
+    {
+        return _signal.Connect(std::move(slot));
+    }
+
+private:
+    /** Associated signal. */
+    SignalType &_signal;
+};
 
 } /* namespace adk */
 

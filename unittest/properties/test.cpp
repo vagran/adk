@@ -656,22 +656,30 @@ UT_TEST("Listeners")
         UT_BOOL(node) == UT_TRUE;
         fired = true;
     }, std::placeholders::_1);
+    bool changed = false;
+    props.SignalChanged().Connect(Slot<void(Properties &)>::Make([&changed](){changed = true;}));
+
     sum = 0;
     props.Add("a1/a2/a3", 0x20,
               Properties::NodeOptions().Listener(listener).Listener(listener2, &con));
     UT(sum) == UT(0x33);
     UT(fired) == UT_TRUE;
+    UT(changed) == UT_TRUE;
 
     sum = 0;
     fired = false;
+    changed = false;
     props.Modify("a1/a2/a3", 0x40);
     UT(sum) == UT(0x53);
     UT(fired) == UT_TRUE;
+    UT(changed) == UT_TRUE;
 
     con.Disconnect();
     sum = 0;
     fired = false;
+    changed = false;
     props.Modify("a1/a2/a3", 0x20);
     UT(sum) == UT(0x33);
     UT(fired) == UT_FALSE;
+    UT(changed) == UT_TRUE;
 }

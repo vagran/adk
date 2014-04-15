@@ -18,7 +18,7 @@ namespace adk {
 /** View for properties sheet. Used in GUI applications for displaying and
  * changing properties.
  */
-class PropView {
+class PropView: public SlotTarget {
 
 public:
     PropView(Properties &props, bool haveButtons = false);
@@ -36,6 +36,9 @@ private:
     bool haveButtons;
     /** Top level widget. */
     Gtk::Label *tlWidget;//XXX
+
+    void
+    OnPropsChanged();
 };
 
 } /* namespace adk */
