@@ -68,6 +68,7 @@
 #include <adk/resources.h>
 #include <adk/xml.h>
 #include <adk/properties.h>
+#include <adk/locale.h>
 
 #ifdef ADK_USE_GUI
 #include <adk/glade.h>

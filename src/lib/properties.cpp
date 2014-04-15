@@ -95,6 +95,7 @@ Properties::Value
 Properties::Value::FromString(Type type, const std::string &s)
 {
     size_t pos;
+    LocaleGuard locale;
 
     switch (type) {
 
@@ -132,16 +133,19 @@ Properties::Value::FromString(Type type, const std::string &s)
         }
         return Value(d);
 
-    case Type::BOOLEAN:
+    case Type::BOOLEAN: {
         bool b;
-        if (s == "true") {
+        std::string locase(s);
+        std::transform(locase.begin(), locase.end(), locase.begin(), ::tolower);
+        if (locase == "true" || locase == "yes") {
             b = true;
-        } else if (s == "false") {
+        } else if (locase == "false" || locase == "no") {
             b = false;
         } else {
             ADK_EXCEPTION(ParseException, "Invalid boolean value: " << s);
         }
         return Value(b);
+    }
 
     case Type::STRING:
         return Value(s);
@@ -318,22 +322,46 @@ Properties::Value::operator =(Value &&value)
 std::string
 Properties::Value::Str()
 {
+    LocaleGuard locale;
+    std::stringstream ss;
+    switch (_type) {
+    case Type::NONE:
+        break;
+    case Type::INTEGER:
+        ss << _value.i;
+        break;
+    case Type::FLOAT:
+        ss << _value.f;
+        break;
+    case Type::BOOLEAN:
+        ss << (_value.b ? "yes" : "no");
+        break;
+    case Type::STRING:
+        ss << *_value.s;
+        break;
+    }
+    return ss.str();
+}
+
+std::string
+Properties::Value::Describe()
+{
     std::stringstream ss;
     switch (_type) {
     case Type::NONE:
         ss << "NONE";
         break;
     case Type::INTEGER:
-        ss << "INT(" << _value.i << ")";
+        ss << "INT(" << Str() << ")";
         break;
     case Type::FLOAT:
-        ss << "FLOAT(" << _value.f << ")";
+        ss << "FLOAT(" << Str() << ")";
         break;
     case Type::BOOLEAN:
-        ss << "BOOL(" << (_value.b ? "true" : "false") << ")";
+        ss << "BOOL(" << Str() << ")";
         break;
     case Type::STRING:
-        ss << "STR(" << *_value.s << ")";
+        ss << "STR(" << Str() << ")";
         break;
     }
     return ss.str();

@@ -216,7 +216,7 @@ See COPYING file for copyright details.
             <enumeration value="boolean">
                 <annotation>
                     <documentation>
-                        Boolean value. Content should be "true" or "false" string.
+                        Boolean value. Content should be "true"/"false"/"yes"/"no" string.
                     </documentation>
                 </annotation>
             </enumeration>

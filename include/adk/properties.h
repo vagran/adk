@@ -386,9 +386,13 @@ public:
         Value &
         operator =(Value &&value);
 
-        /** Get human-readable string representation. */
+        /** Convert value to string. */
         std::string
         Str();
+
+        /** Get human-readable string representation. */
+        std::string
+        Describe();
 
     private:
         Type _type;
@@ -1210,7 +1214,7 @@ private:
 #define ADK_PROPS_INVALID(__node, __msg) \
     ADK_EXCEPTION(adk::Properties::ValidationException, \
                   "[" << __node.GetPath().Str() << ": " << \
-                  __node.Val().Str() << "] " << __msg)
+                  __node.Val().Describe() << "] " << __msg)
 
 } /* namespace adk */
 
