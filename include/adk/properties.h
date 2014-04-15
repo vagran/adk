@@ -227,19 +227,6 @@ public:
 
 class Properties {
 public:
-    /** Base exception class for all properties exceptions. */
-    ADK_DEFINE_EXCEPTION(Exception);
-    /** Document parsing exception. Any kind of inconsistency with schema or
-     * data types causes this exception (e.g. string cannot be converted to
-     * number, misplaced tag or attribute).
-     */
-    ADK_DEFINE_DERIVED_EXCEPTION(ParseException, Exception);
-    /** Value validation exception. Raised either by built-in or custom user
-     * validators.
-     */
-    ADK_DEFINE_DERIVED_EXCEPTION(ValidationException, Exception);
-    /** The requested operation is invalid. */
-    ADK_DEFINE_DERIVED_EXCEPTION(InvalidOpException, Exception);
 
     /** Properties change notification handler slot. */
     typedef Slot<void(Properties &)> ChangedHandler;
@@ -779,12 +766,30 @@ public:
         Iterator
         end() const;
 
+        void
+        ToString(std::stringstream &ss);
+
     private:
         _Node::Ptr _node;
 
         bool
         _HasTransaction() const;
     };
+
+    /** Base exception class for all properties exceptions. */
+    ADK_DEFINE_EXCEPTION(Exception);
+    /** Document parsing exception. Any kind of inconsistency with schema or
+     * data types causes this exception (e.g. string cannot be converted to
+     * number, misplaced tag or attribute).
+     */
+    ADK_DEFINE_DERIVED_EXCEPTION(ParseException, Exception);
+    /** Value validation exception. Raised either by built-in or custom user
+     * validators. The parameter should be the node which caused the validation
+     * error.
+     */
+    ADK_DEFINE_DERIVED_PARAM_EXCEPTION(ValidationException, Exception, Node);
+    /** The requested operation is invalid. */
+    ADK_DEFINE_DERIVED_EXCEPTION(InvalidOpException, Exception);
 
     /** Connection object for handlers disconnecting. */
     class NodeHandlerConnection {
@@ -1219,11 +1224,6 @@ private:
     _Validator_FloatMinMax(Node node, Optional<double> minValue,
                            Optional<double> maxValue);
 };
-
-#define ADK_PROPS_INVALID(__node, __msg) \
-    ADK_EXCEPTION(adk::Properties::ValidationException, \
-                  "[" << __node.GetPath().Str() << ": " << \
-                  __node.Val().Describe() << "] " << __msg)
 
 } /* namespace adk */
 

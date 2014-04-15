@@ -456,7 +456,7 @@ UT_TEST("Validators")
     Properties::Transaction::Ptr t = props.OpenTransaction();
 
     Properties::NodeHandler blocker = Properties::NodeHandler::Make([](Properties::Node node) {
-        ADK_PROPS_INVALID(node, "test validation");
+        ADK_EXCEPTION(Properties::ValidationException, "test validation", node);
     }, std::placeholders::_1);
 
     props.Add("");
@@ -469,7 +469,8 @@ UT_TEST("Validators")
         UT_BOOL(node) == UT_TRUE;
         UT(node.Type() == Properties::Value::Type::INTEGER) == UT_TRUE;
         if (node.Val<int>() <= 10) {
-            ADK_PROPS_INVALID(node, "Should be greater than 10");
+            ADK_EXCEPTION(Properties::ValidationException,
+                          "Should be greater than 10", node);
         }
     }, std::placeholders::_1);
 
@@ -477,7 +478,8 @@ UT_TEST("Validators")
         UT_BOOL(node) == UT_TRUE;
         UT(node.Type() == Properties::Value::Type::INTEGER) == UT_TRUE;
         if (node.Val<int>() >= 20) {
-            ADK_PROPS_INVALID(node, "Should be less than 20");
+            ADK_EXCEPTION(Properties::ValidationException,
+                          "Should be less than 20", node);
         }
     }, std::placeholders::_1);
 
@@ -485,7 +487,8 @@ UT_TEST("Validators")
         UT_BOOL(node) == UT_TRUE;
         UT(node.Type() == Properties::Value::Type::INTEGER) == UT_TRUE;
         if (node.Val<int>() == 15) {
-            ADK_PROPS_INVALID(node, "Should not be equal 15");
+            ADK_EXCEPTION(Properties::ValidationException,
+                          "Should not be equal 15", node);
         }
     }, std::placeholders::_1);
 
@@ -524,7 +527,8 @@ UT_TEST("Validators")
         int sum = 0;
         for (Properties::Node summant: node) {
             if (summant.Type() != Properties::Value::Type::INTEGER) {
-                ADK_PROPS_INVALID(node, "Should be integer");
+                ADK_EXCEPTION(Properties::ValidationException,
+                              "Should be integer", node);
             }
             sum += summant.Val<int>();
         }
@@ -537,7 +541,8 @@ UT_TEST("Validators")
         UT_BOOL(node) == UT_TRUE;
         int sum = Sum(node);
         if (sum != 15) {
-            ADK_PROPS_INVALID(node, "Sum should be 15, have " << sum);
+            ADK_EXCEPTION(Properties::ValidationException,
+                          "Sum should be 15, have " << sum, node);
         }
     }, std::placeholders::_1);
 
@@ -545,7 +550,8 @@ UT_TEST("Validators")
         UT_BOOL(node) == UT_TRUE;
         int sum = Sum(node);
         if (sum != 31) {
-            ADK_PROPS_INVALID(node, "Sum should be 31, have " << sum);
+            ADK_EXCEPTION(Properties::ValidationException,
+                          "Sum should be 31, have " << sum, node);
         }
     }, std::placeholders::_1);
 
