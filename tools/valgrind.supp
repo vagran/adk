@@ -171,6 +171,113 @@
    fun:pixman_image_composite32
 }
 
+{
+   GTK+
+   Memcheck:Leak
+   match-leak-kinds: definite
+   ...
+   fun:FcConfigParseAndLoad
+}
+
+{
+   GTK+
+   Memcheck:Leak
+   match-leak-kinds: definite
+   ...
+   fun:FcPatternAddInteger
+   fun:_cairo_ft_font_options_substitute
+   fun:pango_cairo_fc_font_map_fontset_key_substitute
+   fun:pango_fc_font_map_load_fontset
+   fun:itemize_state_process_run
+   fun:pango_itemize_with_base_dir
+   fun:pango_layout_check_lines
+   fun:pango_layout_get_extents_internal
+   fun:_pango_cairo_font_get_metrics
+}
+
+{
+   GTK+
+   Memcheck:Leak
+   match-leak-kinds: definite
+   ...
+   fun:_cairo_ft_font_options_substitute
+   fun:pango_cairo_fc_font_map_fontset_key_substitute
+   fun:pango_fc_font_map_load_fontset
+   fun:itemize_state_process_run
+   fun:pango_itemize_with_base_dir
+   fun:pango_layout_check_lines
+   fun:pango_layout_get_extents_internal
+   fun:gtk_label_get_preferred_size
+}
+
+{
+   GTK+
+   Memcheck:Leak
+   match-leak-kinds: definite
+   ...
+   fun:FcFontRenderPrepare
+   fun:FcFontMatch
+   fun:pango_fc_fontset_get_font_at
+   fun:pango_fc_fontset_foreach
+   fun:get_shaper_and_font
+   fun:itemize_state_process_run
+   fun:pango_itemize_with_base_dir
+   fun:pango_layout_check_lines
+   fun:pango_layout_get_extents_internal
+}
+
+{
+   GTK+
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znwm
+   fun:_ZN4sigc8internal14typed_slot_repINS_12bind_functorILin1ENS_18bound_mem_functor1IvN3Gtk11ApplicationEPNS4_6WindowEEES7_NS_3nilES9_S9_S9_S9_S9_EEE3dupEPv
+   fun:_ZN4sigc9slot_baseC1ERKS0_
+   fun:_ZN4Glib25SignalProxyConnectionNodeC1ERKN4sigc9slot_baseEP8_GObject
+   fun:_ZN4Glib17SignalProxyNormal13connect_impl_EPFvvERKN4sigc9slot_baseEb
+   fun:_ZN3Gtk11Application3runERNS_6WindowE
+}
+
+{
+   GTK+
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znwm
+   fun:_ZNK4sigc9trackable13callback_listEv
+   ...
+   fun:_ZN3Gtk11Application3runERNS_6WindowE
+}
+
+{
+   GTK+
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znwm
+   fun:_ZN4Glib17SignalProxyNormal13connect_impl_EPFvvERKN4sigc9slot_baseEb
+   fun:_ZN3Gtk11Application3runERNS_6WindowE
+}
+
+{
+   GTK+
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znwm
+   fun:_ZN4sigc8internal23trackable_callback_list12add_callbackEPvPFS2_S2_E
+   fun:_ZN4sigc8internal14typed_slot_repINS_12bind_functorILin1ENS_18bound_mem_functor1IvN3Gtk11ApplicationEPNS4_6WindowEEES7_NS_3nilES9_S9_S9_S9_S9_EEE3dupEPv
+   fun:_ZN4sigc9slot_baseC1ERKS0_
+   fun:_ZN4Glib25SignalProxyConnectionNodeC1ERKN4sigc9slot_baseEP8_GObject
+   fun:_ZN4Glib17SignalProxyNormal13connect_impl_EPFvvERKN4sigc9slot_baseEb
+   fun:_ZN3Gtk11Application3runERNS_6WindowE
+}
+
+{
+   GTK+
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znwm
+   fun:_ZN3Gtk11Application6createERiRPPcRKN4Glib7ustringEN3Gio16ApplicationFlagsE
+}
+
 # Python library
 
 {

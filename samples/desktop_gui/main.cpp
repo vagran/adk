@@ -138,12 +138,6 @@ public:
         Glib::RefPtr<Gtk::Action>::cast_dynamic(_builder->get_object("action_quit"))->
             signal_activate().connect(sigc::mem_fun(*this, &MainWindow::OnQuit));
     }
-
-    virtual
-    ~MainWindow() //XXX
-    {
-        ADK_INFO("Destructor");
-    }
 };
 
 int
