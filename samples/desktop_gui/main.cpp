@@ -83,6 +83,10 @@ private:
     Glib::RefPtr<Gtk::Builder> _builder;
     Glib::RefPtr<Gtk::RadioButton> _rbRect, _rbEllipse, _rbTriangle;
     Glib::RefPtr<CDrawingArea> _drawingArea;
+    Glib::RefPtr<Gtk::Paned> _paned;
+
+    adk::Properties _props;
+    adk::PropView _propView;
 public:
     /** Signal handler which is called when any radio button is clicked. */
     void
@@ -105,8 +109,10 @@ public:
     }
 
     MainWindow(BaseObjectType* cobject, const Glib::RefPtr<Gtk::Builder>& builder):
-        Gtk::Window(cobject), _builder(builder)
+        Gtk::Window(cobject), _builder(builder), _propView(_props)
     {
+        _props.Load(adk::Xml().Load(adk::GetResource("props.xml").GetString()));
+
         /* Retrieve all widgets. */
         Gtk::RadioButton *rb;
         _builder->get_widget("rbRectangle", rb);
@@ -118,6 +124,12 @@ public:
         CDrawingArea *da;
         _builder->get_widget_derived("drawing_area", da);
         _drawingArea = Glib::RefPtr<CDrawingArea>(da);
+
+        Gtk::Paned *paned;
+        _builder->get_widget("leftPane", paned);
+        _paned = Glib::RefPtr<Gtk::Paned>(paned);
+        _paned->add2(*_propView.GetWidget());
+
         /* Connect signals. */
         _rbRect->signal_clicked().connect(sigc::mem_fun(*this, &MainWindow::OnRadiobuttonClick));
         _rbEllipse->signal_clicked().connect(sigc::mem_fun(*this, &MainWindow::OnRadiobuttonClick));
@@ -125,6 +137,12 @@ public:
         /* Actions. */
         Glib::RefPtr<Gtk::Action>::cast_dynamic(_builder->get_object("action_quit"))->
             signal_activate().connect(sigc::mem_fun(*this, &MainWindow::OnQuit));
+    }
+
+    virtual
+    ~MainWindow() //XXX
+    {
+        ADK_INFO("Destructor");
     }
 };
 
@@ -135,8 +153,6 @@ main(int argc, char **argv)
     Glib::RefPtr<Gtk::Builder> builder = g_sampleLib.Test();
     MainWindow *mainWindow = 0;
     builder->get_widget_derived("main_wnd", mainWindow);
-
-    adk::Properties props(adk::Xml().Load(adk::GetResource("props.xml").GetString()));
 
     app->run(*mainWindow);
     delete mainWindow;

@@ -11,5 +11,6 @@ ADK_APP_TYPE = lib
 ADK_APP_NAME = adk
 ADK_USE_PYTHON = yes
 ADK_NO_ADK_LIB = yes
+ADK_USE_GUI = yes
 
 include $(ADK_ROOT)/make/make.mk
