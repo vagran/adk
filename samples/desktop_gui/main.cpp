@@ -129,6 +129,7 @@ public:
         _builder->get_widget("leftPane", paned);
         _paned = Glib::RefPtr<Gtk::Paned>(paned);
         _paned->add2(*_propView.GetWidget());
+        _paned->show_all();
 
         /* Connect signals. */
         _rbRect->signal_clicked().connect(sigc::mem_fun(*this, &MainWindow::OnRadiobuttonClick));
