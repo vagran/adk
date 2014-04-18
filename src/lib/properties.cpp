@@ -1212,7 +1212,7 @@ Properties::NodeHandlerConnection::GetNode()
 
 void
 Properties::NodeHandlerConnection::Set(_Node::Ptr node,
-                                       SignalConnection<void(Node)> con)
+                                       SignalConnection<NodeHandler::SignatureType> con)
 {
     _node = node;
     _con = con;
@@ -1843,7 +1843,7 @@ Properties::_CommitTransaction(Transaction &trans)
      */
     if (_root) {
         _root->Traverse([](_Node &node) {
-            node._isChanged = false;
+            node._change = EventType::NONE;
             return true;
         });
     }
@@ -1858,21 +1858,42 @@ Properties::_CommitTransaction(Transaction &trans)
         _Node::Ptr node = _LookupNode(path, false);
         ASSERT(node);
 
+        if (rec.type == Transaction::Record::Type::MODIFY) {
+            node->_change |= EventType::MODIFY;
+        } else if (rec.type == Transaction::Record::Type::ADD) {
+            node->_change |= EventType::ADD;
+        } else if (rec.type == Transaction::Record::Type::DELETE) {
+            node->_change |= EventType::DELETE;
+        }
+        node = node->Parent();
         while (node) {
-            node->_isChanged = true;
+            node->_change |= EventType::CHILD;
             node = node->Parent();
         }
     }
 
-    std::list<std::pair<NodeHandler, _Node::Ptr>> listeners;
+    class Listener {
+    public:
+        NodeHandler handler;
+        _Node::Ptr node;
+        int event;
+
+        Listener(NodeHandler handler, _Node::Ptr node, int event):
+            handler(handler), node(node), event(event)
+        {}
+    };
+
+    std::list<Listener> listeners;
+
     if (_root) {
         _root->Traverse([&trans, &listeners](_Node &node) {
-            if (node._isChanged) {
-                node._isChanged = false;
-                node._validators.Emit(Node(node.GetPtr()));
+            if (node._change != EventType::NONE) {
+                int event = node._change;
+                node._change = EventType::NONE;
+                node._validators.Emit(Node(node.GetPtr()), event);
                 auto handlers = node._listeners.GetEmitSlots();
                 for (NodeHandler h: handlers) {
-                    listeners.emplace_back(h, node.GetPtr());
+                    listeners.emplace_back(h, node.GetPtr(), event);
                 }
                 /* Additional validators and listeners in modify record. */
                 for (Transaction::Record &rec: trans._log) {
@@ -1880,10 +1901,10 @@ Properties::_CommitTransaction(Transaction &trans)
                         rec.path == node.GetPath()) {
 
                         for (NodeOptions::HandlerEntry &e: rec.newNode->options->validators) {
-                            e.handler(Node(node.GetPtr()));
+                            e.handler(Node(node.GetPtr()), event);
                         }
                         for (NodeOptions::HandlerEntry &e: rec.newNode->options->listeners) {
-                            listeners.emplace_back(e.handler, node.GetPtr());
+                            listeners.emplace_back(e.handler, node.GetPtr(), event);
                         }
                     }
                 }
@@ -1895,10 +1916,10 @@ Properties::_CommitTransaction(Transaction &trans)
         if (rec.type == Transaction::Record::Type::ADD) {
             rec.newNode->Traverse([&listeners](_Node &node) {
                 for (NodeOptions::HandlerEntry &e: node.options->validators) {
-                    e.handler(Node(node.GetPtr()));
+                    e.handler(Node(node.GetPtr()), EventType::NEW);
                 }
                 for (NodeOptions::HandlerEntry &e: node.options->listeners) {
-                    listeners.emplace_back(e.handler, node.GetPtr());
+                    listeners.emplace_back(e.handler, node.GetPtr(), EventType::NEW);
                 }
                 return true;
             });
@@ -1912,8 +1933,8 @@ Properties::_CommitTransaction(Transaction &trans)
 
     /* Invoke listeners. */
     tg.Release();
-    for (std::pair<NodeHandler, _Node::Ptr> handler: listeners) {
-        handler.first(handler.second);
+    for (Listener &listener: listeners) {
+        listener.handler(listener.node, listener.event);
     }
     _sigChanged.Emit(std::ref(*this));
 }

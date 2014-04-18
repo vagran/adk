@@ -689,3 +689,48 @@ UT_TEST("Listeners")
     UT(fired) == UT_FALSE;
     UT(changed) == UT_TRUE;
 }
+
+UT_TEST("Events")
+{
+    Properties props;
+    Properties::Transaction::Ptr t = props.OpenTransaction();
+
+    const char *curPath;
+    Properties::EventType curEvent;
+
+    Properties::NodeHandler listener =
+        Properties::NodeHandler::Make([&curPath, &curEvent](Properties::Node node, int event) {
+
+        UT_TRACE("%s: %d", node.GetPath().Str().c_str(), event);
+        UT_BOOL(node) == UT_TRUE;
+        if (node.GetPath() == curPath) {
+            UT(event) == UT_INT(curEvent);
+        } else if (node.GetPath().Size() > Properties::Path(curPath).Size()) {
+            UT(event) == UT_INT(Properties::EventType::NEW);
+        } else {
+            UT(event) == UT_INT(Properties::EventType::CHILD);
+        }
+    }, std::placeholders::_1, std::placeholders::_2);
+
+    curPath = "";
+    curEvent = Properties::EventType::NEW;
+    t->Add("", Properties::NodeOptions().Listener(listener));
+    t->Add("a1", Properties::NodeOptions().Listener(listener));
+    t->Add("b1", Properties::NodeOptions().Listener(listener));
+    t->Add("c1", Properties::NodeOptions().Listener(listener));
+    t->Add("a1/a2", Properties::NodeOptions().Listener(listener));
+    t->Add("a1/a2/a3", Properties::NodeOptions().Listener(listener));
+    t->Commit();
+
+    curPath = "a1";
+    curEvent = Properties::EventType::ADD;
+    props.Add("a1/b2", 1, Properties::NodeOptions().Listener(listener));
+
+    curPath = "a1/b2";
+    curEvent = Properties::EventType::MODIFY;
+    props.Modify("a1/b2", 2);
+
+    curPath = "a1";
+    curEvent = Properties::EventType::DELETE;
+    props.Delete("a1/b2");
+}

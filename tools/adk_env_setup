@@ -32,5 +32,7 @@ cd $ADK_PROJECT_PATH
 
 ExportEnv
 
+alias adk-valgrind="valgrind --suppressions=$ADK_PROJECT_PATH/source/ADK/tools/valgrind.supp"
+
 export PS1='ADK env [\W]$ '
 echo "Welcome to ADK development environment"

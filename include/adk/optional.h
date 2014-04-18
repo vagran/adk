@@ -151,7 +151,7 @@ public:
     operator *() &
     {
         ASSERT(isValid);
-        return *reinterpret_cast<T *>(storage);
+        return *GetPtr();
     }
 
 #   ifndef DEBUG
@@ -161,14 +161,14 @@ public:
     operator *() const &
     {
         ASSERT(isValid);
-        return *reinterpret_cast<const T *>(storage);
+        return *GetPtr();
     }
 
     T &&
     operator *() &&
     {
         ASSERT(isValid);
-        return std::move(*reinterpret_cast<T *>(storage));
+        return std::move(*GetPtr());
     }
 
     T *
@@ -207,6 +207,18 @@ private:
     /** Storage for the value. */
     u8 storage[sizeof(T)];
     bool isValid;
+
+    inline T *
+    GetPtr()
+    {
+        return reinterpret_cast<T *>(storage);
+    }
+
+    inline const T *
+    GetPtr() const
+    {
+        return reinterpret_cast<const T *>(storage);
+    }
 };
 
 } /* namespace adk */

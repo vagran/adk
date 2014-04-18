@@ -228,6 +228,21 @@ public:
 class Properties {
 public:
 
+    /** Argument for listeners invocation. */
+    enum EventType {
+        NONE = 0x0,
+        /** The related node is newly added one. */
+        NEW = 0x1,
+        /** Node added to the related node. */
+        ADD = 0x2,
+        /** Node deleted from the related node. */
+        DELETE = 0x4,
+        /** The related node modified. */
+        MODIFY = 0x8,
+        /** Changes in descendant nodes of the related one. */
+        CHILD = 0x10
+    };
+
     /** Properties change notification handler slot. */
     typedef Slot<void(Properties &)> ChangedHandler;
 
@@ -498,8 +513,10 @@ public:
 
     class Node;
 
-    /** Validator callback. */
-    typedef Slot<void(Node)> NodeHandler;
+    /** Validator or listener callback. The second argument is EventType
+     * combination.
+     */
+    typedef Slot<void(Node, int)> NodeHandler;
 
     class NodeHandlerConnection;
 
@@ -647,14 +664,14 @@ private:
         _Node *_parent = nullptr;
         /** Child nodes. */
         std::map<std::string, Ptr> _children;
-        /** Indicates that the node is affected by current transaction. */
-        bool _isChanged = false,
         /** Indicates that node is not committed. */
-             _isTransaction = true;
+        bool _isTransaction = true;
         /** Attached validators. */
-        Signal <void(Node)> _validators,
+        Signal <NodeHandler::SignatureType> _validators,
         /** Attached listeners. */
-                            _listeners;
+                                            _listeners;
+        /** Indicates how this node is affected by current transaction. */
+        int _change = EventType::NONE;
     };
 
 public:
@@ -808,9 +825,9 @@ public:
         friend class Properties;
 
         void
-        Set(_Node::Ptr node, SignalConnection<void(Node)> con);
+        Set(_Node::Ptr node, SignalConnection<NodeHandler::SignatureType> con);
 
-        SignalConnection<void(Node)> _con;
+        SignalConnection<NodeHandler::SignatureType> _con;
         _Node::Ptr _node;
     };
 

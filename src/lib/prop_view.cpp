@@ -15,22 +15,61 @@
 using namespace adk;
 
 PropView::PropView(Properties &props, bool haveButtons):
-    props(props), haveButtons(haveButtons)
+    props(props), haveButtons(haveButtons),
+    wdgTlBox(Gtk::ORIENTATION_VERTICAL, 4),
+    wdgButtonsBox(Gtk::ORIENTATION_HORIZONTAL, 4),
+    wdgApplyButton("Apply"),
+    wdgCancelButton("Cancel"),
+    wdgValuesVp(Glib::RefPtr<Gtk::Adjustment>(), Glib::RefPtr<Gtk::Adjustment>())
 {
+    wdgValuesScrolled.add(wdgValuesVp);
+    wdgDescScrolled.add(wdgDesc);
+
+    wdgButtonsBox.set_homogeneous();
+    wdgButtonsBox.set_size_request();
+    wdgButtonsBox.pack_start(wdgApplyButton, true, false);
+    wdgButtonsBox.pack_start(wdgCancelButton, true, false);
+
+    wdgPaned.set_orientation(Gtk::ORIENTATION_VERTICAL);
+    wdgPaned.add1(wdgValuesScrolled);
+    wdgPaned.add2(wdgDescScrolled);
+
+    wdgTlBox.pack_start(wdgPaned, true, true);
+    wdgTlBox.pack_start(wdgButtonsBox, false, false);
+
     props.SignalChanged().Connect(Properties::ChangedHandler::Make(
         &PropView::OnPropsChanged, this));
-    tlWidget = new Gtk::Label("test");
+
+    wdgApplyButton.signal_clicked().connect(
+        sigc::mem_fun(*this, &PropView::OnApply));
+    wdgCancelButton.signal_clicked().connect(
+        sigc::mem_fun(*this, &PropView::OnCancel));
 }
 
 PropView::~PropView()
 {
-    delete tlWidget;
+    //XXX
 }
 
-Gtk::Widget *
+Gtk::Widget &
 PropView::GetWidget()
 {
-    return tlWidget;
+    return wdgTlBox;
+}
+
+void
+PropView::Show(bool f)
+{
+    if (f) {
+        wdgTlBox.show();
+        wdgPaned.show_all();
+        if (haveButtons) {
+            wdgButtonsBox.show_all();
+        }
+    } else {
+        wdgTlBox.hide();
+        wdgButtonsBox.hide();
+    }
 }
 
 void
@@ -38,4 +77,18 @@ PropView::OnPropsChanged()
 {
     //XXX
     ADK_INFO("props changed");
+}
+
+void
+PropView::OnApply()
+{
+    //XXX
+    ADK_INFO("applied");
+}
+
+void
+PropView::OnCancel()
+{
+    //XXX
+    ADK_INFO("cancel");
 }

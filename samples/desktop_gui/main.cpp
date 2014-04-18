@@ -109,7 +109,7 @@ public:
     }
 
     MainWindow(BaseObjectType* cobject, const Glib::RefPtr<Gtk::Builder>& builder):
-        Gtk::Window(cobject), _builder(builder), _propView(_props)
+        Gtk::Window(cobject), _builder(builder), _propView(_props, true)
     {
         _props.Load(adk::Xml().Load(adk::GetResource("props.xml").GetString()));
 
@@ -128,8 +128,9 @@ public:
         Gtk::Paned *paned;
         _builder->get_widget("leftPane", paned);
         _paned = Glib::RefPtr<Gtk::Paned>(paned);
-        _paned->add2(*_propView.GetWidget());
-        _paned->show_all();
+        _paned->add2(_propView.GetWidget());
+        _paned->show();
+        _propView.Show();
 
         /* Connect signals. */
         _rbRect->signal_clicked().connect(sigc::mem_fun(*this, &MainWindow::OnRadiobuttonClick));
