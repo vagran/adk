@@ -14,6 +14,50 @@
 
 using namespace adk;
 
+PropView::Item::Item():
+    wdgBox(Gtk::ORIENTATION_HORIZONTAL, 2),
+    wdgNameAlign(1.0, 0.5, 0.0, 1.0)
+{
+    wdgBox.set_homogeneous();
+    wdgNameAlign.add(wdgName);
+    wdgBox.pack_start(wdgNameAlign, true, true);
+    wdgBox.pack_start(wdgValue, true, true);
+}
+
+void
+PropView::Item::Update()
+{
+    wdgName.set_text(node.DispName());
+    wdgValue.set_text(node.Val().Str());//XXX
+}
+
+/* ****************************************************************************/
+
+PropView::Category::Category(PropView &propView)
+{
+    wdgList.set_sort_func(sigc::mem_fun(propView, &PropView::CategorySortFunc));
+    wdgExpander.add(wdgList);
+}
+
+PropView::Node *
+PropView::Category::FindChild(Properties::Node node)
+{
+    for (Node *nodePtr: children) {
+        if (nodePtr->node == node) {
+            return nodePtr;
+        }
+    }
+    return nullptr;
+}
+
+void
+PropView::Category::Update()
+{
+    //XXX
+}
+
+/* ****************************************************************************/
+
 PropView::PropView(Properties &props, bool haveButtons):
     props(props), haveButtons(haveButtons),
     wdgTlBox(Gtk::ORIENTATION_VERTICAL, 4),
@@ -36,6 +80,10 @@ PropView::PropView(Properties &props, bool haveButtons):
 
     wdgTlBox.pack_start(wdgPaned, true, true);
     wdgTlBox.pack_start(wdgButtonsBox, false, false);
+
+    root = new Category(*this);
+    IndexNode(root);
+    wdgValuesVp.add(*root->GetWidget());
 
     props.SignalChanged().Connect(Properties::ChangedHandler::Make(
         &PropView::OnPropsChanged, this));
@@ -76,7 +124,10 @@ void
 PropView::OnPropsChanged()
 {
     //XXX
-    ADK_INFO("props changed");
+    if (!root->node) {
+        root->node = props[""];
+        UpdateCategory(*root);
+    }
 }
 
 void
@@ -91,4 +142,79 @@ PropView::OnCancel()
 {
     //XXX
     ADK_INFO("cancel");
+}
+
+void
+PropView::UpdateCategory(Category &catNode)
+{
+    catNode.wdgExpander.set_label(catNode.node.DispName());
+
+    for (Node *node: catNode.children) {
+        node->order = -1;
+    }
+
+    int order = 0;
+    for (Properties::Node node: catNode.node) {
+        Node *vnode = catNode.FindChild(node);
+        if (vnode) {
+            vnode->order = order;
+        } else {
+            /* New node. */
+            auto value = node.Val();
+            if (value.IsNone()) {
+                vnode = new Category(*this);
+            } else {
+                vnode = new Item();
+            }
+            catNode.children.push_back(vnode);
+            IndexNode(vnode);
+            vnode->node = node;
+            vnode->order = order;
+            if (value.IsNone()) {
+                UpdateCategory(vnode->GetCategory());
+            } else {
+                vnode->Update();
+            }
+            catNode.wdgList.add(*vnode->GetWidget());
+        }
+        order++;
+    }
+
+    /* Delete non visited. */
+    for (auto it = catNode.children.begin(); it != catNode.children.end();) {
+        Node *node = *it;
+        if (node->order == -1) {
+            catNode.wdgList.remove(*node->GetWidget());
+            it = catNode.children.erase(it);
+            UnindexNode(node);
+        } else {
+            it++;
+        }
+    }
+}
+
+int
+PropView::CategorySortFunc(Gtk::ListBoxRow* row1, Gtk::ListBoxRow* row2)
+{
+    Node *node1 = nodes[row1->get_child()].get();
+    Node *node2 = nodes[row2->get_child()].get();
+    return node1->order - node2->order;
+}
+
+void
+PropView::IndexNode(Node *node)
+{
+    nodes.emplace(node->GetWidget(), std::unique_ptr<Node>(node));
+}
+
+std::unique_ptr<PropView::Node>
+PropView::UnindexNode(Node *node)
+{
+    auto it = nodes.find(node->GetWidget());
+    if (it == nodes.end()) {
+        return nullptr;
+    }
+    std::unique_ptr<Node> ref = std::move(it->second);
+    nodes.erase(it);
+    return ref;
 }

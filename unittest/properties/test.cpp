@@ -696,15 +696,14 @@ UT_TEST("Events")
     Properties::Transaction::Ptr t = props.OpenTransaction();
 
     const char *curPath;
-    Properties::EventType curEvent;
+    int curEvent;
 
     Properties::NodeHandler listener =
         Properties::NodeHandler::Make([&curPath, &curEvent](Properties::Node node, int event) {
 
-        UT_TRACE("%s: %d", node.GetPath().Str().c_str(), event);
         UT_BOOL(node) == UT_TRUE;
         if (node.GetPath() == curPath) {
-            UT(event) == UT_INT(curEvent);
+            UT(event) == UT(curEvent);
         } else if (node.GetPath().Size() > Properties::Path(curPath).Size()) {
             UT(event) == UT_INT(Properties::EventType::NEW);
         } else {
@@ -733,4 +732,9 @@ UT_TEST("Events")
     curPath = "a1";
     curEvent = Properties::EventType::DELETE;
     props.Delete("a1/b2");
+
+    curEvent = Properties::EventType::ADD | Properties::EventType::DELETE;
+    t->Add("a1/c2", Properties::NodeOptions().Listener(listener));
+    t->Delete("a1/a2");
+    t->Commit();
 }

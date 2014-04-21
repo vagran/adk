@@ -34,21 +34,104 @@ public:
     Show(bool f = true);
 
 private:
-    //XXX
-    class Node {
+    class Item;
+    class Category;
 
+    class Node {
+    public:
+        Properties::Node node;
+        /** Order value, nodes in list sorted by this  value. */
+        int order;
+
+        virtual
+        ~Node()
+        {}
+
+        virtual bool
+        IsItem() const = 0;
+
+        /** Update view. */
+        virtual void
+        Update() = 0;
+
+        /** Get main widget. */
+        virtual Gtk::Widget *
+        GetWidget() = 0;
+
+        Item &
+        GetItem()
+        {
+            ASSERT(IsItem());
+            return dynamic_cast<Item &>(*this);
+        }
+
+        Category &
+        GetCategory()
+        {
+            ASSERT(!IsItem());
+            return dynamic_cast<Category &>(*this);
+        }
     };
 
     class Item: public Node {
     public:
+        Gtk::Box wdgBox;
+        Gtk::Alignment wdgNameAlign;
+        Gtk::Label wdgName;
+        Gtk::Entry wdgValue;
 
-    private:
+        Item();
 
+        virtual bool
+        IsItem() const override
+        {
+            return true;
+        }
+
+        virtual void
+        Update() override;
+
+        virtual Gtk::Widget *
+        GetWidget() override
+        {
+            return &wdgBox;
+        }
     };
 
     class Category: public Node {
+    public:
+        Gtk::Expander wdgExpander;
+        Gtk::ListBox wdgList;
+        std::list<Node *> children;
 
+        Category(PropView &propView);
+
+        virtual bool
+        IsItem() const override
+        {
+            return false;
+        }
+
+        virtual void
+        Update() override;
+
+        virtual Gtk::Widget *
+        GetWidget() override
+        {
+            return &wdgExpander;
+        }
+
+        Node *
+        FindChild(Properties::Node node);
     };
+
+    /** Nodes indexed by their primary widget pointer. For category nodes it is
+     * expander widget, for items - box widget.
+     */
+    std::map<Gtk::Widget *, std::unique_ptr<Node>> nodes;
+
+    /** Root category. */
+    Category *root;
 
     /** Associated properties. */
     Properties &props;
@@ -78,6 +161,22 @@ private:
 
     void
     OnCancel();
+
+    /** Synchronize category contents with current view. */
+    void
+    UpdateCategory(Category &catNode);
+
+    void
+    IndexNode(Node *node);
+
+    /** Remove node from index and return the pointer holding the last
+     * reference to the node object.
+     */
+    std::unique_ptr<Node>
+    UnindexNode(Node *node);
+
+    int
+    CategorySortFunc(Gtk::ListBoxRow* row1, Gtk::ListBoxRow* row2);
 };
 
 } /* namespace adk */
