@@ -109,7 +109,7 @@ public:
     }
 
     MainWindow(BaseObjectType* cobject, const Glib::RefPtr<Gtk::Builder>& builder):
-        Gtk::Window(cobject), _builder(builder), _propView(_props, true)
+        Gtk::Window(cobject), _builder(builder), _propView(_props, false, true)
     {
         _props.Load(adk::Xml().Load(adk::GetResource("props.xml").GetString()));
 

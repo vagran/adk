@@ -21,7 +21,7 @@ namespace adk {
 class PropView: public SlotTarget, virtual public sigc::trackable {
 
 public:
-    PropView(Properties &props, bool haveButtons = false);
+    PropView(Properties &props, bool readOnly = false, bool haveButtons = false);
 
     ~PropView();
 
@@ -79,8 +79,10 @@ private:
         Gtk::Alignment wdgNameAlign;
         Gtk::Label wdgName;
         Gtk::Entry wdgValue;
+        Gtk::CheckButton wdgCheck;
+        bool isText = true;
 
-        Item();
+        Item(PropView &propView);
 
         virtual bool
         IsItem() const override
@@ -135,6 +137,8 @@ private:
 
     /** Associated properties. */
     Properties &props;
+    /** Indicates whether modifications are allowed by user. */
+    bool readOnly;
     /** Indicates whether the property sheet has apply and cancel buttons. */
     bool haveButtons;
     /** Top level box widget. */

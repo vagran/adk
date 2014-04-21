@@ -14,21 +14,40 @@
 
 using namespace adk;
 
-PropView::Item::Item():
+PropView::Item::Item(PropView &propView):
     wdgBox(Gtk::ORIENTATION_HORIZONTAL, 2),
     wdgNameAlign(1.0, 0.5, 0.0, 1.0)
 {
     wdgBox.set_homogeneous();
     wdgNameAlign.add(wdgName);
     wdgBox.pack_start(wdgNameAlign, true, true);
-    wdgBox.pack_start(wdgValue, true, true);
+    wdgBox.pack_end(wdgValue, true, true);
+
+    if (propView.readOnly) {
+        wdgValue.set_editable(false);
+        wdgCheck.set_sensitive(false);
+    }
 }
 
 void
 PropView::Item::Update()
 {
     wdgName.set_text(node.DispName());
-    wdgValue.set_text(node.Val().Str());//XXX
+    if (node.Type() == Properties::Value::Type::BOOLEAN) {
+        if (isText) {
+            wdgBox.remove(wdgValue);
+            wdgBox.pack_end(wdgCheck, true, true);
+            isText = false;
+        }
+        wdgCheck.set_active(node.Val<bool>());
+    } else {
+        if (!isText) {
+            wdgBox.remove(wdgCheck);
+            wdgBox.pack_end(wdgValue, true, true);
+            isText = true;
+        }
+        wdgValue.set_text(node.Val().Str());//XXX
+    }
 }
 
 /* ****************************************************************************/
@@ -58,14 +77,15 @@ PropView::Category::Update()
 
 /* ****************************************************************************/
 
-PropView::PropView(Properties &props, bool haveButtons):
-    props(props), haveButtons(haveButtons),
+PropView::PropView(Properties &props, bool readOnly, bool haveButtons):
+    props(props), readOnly(readOnly), haveButtons(haveButtons && !readOnly),
     wdgTlBox(Gtk::ORIENTATION_VERTICAL, 4),
     wdgButtonsBox(Gtk::ORIENTATION_HORIZONTAL, 4),
     wdgApplyButton("Apply"),
     wdgCancelButton("Cancel"),
     wdgValuesVp(Glib::RefPtr<Gtk::Adjustment>(), Glib::RefPtr<Gtk::Adjustment>())
 {
+    wdgDesc.set_editable(false);
     wdgValuesScrolled.add(wdgValuesVp);
     wdgDescScrolled.add(wdgDesc);
 
@@ -164,7 +184,7 @@ PropView::UpdateCategory(Category &catNode)
             if (value.IsNone()) {
                 vnode = new Category(*this);
             } else {
-                vnode = new Item();
+                vnode = new Item(*this);
             }
             catNode.children.push_back(vnode);
             IndexNode(vnode);
