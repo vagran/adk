@@ -21,7 +21,7 @@ namespace adk {
 class PropView: public SlotTarget, virtual public sigc::trackable {
 
 public:
-    PropView(Properties &props, bool readOnly = false, bool haveButtons = false);
+    PropView(Properties &props, bool readOnly = false, bool hasButtons = false);
 
     ~PropView();
 
@@ -109,7 +109,16 @@ private:
         OnFocusLost(GdkEventFocus *);
 
         void
-        OnHide();
+        OnUnmap();
+
+        void
+        UpdateValue();
+
+        /** Parse value from string (may include units).
+         * @throws Properties::ParseException if parsing fails.
+         */
+        Properties::Value
+        Parse(const std::string &s);
     };
 
     class Category: public Node {
@@ -149,10 +158,12 @@ private:
 
     /** Associated properties. */
     Properties &props;
+    /** Active transaction when using buttons. */
+    Properties::Transaction::Ptr trans;
     /** Indicates whether modifications are allowed by user. */
     bool readOnly;
     /** Indicates whether the property sheet has apply and cancel buttons. */
-    bool haveButtons;
+    bool hasButtons;
     /** Top level box widget. */
     Gtk::Box wdgTlBox,
     /** Box for buttons. */

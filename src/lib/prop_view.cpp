@@ -33,13 +33,19 @@ PropView::Item::Item(PropView &propView):
     }
 
     wdgValue.signal_unmap().connect(
-        sigc::mem_fun(*this, &PropView::Item::OnHide));
+        sigc::mem_fun(*this, &PropView::Item::OnUnmap));
 }
 
 void
 PropView::Item::Update()
 {
     wdgName.set_text(node.DispName());
+    UpdateValue();
+}
+
+void
+PropView::Item::UpdateValue()
+{
     if (node.Type() == Properties::Value::Type::BOOLEAN) {
         if (isText) {
             wdgBox.remove(wdgValue);
@@ -53,7 +59,13 @@ PropView::Item::Update()
             wdgBox.pack_end(wdgValue, true, true);
             isText = true;
         }
-        wdgValue.set_text(node.Val().Str());//XXX
+        std::string s(node.Val().Str());
+        std::string units = node.Units();
+        if (!units.empty()) {
+            s += ' ';
+            s += units;
+        }
+        wdgValue.set_text(s);
     }
 }
 
@@ -63,14 +75,81 @@ PropView::Item::OnFocusLost(GdkEventFocus *)
     if (!wdgValue.is_visible()) {
         return false;
     }
-    wdgValue.grab_focus();
-    return true;
+
+    auto ErrorMsg = [this](const std::string title, Properties::Exception &e) {
+        std::string msg(node.GetPath().Str() + ":\n");
+        msg += e.what();
+        msg += "\nPress cancel to restore original value, OK to correct your input.";
+        Gtk::MessageDialog
+            dlg(msg, false, Gtk::MESSAGE_ERROR, Gtk::BUTTONS_OK_CANCEL, true);
+        dlg.set_title(title);
+        if (dlg.run() == Gtk::RESPONSE_OK) {
+            wdgValue.grab_focus();
+            return true;
+        }
+        UpdateValue();
+        return false;
+    };
+
+    Properties::Value v;
+    try {
+        v = Parse(wdgValue.get_text());
+    } catch (Properties::ParseException &e) {
+        return ErrorMsg("Value parsing failed", e);
+    }
+    if (v == node.Val()) {
+        return false;
+    }
+
+    try {
+        if (propView.hasButtons) {
+            propView.trans->Modify(node.GetPath(), std::move(v));
+        } else {
+            propView.props.Modify(node.GetPath(), std::move(v));
+        }
+    } catch (Properties::Exception &e) {
+        return ErrorMsg("Value modification failed", e);
+    }
+
+    return false;
 }
 
 void
-PropView::Item::OnHide()
+PropView::Item::OnUnmap()
 {
-    //restore value if editing
+    UpdateValue();
+}
+
+Properties::Value
+PropView::Item::Parse(const std::string &s)
+{
+    std::string buf;
+    /* Strip units if present. */
+    std::string units = node.Units();
+    buf = s;
+    if (!units.empty()) {
+        if (s.size() >= units.size()) {
+            size_t unitsStart = s.size() - units.size();
+            bool matched = true;
+            for (size_t i = 0; i < units.size(); i++) {
+                if (s[unitsStart + i] != units[i]) {
+                    matched = false;
+                    break;
+                }
+            }
+            if (matched) {
+                /* Strip also spaces between value and units. */
+                for (size_t i = unitsStart; i > 0; i--) {
+                    if (s[i - 1] == ' ') {
+                        unitsStart = i - 1;
+                    }
+                }
+                buf = s.substr(0, unitsStart);
+            }
+        }
+    }
+
+    return Properties::Value::FromString(node.Type(), buf);
 }
 
 /* ****************************************************************************/
@@ -101,8 +180,8 @@ PropView::Category::Update()
 
 /* ****************************************************************************/
 
-PropView::PropView(Properties &props, bool readOnly, bool haveButtons):
-    props(props), readOnly(readOnly), haveButtons(haveButtons && !readOnly),
+PropView::PropView(Properties &props, bool readOnly, bool hasButtons):
+    props(props), readOnly(readOnly), hasButtons(hasButtons && !readOnly),
     wdgTlBox(Gtk::ORIENTATION_VERTICAL, 4),
     wdgButtonsBox(Gtk::ORIENTATION_HORIZONTAL, 4),
     wdgApplyButton("Apply"),
@@ -136,6 +215,10 @@ PropView::PropView(Properties &props, bool readOnly, bool haveButtons):
         sigc::mem_fun(*this, &PropView::OnApply));
     wdgCancelButton.signal_clicked().connect(
         sigc::mem_fun(*this, &PropView::OnCancel));
+
+    if (hasButtons) {
+        trans = props.OpenTransaction();
+    }
 }
 
 PropView::~PropView()
@@ -155,7 +238,7 @@ PropView::Show(bool f)
     if (f) {
         wdgTlBox.show();
         wdgPaned.show_all();
-        if (haveButtons) {
+        if (hasButtons) {
             wdgButtonsBox.show_all();
         }
     } else {
@@ -184,8 +267,8 @@ PropView::OnApply()
 void
 PropView::OnCancel()
 {
-    //XXX
-    ADK_INFO("cancel");
+    trans->Cancel();
+    //XXX restore values
 }
 
 void

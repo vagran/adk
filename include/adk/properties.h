@@ -391,6 +391,11 @@ public:
         Value &
         operator =(Value &&value);
 
+        bool
+        operator ==(const Value &value) const;
+        bool
+        operator !=(const Value &value) const;
+
         /** Convert value to string. */
         std::string
         Str();

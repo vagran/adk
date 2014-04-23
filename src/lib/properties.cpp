@@ -319,6 +319,35 @@ Properties::Value::operator =(Value &&value)
     return *this;
 }
 
+bool
+Properties::Value::operator ==(const Value &value) const
+{
+    if (_type != value._type) {
+        return false;
+    }
+    switch (_type) {
+    case Type::NONE:
+        return true;
+    case Type::INTEGER:
+        return _value.i == value._value.i;
+    case Type::FLOAT:
+        return _value.f == value._value.f;
+    case Type::BOOLEAN:
+        return _value.b == value._value.b;
+    case Type::STRING:
+        return *_value.s == *value._value.s;
+    }
+    /* NOT REACHED */
+    ASSERT(false);
+    return false;
+}
+
+bool
+Properties::Value::operator !=(const Value &value) const
+{
+    return !(*this == value);
+}
+
 std::string
 Properties::Value::Str()
 {
