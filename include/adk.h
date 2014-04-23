@@ -30,6 +30,8 @@
 /* Desktop applications. */
 
 #include <list>
+#include <set>
+#include <map>
 #include <cstring>
 #include <string>
 #include <sstream>

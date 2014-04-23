@@ -98,6 +98,9 @@ private:
         virtual void
         Update() override;
 
+        void
+        UpdateValue();
+
         virtual Gtk::Widget *
         GetWidget() override
         {
@@ -110,9 +113,6 @@ private:
 
         void
         OnUnmap();
-
-        void
-        UpdateValue();
 
         /** Parse value from string (may include units).
          * @throws Properties::ParseException if parsing fails.
@@ -152,6 +152,8 @@ private:
      * expander widget, for items - box widget.
      */
     std::map<Gtk::Widget *, std::unique_ptr<Node>> nodes;
+    /** Nodes affected by current transaction. */
+    std::set<Node *> transNodes;
 
     /** Root category. */
     Category *root;

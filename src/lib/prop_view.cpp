@@ -79,9 +79,10 @@ PropView::Item::OnFocusLost(GdkEventFocus *)
     auto ErrorMsg = [this](const std::string title, Properties::Exception &e) {
         std::string msg(node.GetPath().Str() + ":\n");
         msg += e.what();
-        msg += "\nPress cancel to restore original value, OK to correct your input.";
+        msg += "\nPress [Cancel] to restore original value, [OK] to correct your input.";
         Gtk::MessageDialog
-            dlg(msg, false, Gtk::MESSAGE_ERROR, Gtk::BUTTONS_OK_CANCEL, true);
+            dlg(*dynamic_cast<Gtk::Window *>(wdgValue.get_toplevel()),
+                msg, false, Gtk::MESSAGE_ERROR, Gtk::BUTTONS_OK_CANCEL, true);
         dlg.set_title(title);
         if (dlg.run() == Gtk::RESPONSE_OK) {
             wdgValue.grab_focus();
@@ -104,6 +105,7 @@ PropView::Item::OnFocusLost(GdkEventFocus *)
     try {
         if (propView.hasButtons) {
             propView.trans->Modify(node.GetPath(), std::move(v));
+            propView.transNodes.insert(this);
         } else {
             propView.props.Modify(node.GetPath(), std::move(v));
         }
@@ -260,15 +262,35 @@ PropView::OnPropsChanged()
 void
 PropView::OnApply()
 {
-    //XXX
-    ADK_INFO("applied");
+    try {
+        trans->Commit();
+    } catch (Properties::Exception &e) {
+        std::string msg(e.what());
+        msg += "\nPress [Cancel] to restore original values and cancel the transaction,\n"
+               "[OK] to correct your input.";
+        Gtk::MessageDialog
+            dlg(*dynamic_cast<Gtk::Window *>(wdgTlBox.get_toplevel()),
+                msg, false, Gtk::MESSAGE_ERROR, Gtk::BUTTONS_OK_CANCEL, true);
+        dlg.set_title("Values commit failed");
+        if (dlg.run() == Gtk::RESPONSE_OK) {
+            return;
+        }
+        trans->Cancel();
+        for (Node *node: transNodes) {
+            dynamic_cast<Item *>(node)->UpdateValue();
+        }
+    }
+    transNodes.clear();
 }
 
 void
 PropView::OnCancel()
 {
     trans->Cancel();
-    //XXX restore values
+    for (Node *node: transNodes) {
+        dynamic_cast<Item *>(node)->UpdateValue();
+    }
+    transNodes.clear();
 }
 
 void
@@ -337,6 +359,11 @@ PropView::IndexNode(Node *node)
 std::unique_ptr<PropView::Node>
 PropView::UnindexNode(Node *node)
 {
+    auto transIt = transNodes.find(node);
+    if (transIt != transNodes.end()) {
+        transNodes.erase(transIt);
+    }
+
     auto it = nodes.find(node->GetWidget());
     if (it == nodes.end()) {
         return nullptr;
