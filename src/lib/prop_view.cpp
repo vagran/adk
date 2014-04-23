@@ -15,6 +15,7 @@
 using namespace adk;
 
 PropView::Item::Item(PropView &propView):
+    Node(propView),
     wdgBox(Gtk::ORIENTATION_HORIZONTAL, 2),
     wdgNameAlign(1.0, 0.5, 0.0, 1.0)
 {
@@ -26,7 +27,13 @@ PropView::Item::Item(PropView &propView):
     if (propView.readOnly) {
         wdgValue.set_editable(false);
         wdgCheck.set_sensitive(false);
+    } else {
+        wdgValue.signal_focus_out_event().connect(
+            sigc::mem_fun(*this, &PropView::Item::OnFocusLost));
     }
+
+    wdgValue.signal_unmap().connect(
+        sigc::mem_fun(*this, &PropView::Item::OnHide));
 }
 
 void
@@ -50,9 +57,26 @@ PropView::Item::Update()
     }
 }
 
+bool
+PropView::Item::OnFocusLost(GdkEventFocus *)
+{
+    if (!wdgValue.is_visible()) {
+        return false;
+    }
+    wdgValue.grab_focus();
+    return true;
+}
+
+void
+PropView::Item::OnHide()
+{
+    //restore value if editing
+}
+
 /* ****************************************************************************/
 
-PropView::Category::Category(PropView &propView)
+PropView::Category::Category(PropView &propView):
+    Node(propView)
 {
     wdgList.set_sort_func(sigc::mem_fun(propView, &PropView::CategorySortFunc));
     wdgExpander.add(wdgList);
@@ -90,7 +114,6 @@ PropView::PropView(Properties &props, bool readOnly, bool haveButtons):
     wdgDescScrolled.add(wdgDesc);
 
     wdgButtonsBox.set_homogeneous();
-    wdgButtonsBox.set_size_request();
     wdgButtonsBox.pack_start(wdgApplyButton, true, false);
     wdgButtonsBox.pack_start(wdgCancelButton, true, false);
 
@@ -100,6 +123,7 @@ PropView::PropView(Properties &props, bool readOnly, bool haveButtons):
 
     wdgTlBox.pack_start(wdgPaned, true, true);
     wdgTlBox.pack_start(wdgButtonsBox, false, false);
+    wdgTlBox.set_size_request(-1, 200);
 
     root = new Category(*this);
     IndexNode(root);

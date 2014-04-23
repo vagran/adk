@@ -37,11 +37,16 @@ private:
     class Item;
     class Category;
 
-    class Node {
+    class Node: public SlotTarget, virtual public sigc::trackable {
     public:
+        PropView &propView;
         Properties::Node node;
         /** Order value, nodes in list sorted by this  value. */
         int order;
+
+        Node(PropView &propView):
+            propView(propView)
+        {}
 
         virtual
         ~Node()
@@ -98,6 +103,13 @@ private:
         {
             return &wdgBox;
         }
+
+    private:
+        bool
+        OnFocusLost(GdkEventFocus *);
+
+        void
+        OnHide();
     };
 
     class Category: public Node {
