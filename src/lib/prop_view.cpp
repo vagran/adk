@@ -30,9 +30,13 @@ PropView::Item::Item(PropView &propView):
     } else {
         wdgValue.signal_focus_out_event().connect(
             sigc::mem_fun(*this, &PropView::Item::OnFocusLost));
+        wdgCheck.signal_clicked().connect(
+            sigc::mem_fun(*this, &PropView::Item::OnCheckbox));
     }
 
     wdgValue.signal_unmap().connect(
+        sigc::mem_fun(*this, &PropView::Item::OnUnmap));
+    wdgCheck.signal_unmap().connect(
         sigc::mem_fun(*this, &PropView::Item::OnUnmap));
 }
 
@@ -114,6 +118,38 @@ PropView::Item::OnFocusLost(GdkEventFocus *)
     }
 
     return false;
+}
+
+void
+PropView::Item::OnCheckbox()
+{
+    auto ErrorMsg = [this](const std::string title, Properties::Exception &e) {
+        std::string msg(node.GetPath().Str() + ":\n");
+        msg += e.what();
+        Gtk::MessageDialog
+            dlg(*dynamic_cast<Gtk::Window *>(wdgValue.get_toplevel()),
+                msg, false, Gtk::MESSAGE_ERROR, Gtk::BUTTONS_OK, true);
+        dlg.set_title(title);
+        dlg.run();
+        UpdateValue();
+        return;
+    };
+
+    bool v = wdgCheck.get_active();
+    if (v == node.Val<bool>()) {
+        return;
+    }
+
+    try {
+        if (propView.hasButtons) {
+            propView.trans->Modify(node.GetPath(), v);
+            propView.transNodes.insert(this);
+        } else {
+            propView.props.Modify(node.GetPath(), v);
+        }
+    } catch (Properties::Exception &e) {
+        return ErrorMsg("Value modification failed", e);
+    }
 }
 
 void
@@ -319,12 +355,11 @@ PropView::UpdateCategory(Category &catNode)
             IndexNode(vnode);
             vnode->node = node;
             vnode->order = order;
-            if (value.IsNone()) {
-                UpdateCategory(vnode->GetCategory());
-            } else {
-                vnode->Update();
-            }
             catNode.wdgList.add(*vnode->GetWidget());
+
+            props.Modify(node.GetPath(), Properties::NodeOptions().Listener(
+                Properties::NodeHandler::Make(&PropView::OnNodeChanged,
+                                              this, vnode)));
         }
         order++;
     }
@@ -371,4 +406,14 @@ PropView::UnindexNode(Node *node)
     std::unique_ptr<Node> ref = std::move(it->second);
     nodes.erase(it);
     return ref;
+}
+
+void
+PropView::OnNodeChanged(Node *node)
+{
+    if (node->IsItem()) {
+        node->Update();
+    } else {
+        UpdateCategory(node->GetCategory());
+    }
 }

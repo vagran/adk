@@ -112,6 +112,9 @@ private:
         OnFocusLost(GdkEventFocus *);
 
         void
+        OnCheckbox();
+
+        void
         OnUnmap();
 
         /** Parse value from string (may include units).
@@ -190,6 +193,9 @@ private:
 
     void
     OnCancel();
+
+    void
+    OnNodeChanged(Node *node);
 
     /** Synchronize category contents with current view. */
     void

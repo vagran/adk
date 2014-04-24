@@ -92,12 +92,25 @@ public:
     void
     OnRadiobuttonClick()
     {
+        auto SetProps = [this](const std::string s, double d, bool b) {
+            bool f = _props["sample/Item5"].Val<bool>();
+            std::string s1 = s + " " + (f ? "true" : "false");
+            auto trans = _props.OpenTransaction();
+            trans->Modify("sample/Item3", s1);
+            trans->Modify("Item2", d);
+            trans->Modify("sample/Item4", b);
+            trans->Commit();
+        };
+
         if (_rbRect->get_active()) {
             _drawingArea->SetShape(CDrawingArea::SHAPE_RECTANGLE);
+            SetProps("Rectangle", 3.14, true);
         } else if (_rbEllipse->get_active()) {
             _drawingArea->SetShape(CDrawingArea::SHAPE_ELLIPSE);
+            SetProps("Ellipse", 42.42, false);
         } else if (_rbTriangle->get_active()) {
             _drawingArea->SetShape(CDrawingArea::SHAPE_TRIANGLE);
+            SetProps("Triangle", 33.33, true);
         }
     }
 
