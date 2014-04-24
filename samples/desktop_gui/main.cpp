@@ -94,11 +94,20 @@ public:
     {
         auto SetProps = [this](const std::string s, double d, bool b) {
             bool f = _props["sample/Item5"].Val<bool>();
+            bool exists = _props["sample/cat"];
             std::string s1 = s + " " + (f ? "true" : "false");
             auto trans = _props.OpenTransaction();
             trans->Modify("sample/Item3", s1);
             trans->Modify("Item2", d);
             trans->Modify("sample/Item4", b);
+            if (exists) {
+                trans->Delete("sample/cat");
+            } else {
+                trans->Add("sample/cat");
+                trans->Add("sample/cat/a", 1);
+                trans->Add("sample/cat/b", true);
+                trans->Add("sample/cat/c", "aaa");
+            }
             trans->Commit();
         };
 

@@ -195,7 +195,7 @@ private:
     OnCancel();
 
     void
-    OnNodeChanged(Node *node);
+    OnNodeChanged(Node *node, int event);
 
     /** Synchronize category contents with current view. */
     void

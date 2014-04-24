@@ -359,12 +359,13 @@ PropView::UpdateCategory(Category &catNode)
 
             props.Modify(node.GetPath(), Properties::NodeOptions().Listener(
                 Properties::NodeHandler::Make(&PropView::OnNodeChanged,
-                                              this, vnode)));
+                                              this, vnode, std::placeholders::_2)));
         }
         order++;
     }
 
     /* Delete non visited. */
+    //XXX should be recursive
     for (auto it = catNode.children.begin(); it != catNode.children.end();) {
         Node *node = *it;
         if (node->order == -1) {
@@ -409,11 +410,15 @@ PropView::UnindexNode(Node *node)
 }
 
 void
-PropView::OnNodeChanged(Node *node)
+PropView::OnNodeChanged(Node *node, int event)
 {
-    if (node->IsItem()) {
+    if (node->IsItem() && (event & Properties::EventType::MODIFY)) {
         node->Update();
-    } else {
+    } else if (!node->IsItem() &&
+               (event & (Properties::EventType::NEW |
+                         Properties::EventType::ADD |
+                         Properties::EventType::DELETE |
+                         Properties::EventType::MODIFY))) {
         UpdateCategory(node->GetCategory());
     }
 }
