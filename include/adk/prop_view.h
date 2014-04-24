@@ -212,6 +212,9 @@ private:
 
     int
     CategorySortFunc(Gtk::ListBoxRow* row1, Gtk::ListBoxRow* row2);
+
+    void
+    DeleteNode(Category &parent, Node *node);
 };
 
 } /* namespace adk */

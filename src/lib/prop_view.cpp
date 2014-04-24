@@ -363,18 +363,34 @@ PropView::UpdateCategory(Category &catNode)
         }
         order++;
     }
+    catNode.wdgList.show_all();
 
     /* Delete non visited. */
-    //XXX should be recursive
     for (auto it = catNode.children.begin(); it != catNode.children.end();) {
         Node *node = *it;
         if (node->order == -1) {
-            catNode.wdgList.remove(*node->GetWidget());
+            DeleteNode(catNode, node);
             it = catNode.children.erase(it);
             UnindexNode(node);
         } else {
             it++;
         }
+    }
+}
+
+void
+PropView::DeleteNode(Category &parent, Node *node)
+{
+    parent.wdgList.remove(*node->GetWidget()->get_parent());
+    if (node->IsItem()) {
+        return;
+    }
+    Category &cat = node->GetCategory();
+    for (auto it = cat.children.begin(); it != cat.children.end();) {
+        Node *node = *it;
+        DeleteNode(cat, node);
+        it = cat.children.erase(it);
+        UnindexNode(node);
     }
 }
 

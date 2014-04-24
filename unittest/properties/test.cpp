@@ -697,13 +697,18 @@ UT_TEST("Events")
 
     const char *curPath;
     int curEvent;
+    const char *secPath = nullptr;
+    int secEvent;
 
     Properties::NodeHandler listener =
-        Properties::NodeHandler::Make([&curPath, &curEvent](Properties::Node node, int event) {
+        Properties::NodeHandler::Make([&curPath, &curEvent, &secPath, &secEvent]
+                                       (Properties::Node node, int event) {
 
         UT_BOOL(node) == UT_TRUE;
         if (node.GetPath() == curPath) {
             UT(event) == UT(curEvent);
+        } else if (secPath && node.GetPath() == secPath) {
+            UT(event) == UT(secEvent);
         } else if (node.GetPath().Size() > Properties::Path(curPath).Size()) {
             UT(event) == UT_INT(Properties::EventType::NEW);
         } else {
@@ -730,11 +735,40 @@ UT_TEST("Events")
     props.Modify("a1/b2", 2);
 
     curPath = "a1";
-    curEvent = Properties::EventType::DELETE;
-    props.Delete("a1/b2");
-
     curEvent = Properties::EventType::ADD | Properties::EventType::DELETE;
     t->Add("a1/c2", Properties::NodeOptions().Listener(listener));
     t->Delete("a1/a2");
     t->Commit();
+
+    curPath = "a1";
+    curEvent = Properties::EventType::ADD | Properties::EventType::CHILD;
+    secPath = "a1/b2";
+    secEvent = Properties::EventType::MODIFY;
+    t->Modify("a1/b2", 2);
+    t->Add("a1/d2", Properties::NodeOptions().Listener(listener));
+    t->Add("a1/d2/a3", 1, Properties::NodeOptions().Listener(listener));
+    t->Add("a1/d2/b3", 2, Properties::NodeOptions().Listener(listener));
+    t->Add("a1/d2/c3", 3, Properties::NodeOptions().Listener(listener));
+    t->Commit();
+    secPath = nullptr;
+
+    curPath = "a1";
+    curEvent = Properties::EventType::DELETE;
+    props.Delete("a1/d2");
+
+    curPath = "a1";
+    curEvent = Properties::EventType::ADD | Properties::EventType::CHILD;
+    secPath = "a1/b2";
+    secEvent = Properties::EventType::MODIFY;
+    t->Add("a1/d2", Properties::NodeOptions().Listener(listener));
+    t->Add("a1/d2/a3", 1, Properties::NodeOptions().Listener(listener));
+    t->Add("a1/d2/b3", 2, Properties::NodeOptions().Listener(listener));
+    t->Add("a1/d2/c3", 3, Properties::NodeOptions().Listener(listener));
+    t->Modify("a1/b2", 2);
+    t->Commit();
+    secPath = nullptr;
+
+    curPath = "a1";
+    curEvent = Properties::EventType::DELETE;
+    props.Delete("a1/b2");
 }

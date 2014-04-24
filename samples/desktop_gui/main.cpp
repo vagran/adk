@@ -78,6 +78,12 @@ private:
                 queue_draw();
             }
         }
+
+        shape_t
+        GetShape()
+        {
+            return _curShape;
+        }
     };
 
     Glib::RefPtr<Gtk::Builder> _builder;
@@ -93,6 +99,7 @@ public:
     OnRadiobuttonClick()
     {
         auto SetProps = [this](const std::string s, double d, bool b) {
+            ADK_INFO("clicked %s", s.c_str());//XXX
             bool f = _props["sample/Item5"].Val<bool>();
             bool exists = _props["sample/cat"];
             std::string s1 = s + " " + (f ? "true" : "false");
@@ -111,15 +118,30 @@ public:
             trans->Commit();
         };
 
+        CDrawingArea::shape_t newShape;
         if (_rbRect->get_active()) {
-            _drawingArea->SetShape(CDrawingArea::SHAPE_RECTANGLE);
-            SetProps("Rectangle", 3.14, true);
+            newShape = CDrawingArea::SHAPE_RECTANGLE;
         } else if (_rbEllipse->get_active()) {
-            _drawingArea->SetShape(CDrawingArea::SHAPE_ELLIPSE);
-            SetProps("Ellipse", 42.42, false);
+            newShape = CDrawingArea::SHAPE_ELLIPSE;
         } else if (_rbTriangle->get_active()) {
-            _drawingArea->SetShape(CDrawingArea::SHAPE_TRIANGLE);
+            newShape = CDrawingArea::SHAPE_TRIANGLE;
+        }
+
+        if (newShape == _drawingArea->GetShape()) {
+            return;
+        }
+        _drawingArea->SetShape(newShape);
+
+        switch (newShape) {
+        case CDrawingArea::SHAPE_RECTANGLE:
+            SetProps("Rectangle", 3.14, true);
+            break;
+        case CDrawingArea::SHAPE_ELLIPSE:
+            SetProps("Ellipse", 42.42, false);
+            break;
+        case CDrawingArea::SHAPE_TRIANGLE:
             SetProps("Triangle", 33.33, true);
+            break;
         }
     }
 
