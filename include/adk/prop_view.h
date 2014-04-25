@@ -23,8 +23,6 @@ class PropView: public SlotTarget, virtual public sigc::trackable {
 public:
     PropView(Properties &props, bool readOnly = false, bool hasButtons = false);
 
-    ~PropView();
-
     /** Get top-level widget for the properties sheet. */
     Gtk::Widget &
     GetWidget();
@@ -173,14 +171,8 @@ private:
     Gtk::Box wdgTlBox,
     /** Box for buttons. */
              wdgButtonsBox;
-    /** Paned widget between values and description. */
-    Gtk::Paned wdgPaned;
-    /** Scrolling for description. */
-    Gtk::ScrolledWindow wdgDescScrolled,
     /** Scrolling for values. */
-                        wdgValuesScrolled;
-    /** Description text. */
-    Gtk::TextView wdgDesc;
+    Gtk::ScrolledWindow wdgValuesScrolled;
     Gtk::Button wdgApplyButton, wdgCancelButton;
     /** Values viewport. */
     Gtk::Viewport wdgValuesVp;

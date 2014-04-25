@@ -44,6 +44,11 @@ void
 PropView::Item::Update()
 {
     wdgName.set_text(node.DispName());
+    std::string desc(node.Description());
+    if (desc.empty()) {
+        desc = node.GetPath().Str();
+    }
+    wdgBox.set_tooltip_text(desc);
     UpdateValue();
 }
 
@@ -213,7 +218,12 @@ PropView::Category::FindChild(Properties::Node node)
 void
 PropView::Category::Update()
 {
-    //XXX
+    wdgExpander.set_label(node.DispName());
+    std::string desc(node.Description());
+    if (desc.empty()) {
+        desc = node.GetPath().Str();
+    }
+    wdgExpander.set_tooltip_text(desc);
 }
 
 /* ****************************************************************************/
@@ -226,21 +236,14 @@ PropView::PropView(Properties &props, bool readOnly, bool hasButtons):
     wdgCancelButton("Cancel"),
     wdgValuesVp(Glib::RefPtr<Gtk::Adjustment>(), Glib::RefPtr<Gtk::Adjustment>())
 {
-    wdgDesc.set_editable(false);
     wdgValuesScrolled.add(wdgValuesVp);
-    wdgDescScrolled.add(wdgDesc);
 
     wdgButtonsBox.set_homogeneous();
     wdgButtonsBox.pack_start(wdgApplyButton, true, false);
     wdgButtonsBox.pack_start(wdgCancelButton, true, false);
 
-    wdgPaned.set_orientation(Gtk::ORIENTATION_VERTICAL);
-    wdgPaned.add1(wdgValuesScrolled);
-    wdgPaned.add2(wdgDescScrolled);
-
-    wdgTlBox.pack_start(wdgPaned, true, true);
+    wdgTlBox.pack_start(wdgValuesScrolled, true, true);
     wdgTlBox.pack_start(wdgButtonsBox, false, false);
-    wdgTlBox.set_size_request(-1, 200);
 
     root = new Category(*this);
     IndexNode(root);
@@ -259,11 +262,6 @@ PropView::PropView(Properties &props, bool readOnly, bool hasButtons):
     }
 }
 
-PropView::~PropView()
-{
-    //XXX
-}
-
 Gtk::Widget &
 PropView::GetWidget()
 {
@@ -275,7 +273,7 @@ PropView::Show(bool f)
 {
     if (f) {
         wdgTlBox.show();
-        wdgPaned.show_all();
+        wdgValuesScrolled.show_all();
         if (hasButtons) {
             wdgButtonsBox.show_all();
         }
@@ -332,7 +330,7 @@ PropView::OnCancel()
 void
 PropView::UpdateCategory(Category &catNode)
 {
-    catNode.wdgExpander.set_label(catNode.node.DispName());
+    catNode.Update();
 
     for (Node *node: catNode.children) {
         node->order = -1;
