@@ -18,6 +18,7 @@ namespace adk {
 /** Simple spin-lock. */
 class Spinlock {
 public:
+    Spinlock() = default;
     Spinlock(const Spinlock &) = delete;
     Spinlock(Spinlock &&) = delete;
 
