@@ -8,8 +8,6 @@
 
 /** @file signal.h
  * Signals and slots.
- *
- *
  */
 
 #ifndef SIGNAL_H_

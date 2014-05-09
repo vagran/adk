@@ -59,6 +59,7 @@
 #include <adk/exception.h>
 #include <adk/logging.h>
 #include <adk/debug.h>
+#include <adk/spinlock.h>
 
 #include <adk/utils.h>
 #include <adk/optional.h>
