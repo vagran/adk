@@ -91,6 +91,8 @@ def ParseFile(filename, isTest, isDynamicLib):
             continue
         name = m.group(2)
         if m.group(1) in 'TDBWVi':
+            if '@' in name:
+                name = name[:name.index('@')]
             defined_syms[name] = filename
         elif m.group(1) == 'U' and isTest:
             if (not name.startswith('__cxa') and
