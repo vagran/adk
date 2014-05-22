@@ -13,7 +13,7 @@
 using namespace adk;
 
 std::string
-GetSystemError()
+adk::GetSystemError()
 {
     int code = errno;
     char buf[1024];

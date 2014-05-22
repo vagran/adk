@@ -33,9 +33,13 @@
 #define ADK_WARNING(msg, ...) g_warning("%s:%d: " msg, __FILE__, __LINE__, ## __VA_ARGS__)
 #define ADK_INFO(msg, ...) g_message("%s:%d: " msg, __FILE__, __LINE__, ## __VA_ARGS__)
 
+namespace adk {
+
 /** Get description for last system error. */
 std::string
 GetSystemError();
+
+} /* namespace adk */
 
 #endif /* ADK_PLATFORM_AVR */
 
