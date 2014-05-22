@@ -35,6 +35,10 @@
 
 namespace adk {
 
+/** Get error code for the last system error. */
+int
+GetSystemErrorCode();
+
 /** Get description for last system error. */
 std::string
 GetSystemError();

@@ -23,3 +23,9 @@ adk::GetSystemError()
     ss << code << " - " << desc;
     return ss.str();
 }
+
+int
+adk::GetSystemErrorCode()
+{
+    return errno;
+}

@@ -288,6 +288,17 @@ ADK_DEFINE_EXCEPTION(InvalidOpException);
 /** Generic exception thrown when operation is executed in invalid state. */
 ADK_DEFINE_EXCEPTION(InternalErrorException);
 
+/** Exception for failed system calls. */
+ADK_DEFINE_PARAM_EXCEPTION(SysException, int);
+
+#define ADK_SYS_EXCEPTION(__msg) do { \
+    std::stringstream __ss; \
+    int __code = adk::GetSystemErrorCode(); \
+    __ss << "System error: [" << __code << "]: " << \
+        adk::GetSystemError() << ": " << __msg; \
+    __ADK_THROW_EXCEPTION(adk::SysException, __ss.str(), __code); \
+} while (false)
+
 } /* namespace adk */
 
 #endif /* ADK_EXCEPTION_H_ */
