@@ -155,6 +155,8 @@ EFUSE_CMD = $(AVRDUDE) -p $(ADK_MCU) -c $(ADK_PROGRAMMER) -P $(ADK_PROGRAMMER_BU
 DEFS += ADK_MCU_EFUSE=$(ADK_MCU_EFUSE)
 endif
 
+.PHONY: fuse upload_flash upload_eeprom upload verify_flash verify_eeprom verify reset
+
 # Program fuse bytes
 fuse:
 	$(FUSE_CMD)
@@ -162,15 +164,24 @@ fuse:
 	$(HFUSE_CMD)
 	$(EFUSE_CMD)
 
-# Upload firmware (program falsh and data EEPROM)
-upload: $(AVR_ROM_HEX) $(AVR_EEPROM_HEX)
+# Upload program flash only without EEPROM
+upload_flash: $(AVR_ROM_HEX)
 	$(AVRDUDE) -p $(ADK_MCU) -c $(ADK_PROGRAMMER) -P $(ADK_PROGRAMMER_BUS) -U flash:w:$(AVR_ROM_HEX):i
+	
+upload_eeprom: $(AVR_EEPROM_HEX)
 	$(AVRDUDE) -p $(ADK_MCU) -c $(ADK_PROGRAMMER) -P $(ADK_PROGRAMMER_BUS) -U eeprom:w:$(AVR_EEPROM_HEX):i
 
-# Verify firmware (program falsh and data EEPROM)
-verify: $(AVR_ROM_HEX) $(AVR_EEPROM_HEX)
+# Upload firmware (program flash and data EEPROM)
+upload: upload_flash upload_eeprom
+
+verify_flash: $(AVR_ROM_HEX)
 	$(AVRDUDE) -p $(ADK_MCU) -c $(ADK_PROGRAMMER) -P $(ADK_PROGRAMMER_BUS) -U flash:v:$(AVR_ROM_HEX):i
+	
+verify_eeprom: $(AVR_EEPROM_HEX)
 	$(AVRDUDE) -p $(ADK_MCU) -c $(ADK_PROGRAMMER) -P $(ADK_PROGRAMMER_BUS) -U eeprom:v:$(AVR_EEPROM_HEX):i
+
+# Verify firmware (program flash and data EEPROM)
+verify: verify_flash verify_eeprom
 
 # Just check connection and also reset CPU.
 reset:
