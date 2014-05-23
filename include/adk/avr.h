@@ -34,6 +34,7 @@ typedef __WCHAR_TYPE__ wchar_t;
 #include <string.h>
 
 #include <adk/types.h>
+#include <adk/endian.h>
 
 #endif /* __ASSEMBLER__ */
 

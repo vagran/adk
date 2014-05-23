@@ -13,7 +13,9 @@
 #ifndef ENDIAN_H_
 #define ENDIAN_H_
 
-namespace adk {
+/* Not in adk namespace for consistency with types.h */
+
+#ifdef __cplusplus
 
 namespace internal {
 
@@ -401,6 +403,30 @@ typedef BeValue<float> BeFloat;
 typedef BeValue<double> BeDouble;
 /// @}
 
-} /* namespace adk */
+#else /* __cplusplus */
+
+typedef i8 LeI8;
+typedef u8 LeU8;
+typedef i16 LeI16;
+typedef u16 LeU16;
+typedef i32 LeI32;
+typedef u32 LeU32;
+typedef i64 LeI64;
+typedef u64 LeU64;
+typedef float LeFloat;
+typedef double LeDouble;
+
+typedef i8 BeI8;
+typedef u8 BeU8;
+typedef i16 BeI16;
+typedef u16 BeU16;
+typedef i32 BeI32;
+typedef u32 BeU32;
+typedef i64 BeI64;
+typedef u64 BeU64;
+typedef float BeFloat;
+typedef double BeDouble;
+
+#endif /* __cplusplus */
 
 #endif /* ENDIAN_H_ */
