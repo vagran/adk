@@ -171,3 +171,7 @@ upload: $(AVR_ROM_HEX) $(AVR_EEPROM_HEX)
 verify: $(AVR_ROM_HEX) $(AVR_EEPROM_HEX)
 	$(AVRDUDE) -p $(ADK_MCU) -c $(ADK_PROGRAMMER) -P $(ADK_PROGRAMMER_BUS) -U flash:v:$(AVR_ROM_HEX):i
 	$(AVRDUDE) -p $(ADK_MCU) -c $(ADK_PROGRAMMER) -P $(ADK_PROGRAMMER_BUS) -U eeprom:v:$(AVR_EEPROM_HEX):i
+
+# Just check connection and also reset CPU.
+reset:
+	$(AVRDUDE) -p $(ADK_MCU) -c $(ADK_PROGRAMMER) -P $(ADK_PROGRAMMER_BUS)
