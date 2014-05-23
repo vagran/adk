@@ -55,6 +55,7 @@
 #endif
 
 #include <adk/types.h>
+#include <adk/endian.h>
 
 #include <adk/exception.h>
 #include <adk/logging.h>
