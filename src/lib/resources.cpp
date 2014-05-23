@@ -35,9 +35,9 @@ MapReleaser g_mapReleaser;
 
 } /* anonymous namespace */
 
-internal::ResourceDeclarator::ResourceDeclarator(const char *name,
-                                                 const void *start,
-                                                 const void *end)
+adk::internal::ResourceDeclarator::ResourceDeclarator(const char *name,
+                                                      const void *start,
+                                                      const void *end)
 {
     if (!g_resMap) {
         g_resMap = new std::map<std::string, ResourceDesc>();
