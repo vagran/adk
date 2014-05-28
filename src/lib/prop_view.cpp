@@ -260,6 +260,8 @@ PropView::PropView(Properties &props, bool readOnly, bool hasButtons):
     if (hasButtons) {
         trans = props.OpenTransaction();
     }
+
+    OnPropsChanged();
 }
 
 Gtk::Widget &
@@ -289,7 +291,9 @@ PropView::OnPropsChanged()
     //XXX
     if (!root->node) {
         root->node = props[""];
-        UpdateCategory(*root);
+        if (root->node) {
+            UpdateCategory(*root);
+        }
     }
 }
 
