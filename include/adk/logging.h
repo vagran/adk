@@ -13,6 +13,25 @@
 #ifndef ADK_LOGGING_H_
 #define ADK_LOGGING_H_
 
+#ifndef ADK_PLATFORM_AVR
+
+namespace adk {
+
+/** Get error code for the last system error. */
+int
+GetSystemErrorCode();
+
+/** Get description for last system error. */
+std::string
+GetSystemError();
+
+std::string
+GetSystemTime();
+
+} /* namespace adk */
+
+#endif /* !ADK_PLATFORM_AVR */
+
 #ifdef UNITTEST
 
 #define ADK_CRITICAL(msg, ...) UT_TRACE("[CRIT] " msg, ## __VA_ARGS__)
@@ -36,21 +55,6 @@
         adk::GetSystemTime().c_str(), __FILE__, __LINE__, ## __VA_ARGS__)
 #define ADK_INFO(msg, ...) g_message("[%s] %s:%d: " msg, \
         adk::GetSystemTime().c_str(), __FILE__, __LINE__, ## __VA_ARGS__)
-
-namespace adk {
-
-/** Get error code for the last system error. */
-int
-GetSystemErrorCode();
-
-/** Get description for last system error. */
-std::string
-GetSystemError();
-
-std::string
-GetSystemTime();
-
-} /* namespace adk */
 
 #endif /* ADK_PLATFORM_AVR */
 
