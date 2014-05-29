@@ -66,6 +66,11 @@ struct PropValueNearestTypeSet<const char *> {
     typedef std::string &&Type;
 };
 
+template <>
+struct PropValueNearestTypeSet<char *> {
+    typedef std::string &&Type;
+};
+
 template <size_t size>
 struct PropValueNearestTypeSet<const char (&)[size]> {
     typedef std::string &&Type;
