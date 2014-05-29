@@ -28,10 +28,14 @@
 
 #else /* ADK_PLATFORM_AVR */
 
-#define ADK_CRITICAL(msg, ...) g_critical("%s:%d: " msg, __FILE__, __LINE__, ## __VA_ARGS__)
-#define ADK_ERROR(msg, ...) g_error("%s:%d: " msg, __FILE__, __LINE__, ## __VA_ARGS__)
-#define ADK_WARNING(msg, ...) g_warning("%s:%d: " msg, __FILE__, __LINE__, ## __VA_ARGS__)
-#define ADK_INFO(msg, ...) g_message("%s:%d: " msg, __FILE__, __LINE__, ## __VA_ARGS__)
+#define ADK_CRITICAL(msg, ...) g_critical("[%s] %s:%d: " msg, \
+        adk::GetSystemTime().c_str(), __FILE__, __LINE__, ## __VA_ARGS__)
+#define ADK_ERROR(msg, ...) g_error("[%s] %s:%d: " msg, \
+        adk::GetSystemTime().c_str(), __FILE__, __LINE__, ## __VA_ARGS__)
+#define ADK_WARNING(msg, ...) g_warning("[%s] %s:%d: " msg, \
+        adk::GetSystemTime().c_str(), __FILE__, __LINE__, ## __VA_ARGS__)
+#define ADK_INFO(msg, ...) g_message("[%s] %s:%d: " msg, \
+        adk::GetSystemTime().c_str(), __FILE__, __LINE__, ## __VA_ARGS__)
 
 namespace adk {
 
@@ -42,6 +46,9 @@ GetSystemErrorCode();
 /** Get description for last system error. */
 std::string
 GetSystemError();
+
+std::string
+GetSystemTime();
 
 } /* namespace adk */
 

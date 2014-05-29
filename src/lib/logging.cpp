@@ -29,3 +29,18 @@ adk::GetSystemErrorCode()
 {
     return errno;
 }
+
+using Ms = std::chrono::milliseconds;
+using Clock = std::chrono::steady_clock;
+template<class Duration>
+using TimePoint = std::chrono::time_point<Clock, Duration>;
+
+std::string
+adk::GetSystemTime()
+{
+    Clock::time_point now = Clock::now();
+    TimePoint<Ms> tp = std::chrono::time_point_cast<Ms>(now);
+    char buf[64];
+    snprintf(buf, sizeof(buf), "%.3f", (double)tp.time_since_epoch().count() / 1000.0);
+    return buf;
+}
