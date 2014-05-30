@@ -1054,12 +1054,18 @@ Properties::Node::operator *() const
 }
 
 Properties::Node
-Properties::Node::operator [](const Path &path) const
+Properties::Node::Child(const Path &path) const
 {
     ASSERT(_node);
     Lock lock = _node->LockProps();
     //XXX transaction
     return _node->Find(path);
+}
+
+Properties::Node
+Properties::Node::operator [](const Path &path) const
+{
+    return Child(path);
 }
 
 Properties::Node

@@ -769,6 +769,10 @@ public:
         Node
         operator [](const Path &path) const;
 
+        /** Get child node with the specified subpath. */
+        Node
+        Child(const Path &path) const;
+
         /** Create and commit transaction for this node value modification. */
         Node
         operator =(const Value &value);
