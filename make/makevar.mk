@@ -110,6 +110,7 @@ export ADK_PLATFORM_ID_WIN64 = 4
 
 # Desktop libraries
 export DESKTOP_LIBS = \
+	m \
 	glib-$(GLIB_VERSION) \
     glibmm-$(GLIBMM_VERSION) \
     sigc-$(SIGCPP_VERSION) \
