@@ -770,10 +770,7 @@ public:
         operator [](const Path &path) const;
 
         Node
-        operator [](const char *path) const
-        {
-            return Child(path);
-        }
+        operator [](const char *path) const;
 
         /** Get child node with the specified subpath. */
         Node

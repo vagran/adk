@@ -1069,6 +1069,12 @@ Properties::Node::operator [](const Path &path) const
 }
 
 Properties::Node
+Properties::Node::operator [](const char *path) const
+{
+    return Child(path);
+}
+
+Properties::Node
 Properties::Node::operator =(const Value &value)
 {
     ASSERT(_node);
