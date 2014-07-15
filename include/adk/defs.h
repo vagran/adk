@@ -144,7 +144,7 @@
 #endif
 /** Check if value is power of 2. */
 #ifndef IS_POWER_OF_2
-#define IS_POWER_OF_2(value)       ((((value) - 1) & (value)) == 0)
+#define IS_POWER_OF_2(value)       (value && (((value) - 1) & (value)) == 0)
 #endif
 
 /** Round up the value with specified alignment. Alignment must be an integer
