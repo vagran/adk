@@ -37,20 +37,20 @@ public:
     Optional(const T &value):
         isValid(true)
     {
-        new(storage) T(value);
+        new(storage.data) T(value);
     }
 
     Optional(T &&value):
         isValid(true)
     {
-        new(storage) T(std::move(value));
+        new(storage.data) T(std::move(value));
     }
 
     Optional(const Optional &value):
         isValid(value.isValid)
     {
         if (isValid) {
-            new(storage) T(*value);
+            new(storage.data) T(*value);
         }
     }
 
@@ -58,7 +58,7 @@ public:
         isValid(value.isValid)
     {
         if (isValid) {
-            new(storage) T(std::move(*value));
+            new(storage.data) T(std::move(*value));
         }
     }
 
@@ -80,7 +80,7 @@ public:
         if (isValid) {
             **this = value;
         } else {
-            new(storage) T(value);
+            new(storage.data) T(value);
             isValid = true;
         }
         return *this;
@@ -92,7 +92,7 @@ public:
         if (isValid) {
             **this = std::move(value);
         } else {
-            new(storage) T(std::move(value));
+            new(storage.data) T(std::move(value));
             isValid = true;
         }
         return *this;
@@ -109,7 +109,7 @@ public:
                 isValid = false;
             }
         } else if (value.isValid) {
-            new(storage) T(*value);
+            new(storage.data) T(*value);
             isValid = true;
         }
         return *this;
@@ -126,7 +126,7 @@ public:
                 isValid = false;
             }
         } else if (value.isValid) {
-            new(storage) T(*std::move(value));
+            new(storage.data) T(*std::move(value));
             isValid = true;
         }
         return *this;
@@ -141,7 +141,7 @@ public:
         if (isValid) {
             (**this) = std::forward<U>(value);
         } else {
-            new(storage) T(std::forward<U>(value));
+            new(storage.data) T(std::forward<U>(value));
             isValid = true;
         }
         return *this;
@@ -198,26 +198,30 @@ public:
             (**this).~T();
             isValid = false;
 #           ifdef DEBUG
-            memset(storage, 0xfe, sizeof(storage));
+            memset(storage.data, 0xfe, sizeof(storage.data));
 #           endif
         }
     }
 
 private:
     /** Storage for the value. */
-    u8 storage[sizeof(T)];
+    union {
+        u8 data[sizeof(T)];
+        /** Ensure the data array is always aligned as long. */
+        long align;
+    } storage;
     bool isValid;
 
     inline T *
     GetPtr()
     {
-        return reinterpret_cast<T *>(storage);
+        return reinterpret_cast<T *>(storage.data);
     }
 
     inline const T *
     GetPtr() const
     {
-        return reinterpret_cast<const T *>(storage);
+        return reinterpret_cast<const T *>(storage.data);
     }
 };
 
