@@ -1,0 +1,7 @@
+
+import SCons
+import adk
+
+conf = adk.Conf(SCons)
+
+adk.Apply(conf)

@@ -1,0 +1,3 @@
+Import('*')
+
+print(SUBDIRS)
