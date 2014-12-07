@@ -33,6 +33,7 @@ public:
     {
         lock.clear(std::memory_order_release);
     }
+
 private:
     std::atomic_flag lock = ATOMIC_FLAG_INIT;
 };
@@ -105,6 +106,7 @@ public:
         lock = nullptr;
         isLocked = false;
     }
+
 private:
     Spinlock *lock;
     bool isLocked;

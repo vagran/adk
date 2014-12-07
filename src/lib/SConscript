@@ -1,7 +1,18 @@
+# This file is a part of ADK library.
+# Copyright (c) 2012-2014, Artyom Lebedev <artyom.lebedev@gmail.com>
+# All rights reserved.
+# See COPYING file for copyright details.
 
-import SCons
 import adk
 
-conf = adk.Conf(SCons)
+commonParams = {'APP_NAME': 'adk',
+                'USE_GUI': True,
+                'USE_PYTHON': True}
 
-adk.Apply(conf)
+adk.Conf(APP_TYPE = 'dynamic_lib',
+         APP_ALIAS = 'adk_dynamic_lib',
+         **commonParams).Build()
+
+adk.Conf(APP_TYPE = 'static_lib',
+         APP_ALIAS = 'adk_static_lib',
+         **commonParams).Build()

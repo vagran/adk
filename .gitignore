@@ -1,4 +1,3 @@
-.project
-.cproject
 .settings
-/.pydevproject
+/.sconsign.dblite
+*.pyc
