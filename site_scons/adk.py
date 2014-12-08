@@ -29,6 +29,12 @@ sc.AddOption('--adk-platform',
 
 class Conf(object):
     
+    (PLATFORM_ID_AVR,
+     PLATFORM_ID_LINUX32,
+     PLATFORM_ID_LINUX64,
+     PLATFORM_ID_WIN32,
+     PLATFORM_ID_WIN64) = range(5)
+    
     # Possible attributes for configuration and their default values.
     params = {
         'PLATFORM': 'native',
@@ -83,6 +89,7 @@ class Conf(object):
     def _SetupNativePlatform(self, e):
         arch = platform.architecture()
         mach = platform.machine()
+        sys = platform.system()
         
         if arch[0] == '32bit':
             self.WORD_SIZE = 32
@@ -90,6 +97,14 @@ class Conf(object):
             self.WORD_SIZE = 64
         else:
             raise Exception('Unsupported host word size: ' + arch[0])
+        
+        if sys == 'Linux':
+            if self.WORD_SIZE == 32:
+                self.PLATFORM_ID = Conf.PLATFORM_ID_LINUX32
+            else:
+                self.PLATFORM_ID = Conf.PLATFORM_ID_LINUX64
+        else:
+            raise Exception('Unsupported native system')
         
 #         if mach == 'i386' or mach == 'x86_64':
 #             e['OBJ_ARCH'] = 'i386'
@@ -108,6 +123,7 @@ class Conf(object):
             return
         if self.PLATFORM == 'avr':
             self.WORD_SIZE = 16
+            self.PLATFORM_ID = Conf.PLATFORM_ID_AVR
             self._SetupAvrCompiling(e)
         else:
             raise Exception('Unsupported cross compilation target platform: ' +
@@ -262,6 +278,18 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
             self.DEFS += ' ADK_USE_PYTHON '
         
         self._SetupCrossCompiling(e)
+        
+        self.DEFS += ' ADK_PLATFORM_ID=%d ' % self.PLATFORM_ID
+        if self.PLATFORM_ID == Conf.PLATFORM_ID_AVR:
+            self.DEFS += ' ADK_PLATFORM_AVR '
+        elif self.PLATFORM_ID == Conf.PLATFORM_ID_LINUX32:
+            self.DEFS += ' ADK_PLATFORM_LINUX32 '
+        elif self.PLATFORM_ID == Conf.PLATFORM_ID_LINUX64:
+            self.DEFS += ' ADK_PLATFORM_LINUX64 '
+        elif self.PLATFORM_ID == Conf.PLATFORM_ID_WINDOWS32:
+            self.DEFS += ' ADK_PLATFORM_WINDOWS32 '
+        elif self.PLATFORM_ID == Conf.PLATFORM_ID_WINDOWS64:
+            self.DEFS += ' ADK_PLATFORM_WINDOWS64 '
         
         
         # Include directories
