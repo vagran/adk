@@ -118,7 +118,7 @@ public:
             trans->Commit();
         };
 
-        CDrawingArea::shape_t newShape;
+        CDrawingArea::shape_t newShape = CDrawingArea::SHAPE_RECTANGLE;
         if (_rbRect->get_active()) {
             newShape = CDrawingArea::SHAPE_RECTANGLE;
         } else if (_rbEllipse->get_active()) {

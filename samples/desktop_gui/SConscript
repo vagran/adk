@@ -1,0 +1,13 @@
+# This file is a part of ADK library.
+# Copyright (c) 2012-2014, Artyom Lebedev <artyom.lebedev@gmail.com>
+# All rights reserved.
+# See COPYING file for copyright details.
+
+import adk
+
+conf = adk.Conf(APP_NAME= 'desktop_gui',
+                APP_TYPE = 'app',
+                APP_ALIAS = 'desktop_gui_sample',
+                LIBS = 'desktop_sample_gui',
+                RES_FILES = 'props.xml',
+                SUBDIRS = 'lib').Build()
