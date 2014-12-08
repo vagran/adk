@@ -59,6 +59,8 @@ class Conf(object):
     
     def __init__(self, **kwargs):
         
+        self.isTopLevel = False
+        
         for paramName in Conf.params:
             if paramName in kwargs:
                 value = kwargs[paramName]
@@ -376,7 +378,7 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
         
         gchs = list()
         for pch in pchs:
-            fn = os.path.join(hdrsDir, os.path.basename(f.path) + '.gch')
+            fn = os.path.join(hdrsDir, os.path.basename(pch.path) + '.gch')
             if self.IsStatic():
                 gch = e.Gch(fn, pch)
             else:
@@ -407,9 +409,18 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
         '''
         dirs = sc.Split(self.SUBDIRS)
         result = list()
+        
+        if sc.Dir('.').path == '.':
+            buildDirName = os.path.join('build', '%s-%s' % (self.PLATFORM,
+                                                            sc.GetOption('adkBuildType')))
+        else:
+            buildDirName = ''
+        
         for dir in dirs:
             res = sc.SConscript(os.path.join(dir, 'SConscript'),
-                                variant_dir = 'build', duplicate = 0)
+                                variant_dir = buildDirName,
+                                duplicate = False,
+                                src_dir = '.')
             if res is None:
                 continue
             if isinstance(res, list):
