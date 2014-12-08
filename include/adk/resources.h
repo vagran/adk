@@ -80,7 +80,7 @@ public:
 
 #else /* ADK_PLATFORM_AVR */
 //XXX not implemented
-ADK_DECL_RESOURCE(__name, __start, __end)
+ADK_DECL_RESOURCE(__id, __name, __start, __end)
 #endif
 
 #include <auto_adk_res.h>
