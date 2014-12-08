@@ -3,7 +3,7 @@
 # All rights reserved.
 # See COPYING file for copyright details.
 
-import os, subprocess
+import os, subprocess, platform
 
 import SCons
 sc = SCons.Script
@@ -17,6 +17,7 @@ sc.AddOption('--adk-build-type',
              choices = ['debug', 'release'],
              default = 'release',
              help = 'Build configuration type.')
+
 sc.AddOption('--adk-platform',
              dest = 'adkPlatform',
              nargs = 1,
@@ -41,6 +42,7 @@ class Conf(object):
         'CCFLAGS': '',
         'DEFS': '',
         'PKGS': '',
+        'RES_FILES': '',
         
         'USE_GUI': None,
         'USE_PYTHON': False,
@@ -74,22 +76,51 @@ class Conf(object):
         return self.PLATFORM != 'avr'
     
     
-    def SetupCrossCompiling(self, e):
+    def IsStatic(self):
+        return self.APP_TYPE != 'dynamic_lib'
+    
+    
+    def _SetupNativePlatform(self, e):
+        arch = platform.architecture()
+        mach = platform.machine()
+        
+        if arch[0] == '32bit':
+            self.WORD_SIZE = 32
+        elif arch[0] == '64bit':
+            self.WORD_SIZE = 64
+        else:
+            raise Exception('Unsupported host word size: ' + arch[0])
+        
+        if mach == 'i386' or mach == 'x86_64':
+            e['OBJ_ARCH'] = 'i386'
+        else:
+            raise Exception('Unsupported host machine type: ' + mach)
+        
+        if arch[1] == 'ELF':
+            e['OBJ_FORMAT'] = 'elf%d-%s' % (self.WORD_SIZE, mach)
+        else:
+            raise Exception('Unsupported host linkage type: ' + arch[1])
+            
+    
+    def _SetupCrossCompiling(self, e):
+        e['OBJCOPY'] = 'objcopy'
         if self.PLATFORM == 'native':
+            self._SetupNativePlatform(e)
             return
         if self.PLATFORM == 'avr':
-            self.SetupAvrCompiling(e)
+            self.WORD_SIZE = 16
+            self._SetupAvrCompiling(e)
         else:
             raise Exception('Unsupported cross compilation target platform: ' +
                             self.PLATFORM)
     
     
-    def SetupAvrCompiling(self, e):
+    def _SetupAvrCompiling(self, e):
         #XXX
         raise Exception('not implemented')
     
     
-    def SetupPackage(self, pkg, e):
+    def _SetupPackage(self, pkg, e):
         if '=' in pkg:
             pkgName, version = pkg.split('=')
             opt = '--exact-version=' + version
@@ -109,10 +140,63 @@ class Conf(object):
         e.ParseConfig('pkg-config %s --cflags --libs' % pkgName)
         
     
-    def SetupPackages(self, e):
+    def _SetupPackages(self, e):
         pkgs = sc.Split(self.PKGS)
         for pkg in pkgs:
-            self.SetupPackage(pkg, e)
+            self._SetupPackage(pkg, e)
+            
+    
+    def _CreateResBuilder(self, e):
+        'Create for embedding raw resource files.'
+        
+        def BuildResStaticObj(target, source, env):
+            print('BuildResStaticObj called "%s": "%s"' % (repr(target), repr(source)))
+            
+        e['BUILDERS']['ResStaticObjFile'] = e.Builder(action = BuildResStaticObj)
+            
+            
+        def BuildResDynamicObj(target, source, env):
+            print('BuildResDynamicObj called "%s": "%s"' % (repr(target), repr(source)))
+        
+        e['BUILDERS']['ResDynamicObjFile'] = e.Builder(action = BuildResDynamicObj)
+        
+        
+        def BuildResHdr(target, source, env):
+            print('BuildResHdr called "%s": "%s"' % (repr(target), repr(source)))
+        
+        e['BUILDERS']['ResHdrFile'] = e.Builder(action = BuildResHdr)
+        
+        
+        def BuildResIndexHdr(target, source, env):
+            print('writing ' + target[0].abspath)
+            with open(target[0].abspath, "w") as f:
+                f.write('/* This file is generated automatically. */\n')
+        
+        e['BUILDERS']['ResIndexHdrFile'] = e.Builder(action = BuildResIndexHdr)
+        
+        
+    def _GetObjPath(self, e, path, isStatic = None):
+        if isStatic is None:
+            isStatic = self.IsStatic()
+        dirName = os.path.dirname(path)
+        baseName = os.path.basename(path)
+        if isStatic:
+            baseName = e.subst('${OBJPREFIX}%s${OBJSUFFIX}' % baseName)
+        else:
+            baseName = e.subst('${SHOBJPREFIX}%s${SHOBJSUFFIX}' % baseName)
+        return os.path.join(dirName, baseName)
+    
+    
+    def _ProcessFilesList(self, e, files):
+        if isinstance(files, str):
+            files = sc.Split(files)
+        result = list()
+        for file in files:
+            if isinstance(file, str):
+                result.append(e.File(file))
+            else:
+                result.append(file)
+        return result
     
     
     def Build(self):
@@ -123,7 +207,9 @@ class Conf(object):
         
         e = sc.Environment()
         
-        self.HandleSubdirs()
+        self._CreateResBuilder(e)
+        
+        self._HandleSubdirs()
         
         if self.APP_NAME is None:
             return
@@ -144,7 +230,12 @@ class Conf(object):
         self.CXXFLAGS += ' -std=c++11'
         self.CFLAGS += ' -std=c99'
         
-        self.SetupCrossCompiling(e)
+        if self.USE_GUI:
+            self.DEFS += ' ADK_USE_GUI '
+        if self.USE_PYTHON:
+            self.DEFS += ' ADK_USE_PYTHON '
+        
+        self._SetupCrossCompiling(e)
         
         
         # Include directories
@@ -167,31 +258,60 @@ class Conf(object):
         
         
         if self.IsDesktop():
-            self.PKGS += ' glibmm-2.4 giomm-2.4 '
-        self.SetupPackages(e)
+            self.PKGS += ' gtkmm-3.0 python3 '
+        self._SetupPackages(e)
         
         
         cFiles = sc.Glob('*.c')
         cppFiles = sc.Glob('*.cpp')
         asmFiles = sc.Glob('*.s')
+    
+        resFiles = self._ProcessFilesList(e, self.RES_FILES)
+        if self.USE_GUI:
+            resFiles += sc.Glob('*.glade')
         
         srcFiles = cFiles + cppFiles + asmFiles
         
-        if self.APP_TYPE == 'app':
-            output = e.Program(self.APP_NAME, srcFiles)
+        resObjs = list()
+        resHdrs = list()
+        hdrsDir = 'auto_include_' + self.APP_TYPE
+        for resFile in resFiles:
+            fn = self._GetObjPath(e, os.path.basename(resFile.path))
+            print(fn)
+            if self.IsStatic():
+                resObjs.append(e.ResStaticObjFile(fn, resFile))
+            else:
+                resObjs.append(e.ResDynamicObjFile(fn, resFile))
+            resHdrs.append(e.ResHdrFile(os.path.join(hdrsDir, 
+                                                     os.path.basename(resFile.path) + '.h'), 
+                                        resFile))
+        resIndexHdr = e.ResIndexHdrFile(os.path.join(hdrsDir, 'auto_adk_res.h'), 
+                                        resHdrs)
+        e.Append(CPPPATH = e.Dir(hdrsDir).abspath)
+        
+        if self.IsStatic():
+            srcObjs = [e.StaticObject(f) for f in srcFiles]
         elif self.APP_TYPE == 'dynamic_lib':
-            output = e.SharedLibrary(self.APP_NAME, srcFiles)
-        elif self.APP_TYPE == 'static_lib':
-            output = e.StaticLibrary(self.APP_NAME, srcFiles)
+            srcObjs = [e.SharedObject(f) for f in srcFiles]
         else:
             raise Exception('Unsupported application type: ' + self.APP_TYPE)
+        
+        for obj in srcObjs:
+            e.Depends(obj, resIndexHdr)
+
+        if self.APP_TYPE == 'app':
+            output = e.Program(self.APP_NAME, srcObjs + resObjs)
+        elif self.APP_TYPE == 'dynamic_lib':
+            output = e.SharedLibrary(self.APP_NAME, srcObjs + resObjs)
+        else:
+            output = e.StaticLibrary(self.APP_NAME, srcObjs + resObjs)
         
         if self.APP_ALIAS is not None:
             e.Alias(self.APP_ALIAS, output)
         e.Default(output)
         
         
-    def HandleSubdirs(self):
+    def _HandleSubdirs(self):
         '''
         Build subprojects in the SUBDIRS attribute.
         @return SCons nodes returned from the scripts in the subdirectories.

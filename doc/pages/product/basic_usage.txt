@@ -140,6 +140,7 @@ Build configuration parameters:
     * name=version -- exact version required.
     * name>version -- at least the specified version required.
     * name<version -- at most the specified version required.
+  * ''RES_FILES'' -- additional raw resource files to embed into the executable binary.
 
 Optional flag variables -- they can have values ''True'' or ''False'' to enable or disable corresponding feature:
   * ''USE_GUI'' -- use GUI components (based on Gtk+ library). ''True'' by default for desktop targets, ''False'' for the rest ones.
@@ -148,4 +149,4 @@ Optional flag variables -- they can have values ''True'' or ''False'' to enable 
 
 ===== Required development packages =====
 
-  * libglibmm-2.4-dev
+  * libgtkmm-3.0-dev
