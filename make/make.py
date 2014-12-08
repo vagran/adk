@@ -1,3 +1,0 @@
-Import('*')
-
-print(SUBDIRS)

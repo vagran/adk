@@ -7,8 +7,7 @@ import adk
 
 commonParams = {'APP_NAME': 'adk',
                 'USE_GUI': True,
-                'USE_PYTHON': True,
-                'RES_FILES': 'properties.xsd Makefile'}
+                'USE_PYTHON': True}
 
 adk.Conf(APP_TYPE = 'dynamic_lib',
          APP_ALIAS = 'adk_dynamic_lib',

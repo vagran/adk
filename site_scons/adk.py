@@ -49,6 +49,7 @@ class Conf(object):
         'DEFS': '',
         'PKGS': '',
         'RES_FILES': '',
+        'PCHS': '',
         
         'USE_GUI': None,
         'USE_PYTHON': False,
@@ -162,7 +163,7 @@ class Conf(object):
             
     
     def _CreateResBuilder(self, e):
-        'Create for embedding raw resource files.'
+        'Create builders for embedding raw resource files.'
         
         def TransformResFileName(name):
             result = ''
@@ -216,7 +217,25 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
         
         e['BUILDERS']['ResIndexHdrFile'] = e.Builder(action = BuildResIndexHdr)
         
+    
+    def _CreatePchBuilder(self, e):
+        'Create builders for pre-compiled headers'
         
+        def BuildGch(target, source, env):
+            a = e.Action('$CXX -o {0} -x c++-header -c $CXXFLAGS $CCFLAGS $_CCCOMCOM {1}'.
+                format(target[0].abspath, source[0].abspath))
+            e.Execute(a)
+        
+        e['BUILDERS']['Gch'] = e.Builder(action = BuildGch)
+        
+        def BuildGchShared(target, source, env):
+            a = e.Action('$CXX -o {0} -x c++-header -c $SHCXXFLAGS $SHCCFLAGS $_CCCOMCOM {1}'.
+                format(target[0].abspath, source[0].abspath))
+            e.Execute(a)
+        
+        e['BUILDERS']['GchShared'] = e.Builder(action = BuildGchShared)
+        
+    
     def _GetObjPath(self, e, path, isStatic = None):
         if isStatic is None:
             isStatic = self.IsStatic()
@@ -250,11 +269,16 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
         e = sc.Environment()
         
         self._CreateResBuilder(e)
-        
+        self._CreatePchBuilder(e)
+
         self._HandleSubdirs()
         
         if self.APP_NAME is None:
             return
+        
+        if (self.APP_TYPE != 'app' and self.APP_TYPE != 'static_lib' and
+            self.APP_TYPE != 'dynamic_lib'):
+            raise Exception('Unsupported application type: ' + self.APP_TYPE)
         
         if self.USE_GUI is None and self.IsDesktop():
             self.USE_GUI = True
@@ -290,6 +314,8 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
             self.DEFS += ' ADK_PLATFORM_WINDOWS32 '
         elif self.PLATFORM_ID == Conf.PLATFORM_ID_WINDOWS64:
             self.DEFS += ' ADK_PLATFORM_WINDOWS64 '
+            
+        self.PCHS += ' %s ' % os.path.join(self.ADK_ROOT, 'include', 'adk.h')
         
         
         # Include directories
@@ -323,6 +349,8 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
         resFiles = self._ProcessFilesList(e, self.RES_FILES)
         if self.USE_GUI:
             resFiles += sc.Glob('*.glade')
+            
+        pchs = self._ProcessFilesList(e, self.PCHS)
         
         srcFiles = cFiles + cppFiles + asmFiles
         
@@ -338,17 +366,27 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
                                         resFile))
         resIndexHdr = e.ResIndexHdrFile(os.path.join(hdrsDir, 'auto_adk_res.h'), 
                                         resHdrs)
-        e.Append(CPPPATH = e.Dir(hdrsDir).abspath)
+        e.Prepend(CPPPATH = e.Dir(hdrsDir).abspath)
+        
         
         if self.IsStatic():
             srcObjs = [e.StaticObject(f) for f in srcFiles]
-        elif self.APP_TYPE == 'dynamic_lib':
-            srcObjs = [e.SharedObject(f) for f in srcFiles]
         else:
-            raise Exception('Unsupported application type: ' + self.APP_TYPE)
+            srcObjs = [e.SharedObject(f) for f in srcFiles]
         
+        gchs = list()
+        for pch in pchs:
+            fn = os.path.join(hdrsDir, os.path.basename(f.path) + '.gch')
+            if self.IsStatic():
+                gch = e.Gch(fn, pch)
+            else:
+                gch = e.GchShared(fn, pch)
+            e.Depends(gch, resIndexHdr)
+            gchs.append(gch)
+            
         for obj in srcObjs:
             e.Depends(obj, resIndexHdr)
+            e.Depends(obj, gchs)
 
         if self.APP_TYPE == 'app':
             output = e.Program(self.APP_NAME, srcObjs + resAsms)

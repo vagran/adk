@@ -141,6 +141,7 @@ Build configuration parameters:
     * name>version -- at least the specified version required.
     * name<version -- at most the specified version required.
   * ''RES_FILES'' -- additional raw resource files to embed into the executable binary.
+  * ''PCHS'' -- headers for which pre-compiled headers should be generated.
 
 Optional flag variables -- they can have values ''True'' or ''False'' to enable or disable corresponding feature:
   * ''USE_GUI'' -- use GUI components (based on Gtk+ library). ''True'' by default for desktop targets, ''False'' for the rest ones.
