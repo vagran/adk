@@ -31,8 +31,17 @@ sc.AddOption('--adk-prefix',
              nargs = 1,
              action  ='store',
              metavar = 'ADK_PREFIX',
-             default = '/usr',
              help = 'ADK installation prefix.')
+
+
+def GetAdkPrefix():
+    prefix = sc.GetOption('adkPrefix')
+    if prefix is None:
+        if 'ADK_PREFIX' in os.environ:
+            prefix = os.environ['ADK_PREFIX']
+        else:
+            prefix = '/usr'
+    return prefix
 
 
 class Conf(object):
@@ -59,6 +68,9 @@ class Conf(object):
         'RES_FILES': '',
         'PCHS': '',
         'INSTALL_DIR': '',
+        'NO_ADK_LIB': False,
+        'LIBS': '',
+        'LIB_DIRS': '',
         
         'USE_GUI': None,
         'USE_PYTHON': False,
@@ -88,6 +100,8 @@ class Conf(object):
         cmdPlatform = sc.GetOption('adkPlatform')
         if cmdPlatform is not None:
             self.PLATFORM = cmdPlatform
+    
+        self.adkPrefix = GetAdkPrefix()
     
     
     def IsDesktop(self):
@@ -337,6 +351,9 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
             
         self.PCHS += ' %s ' % os.path.join(self.ADK_ROOT, 'include', 'adk.h')
         
+        if self.IsDesktop() and not self.NO_ADK_LIB:
+            self.LIBS += ' adk '
+            self.LIB_DIRS += ' %s ' % os.path.join(self.adkPrefix, 'lib')
         
         # Include directories
         e['CPPPATH'] = sc.Split(self.INCLUDE_DIRS)
@@ -357,13 +374,15 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
         e['CPPDEFINES'] = DEFS
         
         self.PKGS += ' glibmm-2.4 giomm-2.4 '
-        
         if self.USE_GUI:
             self.PKGS += ' gtkmm-3.0 '
         if self.USE_PYTHON:
             self.PKGS += ' python3 '
         self._SetupPackages(e)
         
+        # Libraries
+        e.Append(LIBS = sc.Split(self.LIBS))
+        e.Append(LIBPATH = self._ProcessFilesList(e, self.LIB_DIRS, e.Dir))
         
         cFiles = sc.Glob('*.c')
         cppFiles = sc.Glob('*.cpp')

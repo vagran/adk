@@ -113,6 +113,8 @@ Command line parameters:
     * ''native''
     * ''linux''
     * ''avr''
+  * ''--adk_prefix'' -- ADK installation prefix. Taken from ADK_PREFIX
+    environment variable if not specified. "/usr" by default.
 
 <code python>
 import adk
@@ -143,6 +145,9 @@ Build configuration parameters:
   * ''RES_FILES'' -- additional raw resource files to embed into the executable binary.
   * ''PCHS'' -- headers for which pre-compiled headers should be generated.
   * ''INSTALL_DIR'' -- directories to install compiled binary into.
+  * ''NO_ADK_LIB'' -- do not link with ADK library. ''False'' by default.
+  * ''LIBS'' -- libraries to link with.
+  * ''LIB_DIRS'' -- additional directories to search for libraries.
 
 Optional flag variables -- they can have values ''True'' or ''False'' to enable or disable corresponding feature:
   * ''USE_GUI'' -- use GUI components (based on Gtk+ library). ''True'' by default for desktop targets, ''False'' for the rest ones.
