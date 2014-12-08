@@ -3,11 +3,13 @@
 # All rights reserved.
 # See COPYING file for copyright details.
 
-import adk
+import adk, os
 
 commonParams = {'APP_NAME': 'adk',
                 'USE_GUI': True,
                 'USE_PYTHON': True}
+
+commonParams['INSTALL_DIR'] = os.path.join(GetOption('adkPrefix'), 'lib')
 
 adk.Conf(APP_TYPE = 'dynamic_lib',
          APP_ALIAS = 'adk_dynamic_lib',
