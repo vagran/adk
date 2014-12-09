@@ -59,6 +59,8 @@ class Conf(object):
         'APP_NAME': None,
         'APP_ALIAS': None,
         'SUBDIRS': '',
+        'SRC_DIRS': '.',
+        'SRCS': '',
         'INCLUDE_DIRS': '',
         'CFLAGS': '',
         'CXXFLAGS': '',
@@ -157,8 +159,7 @@ class Conf(object):
     
     
     def _SetupAvrCompiling(self, e):
-        #XXX
-        raise Exception('not implemented')
+        e['CC'] = 'avr-gcc'
     
     
     def _SetupPackage(self, pkg, e):
@@ -376,7 +377,8 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
                 DEFS.append(item)
         e['CPPDEFINES'] = DEFS
         
-        self.PKGS += ' glibmm-2.4 giomm-2.4 '
+        if self.IsDesktop():
+            self.PKGS += ' glibmm-2.4 giomm-2.4 '
         if self.USE_GUI:
             self.PKGS += ' gtkmm-3.0 '
         if self.USE_PYTHON:
@@ -387,17 +389,18 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
         e.Append(LIBS = sc.Split(self.LIBS))
         e.Append(LIBPATH = self._ProcessFilesList(e, self.LIB_DIRS, e.Dir))
         
-        cFiles = sc.Glob('*.c')
-        cppFiles = sc.Glob('*.cpp')
-        asmFiles = sc.Glob('*.s')
+        srcFiles = list()
+        for srcDir in self._ProcessFilesList(e, self.SRC_DIRS, e.Dir):
+            srcFiles.append(srcDir.glob('*.c'))
+            srcFiles.append(srcDir.glob('*.cpp'))
+            srcFiles.append(srcDir.glob('*.s'))
+        
     
         resFiles = self._ProcessFilesList(e, self.RES_FILES)
         if self.USE_GUI:
             resFiles += sc.Glob('*.glade')
             
         pchs = self._ProcessFilesList(e, self.PCHS)
-        
-        srcFiles = cFiles + cppFiles + asmFiles
         
         resHdrs = list()
         resAsms = list()

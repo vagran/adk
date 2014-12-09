@@ -133,6 +133,8 @@ Build configuration parameters:
   * ''APP_ALIAS'' -- alias name for SCons target name. Should be unique in a project scope. Defaults to ''APP_NAME''.
   * ''PLATFORM''
   * ''SUBDIRS'' -- string or list with subdirectory names which should be built. The subdirectories should have //SConscript// file inside. Considered as dependencies af the given build configuration.
+  *  ''SRC_DIRS'' -- additional directories to search for source files. By default only current directory is inspected.
+  * ''SRCS'' -- additional particular source files to include in the build.
   * '' INCLUDE_DIRS'' -- additional directories to specify as include paths.
   * ''CFLAGS'' -- additional compilation flags for C files.
   * ''CXXFLAGS'' -- additional compilation flags for C++ files.
@@ -154,6 +156,19 @@ Optional flag variables -- they can have values ''True'' or ''False'' to enable 
   * ''USE_PYTHON'' -- embedded Python support. ''False'' by default.
   * ''AVR_USE_USB'' -- use USB interface software implementation. ''False'' by default.
 
-===== Required development packages =====
+Platform specific variables:
+  - For ''avr'' platform:
+    * ''MCU'' -- target MCU device model. Should be one of the values allowed by '-mmcu' parameter of GCC for AVR target.
+    * ''PROGRAMMER'' -- used programmer type. Should be one of the values accepted for '-c' option of 'avrdude' (e.g. 'avrisp2').
+    * ''PROGRAMMER_BUS'' -- used programmer connection. The value is provided to '-P' option of 'avrdude' (e.g. '/dev/ttyUSB0').
+    * ''MCU_FUSE'' -- fuse byte in hexadecimal representation (e.g. 0xff) for devices with one fuse byte.
+    * ''MCU_LFUSE'' -- fuse low byte in hexadecimal representation (e.g. 0xff).
+    * ''MCU_HFUSE'' -- fuse high byte in hexadecimal representation (e.g. 0xff).
+    * ''MCU_EFUSE'' -- fuse extended byte in hexadecimal representation (e.g. 0xff).
+    * ''MCU_FREQ'' -- MCU clock frequency in Hz.
+
+===== Required packages =====
 
   * libgtkmm-3.0-dev
+  * gcc-avr
+  * avr-libc

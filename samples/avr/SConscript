@@ -5,4 +5,4 @@
 
 import adk
 
-conf = adk.Conf(SUBDIRS = 'desktop_console desktop_gui avr').Build()
+conf = adk.Conf(SUBDIRS = 'firmware').Build()
