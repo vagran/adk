@@ -101,7 +101,7 @@ class Conf(object):
         if cmdPlatform is not None:
             self.PLATFORM = cmdPlatform
     
-        self.adkPrefix = GetAdkPrefix()
+        self.ADK_PREFIX = GetAdkPrefix()
     
     
     def IsDesktop(self):
@@ -284,11 +284,11 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
         if factory is None:
             factory = e.File
         if isinstance(files, str):
-            files = sc.Split(files)
+            files = sc.Split(e.subst(files))
         result = list()
         for file in files:
             if isinstance(file, str):
-                result.append(factory(file))
+                result.append(factory(e.subst(file)))
             else:
                 result.append(file)
         return result
@@ -304,8 +304,11 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
         
         self._CreateResBuilder(e)
         self._CreatePchBuilder(e)
+        
+        e['ADK_ROOT'] = self.ADK_ROOT
+        e['ADK_PREFIX'] = self.ADK_PREFIX
 
-        self._HandleSubdirs()
+        self._HandleSubdirs(e)
         
         if self.APP_NAME is None:
             return
@@ -353,7 +356,7 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
         
         if self.IsDesktop() and not self.NO_ADK_LIB:
             self.LIBS += ' adk '
-            self.LIB_DIRS += ' %s ' % os.path.join(self.adkPrefix, 'lib')
+            self.LIB_DIRS += ' %s ' % os.path.join(self.ADK_PREFIX, 'lib')
         
         # Include directories
         e['CPPPATH'] = sc.Split(self.INCLUDE_DIRS)
@@ -448,12 +451,12 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
             e.Alias('install', i)
     
     
-    def _HandleSubdirs(self):
+    def _HandleSubdirs(self, e):
         '''
         Build subprojects in the SUBDIRS attribute.
         @return SCons nodes returned from the scripts in the subdirectories.
         '''
-        dirs = sc.Split(self.SUBDIRS)
+        dirs = self._ProcessFilesList(e, self.SUBDIRS, e.Dir)
         result = list()
         
         if sc.Dir('.').path == '.':
@@ -463,7 +466,7 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
             buildDirName = ''
         
         for dir in dirs:
-            res = sc.SConscript(os.path.join(dir, 'SConscript'),
+            res = sc.SConscript(os.path.join(dir.abspath, 'SConscript'),
                                 variant_dir = buildDirName,
                                 duplicate = False,
                                 src_dir = '.')

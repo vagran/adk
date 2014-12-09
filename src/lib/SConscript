@@ -8,9 +8,8 @@ import adk, os
 commonParams = {'APP_NAME': 'adk',
                 'USE_GUI': True,
                 'USE_PYTHON': True,
-                'NO_ADK_LIB': True}
-
-commonParams['INSTALL_DIR'] = os.path.join(adk.GetAdkPrefix(), 'lib')
+                'NO_ADK_LIB': True,
+                'INSTALL_DIR': '${ADK_PREFIX}/lib'}
 
 adk.Conf(APP_TYPE = 'dynamic_lib',
          APP_ALIAS = 'adk_dynamic_lib',

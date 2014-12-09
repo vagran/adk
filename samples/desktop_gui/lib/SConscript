@@ -8,4 +8,4 @@ import adk, os
 conf = adk.Conf(APP_NAME= 'desktop_sample_gui',
                 APP_TYPE = 'dynamic_lib',
                 APP_ALIAS = 'desktop_gui_sample_lib',
-                INSTALL_DIR = os.path.join(adk.GetAdkPrefix(), 'lib')).Build()
+                INSTALL_DIR = '${ADK_PREFIX}/lib').Build()
