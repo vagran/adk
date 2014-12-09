@@ -153,6 +153,7 @@ Build configuration parameters:
   * ''LIB_DIRS'' -- additional directories to search for libraries.
   * ''DEBUG_OPT_FLAGS'' -- optimization flags for debug build. They overwrite default flags if specified.
   * ''RELEASE_OPT_FLAGS'' -- optimization flags for release build. They overwrite default flags if specified.
+  * ''TEST_DESC'' -- Short description for a unit test.
 
 Optional flag variables -- they can have values ''True'' or ''False'' to enable or disable corresponding feature:
   * ''USE_GUI'' -- use GUI components (based on Gtk+ library). ''True'' by default for desktop targets, ''False'' for the rest ones.

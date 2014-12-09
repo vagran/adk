@@ -76,6 +76,8 @@ class Conf(object):
         'LIB_DIRS': '',
         'RELEASE_OPT_FLAGS': None,
         'DEBUG_OPT_FLAGS': None,
+        'TEST_DESC': None,
+        'TEST_SRCS': '',
         
         'MCU': None,
         'PROGRAMMER': None,
@@ -360,11 +362,11 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
             return
         
         if (self.APP_TYPE != 'app' and self.APP_TYPE != 'static_lib' and
-            self.APP_TYPE != 'dynamic_lib'):
+            self.APP_TYPE != 'dynamic_lib' and self.APP_TYPE != 'unit_test'):
             raise Exception('Unsupported application type: ' + self.APP_TYPE)
         
         if self.USE_GUI is None and self.IsDesktop():
-            self.USE_GUI = True
+            self.USE_GUI = self.APP_TYPE != 'unit_test'
         
         self.INCLUDE_DIRS += ' ${ADK_ROOT}/include '
         
@@ -383,9 +385,15 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
             if self.IsDesktop():
                 self.PKGS += ' libusb '
         
+        if self.APP_TYPE == 'unit_test':
+            if self.TEST_DESC is None:
+                raise Exception('Unit test description should be specified')
+            self.DEFS += ' UNITTEST '
+            self.SRC_DIRS += ' ${ADK_ROOT}/src/unit_test '
+            e['BUILDERS']['UtAutoSrc'] = e.Builder(action = Conf._BuildUtAutoSrc)
         
         adkFlags = '-Wall -Werror -Wextra '
-        if e.GetOption('adkBuildType') == 'debug':
+        if e.GetOption('adkBuildType') == 'debug' or self.APP_TYPE == 'unit_test':
             adkFlags += ' -ggdb3 '
             self.DEFS += ' DEBUG '
             if self.DEBUG_OPT_FLAGS is None:
@@ -459,6 +467,13 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
             srcFiles.extend(srcDir.glob('*.S'))
         for src in self._ProcessFilesList(e, self.SRCS):
             srcFiles.append(src)
+        if self.APP_TYPE == 'unit_test':
+            for src in self._ProcessFilesList(e, self.TEST_SRCS):
+                srcFiles.append(src)
+            autoSrc = e.UtAutoSrc('auto/auto_stabs.cpp',
+                                  e.File('SConscript'), # Need some dependency
+                                  ADK_TEST_DESC = self.TEST_DESC)
+            srcFiles.extend(autoSrc)
     
         resFiles = self._ProcessFilesList(e, self.RES_FILES)
         if self.USE_GUI:
@@ -508,7 +523,7 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
             e.Depends(obj, resIndexHdr)
             e.Depends(obj, gchs)
 
-        if self.APP_TYPE == 'app':
+        if self.APP_TYPE == 'app' or self.APP_TYPE == 'unit_test':
             output = e.Program(self.APP_NAME, srcObjs + resAsms)
         elif self.APP_TYPE == 'dynamic_lib':
             output = e.SharedLibrary(self.APP_NAME, srcObjs + resAsms)
@@ -623,3 +638,16 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
         a = env.Action('$OBJCOPY -j .eeprom --change-section-lma .eeprom=0 -O binary {0} {1}'.
             format(source[0].abspath, target[0].abspath))
         env.Execute(a)
+
+    @staticmethod
+    def _BuildUtAutoSrc(target, source, env):
+        #XXX invoke stabs generator
+        
+        with open(target[0].abspath, "w") as out:
+            out.write(env.subst('''
+namespace ut {
+
+const char *__ut_test_description = "${ADK_TEST_DESC}";
+
+} /* namespace ut */
+            '''))
