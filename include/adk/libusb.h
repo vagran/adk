@@ -13,7 +13,7 @@
 #ifndef ADK_LIBUSB_H_
 #define ADK_LIBUSB_H_
 
-#include <libusb.h>
+#include <usb.h>
 
 namespace adk {
 

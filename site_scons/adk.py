@@ -201,7 +201,6 @@ class Conf(object):
             self.DEBUG_OPT_FLAGS = '-Os -mcall-prologues'
             
         if self.AVR_USE_USB:
-            self.DEFS += ' ADK_AVR_USE_USB '
             self.SRC_DIRS += ' ${ADK_ROOT}/src/libavr/usb '
     
     
@@ -377,6 +376,12 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
         
         
         self._SetupCrossCompiling(e)
+        
+        
+        if self.AVR_USE_USB:
+            self.DEFS += ' ADK_AVR_USE_USB '
+            if self.IsDesktop():
+                self.PKGS += ' libusb '
         
         
         adkFlags = '-Wall -Werror -Wextra '
