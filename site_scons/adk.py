@@ -65,6 +65,7 @@ class Conf(object):
         'CFLAGS': '',
         'CXXFLAGS': '',
         'CCFLAGS': '',
+        'ASFLAGS': '',
         'DEFS': '',
         'PKGS': '',
         'RES_FILES': '',
@@ -73,6 +74,17 @@ class Conf(object):
         'NO_ADK_LIB': False,
         'LIBS': '',
         'LIB_DIRS': '',
+        'RELEASE_OPT_FLAGS': None,
+        'DEBUG_OPT_FLAGS': None,
+        
+        'MCU': None,
+        'PROGRAMMER': None,
+        'PROGRAMMER_BUS': None,
+        'MCU_FUSE': None,
+        'MCU_LFUSE': None,
+        'MCU_HFUSE': None,
+        'MCU_EFUSE': None,
+        'MCU_FREQ': None,
         
         'USE_GUI': None,
         'USE_PYTHON': False,
@@ -160,6 +172,34 @@ class Conf(object):
     
     def _SetupAvrCompiling(self, e):
         e['CC'] = 'avr-gcc'
+        e['CXX'] = 'avr-g++'
+    
+        if self.MCU is None:
+            raise Exception('MCU must be set for AVR target')
+        if self.MCU_FREQ is None:
+            raise Exception('MCU clock frequency must be set for AVR target')
+        
+        self.CCFLAGS += ' -mmcu=%s -fshort-wchar ' % self.MCU
+        self.DEFS += ' ADK_MCU=%s ADK_MCU_FREQ=%d' % (self.MCU, self.MCU_FREQ)
+        self.ASFLAGS += ' -mmcu=%s ' % self.MCU
+        
+        if self.MCU_FUSE is not None:
+            self.DEFS += ' ADK_MCU_FUSE=0x%x ' % self.MCU_FUSE
+        if self.MCU_LFUSE is not None:
+            self.DEFS += ' ADK_MCU_LFUSE=0x%x ' % self.MCU_LFUSE
+        if self.MCU_HFUSE is not None:
+            self.DEFS += ' ADK_MCU_HFUSE=0x%x ' % self.MCU_HFUSE
+        if self.MCU_EFUSE is not None:
+            self.DEFS += ' ADK_MCU_EFUSE=0x%x ' % self.MCU_EFUSE
+    
+        if self.RELEASE_OPT_FLAGS is None:
+            self.RELEASE_OPT_FLAGS = '-Os -mcall-prologues'
+        if self.DEBUG_OPT_FLAGS is None:
+            self.DEBUG_OPT_FLAGS = '-Os -mcall-prologues'
+            
+        if self.AVR_USE_USB:
+            self.DEFS += ' ADK_AVR_USE_USB '
+            self.SRC_DIRS += ' ${ADK_ROOT}/src/libavr/usb '
     
     
     def _SetupPackage(self, pkg, e):
@@ -281,7 +321,7 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
         return os.path.join(dirName, baseName)
     
     
-    def _ProcessFilesList(self, e, files, factory = None):
+    def _ProcessFilesList(self, e, files, factory = None, isSrc = False):
         if factory is None:
             factory = e.File
         if isinstance(files, str):
@@ -289,7 +329,10 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
         result = list()
         for file in files:
             if isinstance(file, str):
-                result.append(factory(e.subst(file)))
+                node = factory(e.subst(file))
+                if isSrc:
+                    node = node.srcnode()
+                result.append(node)
             else:
                 result.append(file)
         return result
@@ -321,25 +364,35 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
         if self.USE_GUI is None and self.IsDesktop():
             self.USE_GUI = True
         
-        self.INCLUDE_DIRS += ' ' + os.path.join(self.ADK_ROOT, 'include')
+        self.INCLUDE_DIRS += ' ${ADK_ROOT}/include '
         
-        adkFlags = '-Wall -Werror -Wextra '
-        if e.GetOption('adkBuildType') == 'debug':
-            adkFlags += ' -ggdb3 -O0 '
-            self.DEFS += ' DEBUG'
-        else:
-            adkFlags += '-O2'
-        
-        self.CCFLAGS = adkFlags + self.CCFLAGS
-        self.CXXFLAGS += ' -std=c++11'
-        self.CFLAGS += ' -std=c99'
         
         if self.USE_GUI:
             self.DEFS += ' ADK_USE_GUI '
         if self.USE_PYTHON:
             self.DEFS += ' ADK_USE_PYTHON '
         
+        
         self._SetupCrossCompiling(e)
+        
+        
+        adkFlags = '-Wall -Werror -Wextra '
+        if e.GetOption('adkBuildType') == 'debug':
+            adkFlags += ' -ggdb3 '
+            self.DEFS += ' DEBUG '
+            if self.DEBUG_OPT_FLAGS is None:
+                adkFlags += ' -O0 '
+            else:
+                adkFlags += ' %s ' % self.DEBUG_OPT_FLAGS
+        else:
+            if self.RELEASE_OPT_FLAGS is None:
+                adkFlags += ' -O2 '
+            else:
+                adkFlags += ' %s ' % self.RELEASE_OPT_FLAGS
+        
+        self.CCFLAGS = adkFlags + self.CCFLAGS
+        self.CXXFLAGS += ' -std=c++11 '
+        self.CFLAGS += ' -std=c99 '
         
         self.DEFS += ' ADK_PLATFORM_ID=%d ' % self.PLATFORM_ID
         if self.PLATFORM_ID == Conf.PLATFORM_ID_AVR:
@@ -360,12 +413,13 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
             self.LIB_DIRS += ' %s ' % os.path.join(self.ADK_PREFIX, 'lib')
         
         # Include directories
-        e['CPPPATH'] = sc.Split(self.INCLUDE_DIRS)
+        e['CPPPATH'] = self._ProcessFilesList(e, self.INCLUDE_DIRS, e.Dir, True)
         
         # Compiler flags
         e['CFLAGS'] = self.CFLAGS
         e['CXXFLAGS'] = self.CXXFLAGS
         e['CCFLAGS'] = self.CCFLAGS
+        e['ASFLAGS'] = self.ASFLAGS
         
         # Preprocessor macros
         defs = sc.Split(self.DEFS)
@@ -394,6 +448,7 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
             srcFiles.append(srcDir.glob('*.c'))
             srcFiles.append(srcDir.glob('*.cpp'))
             srcFiles.append(srcDir.glob('*.s'))
+            srcFiles.append(srcDir.glob('*.S'))
         
     
         resFiles = self._ProcessFilesList(e, self.RES_FILES)
@@ -445,6 +500,8 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
     
         if self.APP_ALIAS is not None:
             e.Alias(self.APP_ALIAS, output)
+        else:
+            e.Alias(self.APP_NAME, output)
         e.Default(output)
         
         for installDir in self._ProcessFilesList(e, self.INSTALL_DIR, e.Dir):

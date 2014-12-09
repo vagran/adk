@@ -11,7 +11,7 @@ conf = adk.Conf(
     PLATFORM = 'avr',
                 
     # MCU code name
-    AVR_MCU = 'attiny2313',
+    MCU = 'attiny2313',
     # Programmer type
     PROGRAMMER = 'avrisp2',
     # Programmer connection
@@ -27,7 +27,7 @@ conf = adk.Conf(
     AVR_USE_USB = True,
     
     # Additional directory with source files
-    SRC_DIRS = 'pwm',
+    SRC_DIRS = '. pwm',
     # Additional source file
     SRCS = 'misc/misc.c',
     # Additional include directories

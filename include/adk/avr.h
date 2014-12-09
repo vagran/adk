@@ -20,9 +20,6 @@
 
 #ifndef __ASSEMBLER__
 
-/** Wide character type. */
-typedef __WCHAR_TYPE__ wchar_t;
-
 #include <avr/pgmspace.h>
 #include <avr/interrupt.h>
 #include <avr/sleep.h>

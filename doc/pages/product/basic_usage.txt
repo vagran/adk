@@ -139,6 +139,7 @@ Build configuration parameters:
   * ''CFLAGS'' -- additional compilation flags for C files.
   * ''CXXFLAGS'' -- additional compilation flags for C++ files.
   * ''CCFLAGS'' -- additional compilation flags for both C and C++ files.
+  * ''ASFLAGS'' -- additional compilation flags for assembler.
   * ''DEFS'' -- additional preprocessor macros to be defined. In form of string "single_name name=value".
   * ''PKGS'' -- required packages which are configured through ''pkg-config''. The value is space-separated string of package names. Name can be followed by version ID in the following form:
     * name=version -- exact version required.
@@ -150,6 +151,8 @@ Build configuration parameters:
   * ''NO_ADK_LIB'' -- do not link with ADK library. ''False'' by default.
   * ''LIBS'' -- libraries to link with.
   * ''LIB_DIRS'' -- additional directories to search for libraries.
+  * ''DEBUG_OPT_FLAGS'' -- optimization flags for debug build. They overwrite default flags if specified.
+  * ''RELEASE_OPT_FLAGS'' -- optimization flags for release build. They overwrite default flags if specified.
 
 Optional flag variables -- they can have values ''True'' or ''False'' to enable or disable corresponding feature:
   * ''USE_GUI'' -- use GUI components (based on Gtk+ library). ''True'' by default for desktop targets, ''False'' for the rest ones.
