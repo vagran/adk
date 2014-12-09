@@ -127,6 +127,8 @@ class Conf(object):
     
     
     def _SetupNativePlatform(self, e):
+        e['OBJCOPY'] = 'objcopy'
+        
         arch = platform.architecture()
         mach = platform.machine()
         sys = platform.system()
@@ -173,6 +175,7 @@ class Conf(object):
     def _SetupAvrCompiling(self, e):
         e['CC'] = 'avr-gcc'
         e['CXX'] = 'avr-g++'
+        e['OBJCOPY'] = 'avr-objcopy'
     
         if self.MCU is None:
             raise Exception('MCU must be set for AVR target')
@@ -445,11 +448,12 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
         
         srcFiles = list()
         for srcDir in self._ProcessFilesList(e, self.SRC_DIRS, e.Dir):
-            srcFiles.append(srcDir.glob('*.c'))
-            srcFiles.append(srcDir.glob('*.cpp'))
-            srcFiles.append(srcDir.glob('*.s'))
-            srcFiles.append(srcDir.glob('*.S'))
-        
+            srcFiles.extend(srcDir.glob('*.c'))
+            srcFiles.extend(srcDir.glob('*.cpp'))
+            srcFiles.extend(srcDir.glob('*.s'))
+            srcFiles.extend(srcDir.glob('*.S'))
+        for src in self._ProcessFilesList(e, self.SRCS):
+            srcFiles.append(src)
     
         resFiles = self._ProcessFilesList(e, self.RES_FILES)
         if self.USE_GUI:
@@ -471,11 +475,19 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
                                         resHdrs)
         e.Prepend(CPPPATH = e.Dir(hdrsDir).abspath)
         
-        
-        if self.IsStatic():
-            srcObjs = [e.StaticObject(f) for f in srcFiles]
-        else:
-            srcObjs = [e.SharedObject(f) for f in srcFiles]
+        srcObjs = list()
+        buildDir = e.Dir('.').path
+        for srcFile in srcFiles:
+            if os.path.commonprefix([srcFile.path, buildDir]) != buildDir:
+                path = os.path.join('external', srcFile.path)
+                objPath = self._GetObjPath(e, path)
+            else:
+                objPath = self._GetObjPath(e, srcFile.path[len(buildDir) + 1:])
+            if self.IsStatic():
+                obj = e.StaticObject(objPath, srcFile)
+            else:
+                obj = e.SharedObject(objPath, srcFile)
+            srcObjs.append(obj)
         
         gchs = list()
         for pch in pchs:
@@ -503,6 +515,9 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
         else:
             e.Alias(self.APP_NAME, output)
         e.Default(output)
+        
+        if self.PLATFORM == 'avr':
+            self._HandleAvrBuild(e, output)
         
         for installDir in self._ProcessFilesList(e, self.INSTALL_DIR, e.Dir):
             i = e.Install(installDir, output)
@@ -536,3 +551,70 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
                 result.extend(res)
             else:
                 result.append(res)
+
+    
+    def _HandleAvrBuild(self, e, output):
+        'Handle additional actions for AVR build'
+        
+        # Binary converted to text formats understandable by most firmware uploaders.
+        e['BUILDERS']['AvrRomHex'] = e.Builder(action = Conf._BuildAvrRomHex)
+        e['BUILDERS']['AvrRomSrec'] = e.Builder(action = Conf._BuildAvrRomSrec)
+        e['BUILDERS']['AvrRomBin'] = e.Builder(action = Conf._BuildAvrRomBin)
+        e['BUILDERS']['AvrEepromHex'] = e.Builder(action = Conf._BuildAvrEepromHex)
+        e['BUILDERS']['AvrEepromSrec'] = e.Builder(action = Conf._BuildAvrEepromSrec)
+        e['BUILDERS']['AvrEepromBin'] = e.Builder(action = Conf._BuildAvrEepromBin)
+        
+        romHex = e.AvrRomHex(output[0].abspath + '_rom.hex', output)
+        e.Default(romHex)
+        romSrec = e.AvrRomSrec(output[0].abspath + '_rom.srec', output)
+        e.Default(romSrec)
+        romBin = e.AvrRomBin(output[0].abspath + '_rom.bin', output)
+        e.Default(romBin)
+        eepromHex = e.AvrEepromHex(output[0].abspath + '_eeprom.hex', output)
+        e.Default(eepromHex)
+        eepromSrec = e.AvrEepromSrec(output[0].abspath + '_eeprom.srec', output)
+        e.Default(eepromSrec)
+        eepromBin = e.AvrEepromBin(output[0].abspath + '_eeprom.bin', output)
+        e.Default(eepromBin)
+        
+        
+    @staticmethod
+    def _BuildAvrRomHex(target, source, env):
+        a = env.Action('$OBJCOPY -j .text -j .data -O ihex {0} {1}'.
+            format(source[0].abspath, target[0].abspath))
+        env.Execute(a)
+        
+        
+    @staticmethod
+    def _BuildAvrRomSrec(target, source, env):
+        a = env.Action('$OBJCOPY -j .text -j .data -O srec {0} {1}'.
+            format(source[0].abspath, target[0].abspath))
+        env.Execute(a)
+        
+        
+    @staticmethod
+    def _BuildAvrRomBin(target, source, env):
+        a = env.Action('$OBJCOPY -j .text -j .data -O binary {0} {1}'.
+            format(source[0].abspath, target[0].abspath))
+        env.Execute(a)
+    
+    
+    @staticmethod
+    def _BuildAvrEepromHex(target, source, env):
+        a = env.Action('$OBJCOPY -j .eeprom --change-section-lma .eeprom=0 -O ihex {0} {1}'.
+            format(source[0].abspath, target[0].abspath))
+        env.Execute(a)
+        
+        
+    @staticmethod
+    def _BuildAvrEepromSrec(target, source, env):
+        a = env.Action('$OBJCOPY -j .eeprom --change-section-lma .eeprom=0 -O srec {0} {1}'.
+            format(source[0].abspath, target[0].abspath))
+        env.Execute(a)
+        
+        
+    @staticmethod
+    def _BuildAvrEepromBin(target, source, env):
+        a = env.Action('$OBJCOPY -j .eeprom --change-section-lma .eeprom=0 -O binary {0} {1}'.
+            format(source[0].abspath, target[0].abspath))
+        env.Execute(a)
