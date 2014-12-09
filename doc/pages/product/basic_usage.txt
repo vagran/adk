@@ -177,3 +177,4 @@ Platform specific variables:
   * gcc-avr (for AVR target support)
   * avr-libc ((for AVR target support)
   * libusb-dev (for AVR USB devices support on desktop platforms)
+  * valgrind (for running unit tests)

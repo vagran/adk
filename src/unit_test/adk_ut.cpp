@@ -21,6 +21,7 @@
 #include <string>
 #include <sstream>
 #include <list>
+#include <memory>
 
 using namespace ut;
 
@@ -240,7 +241,7 @@ TestMan::RegisterTest(TestDesc *desc)
 }
 
 /** Global test manager object. */
-TestMan testMan;
+TestMan *testMan;
 
 } /* anonymous namespace */
 
@@ -252,7 +253,10 @@ TestDesc::TestDesc(const char *file, int line, const char *name)
     _file = file;
     _line = line;
     _name = name;
-    ::testMan.RegisterTest(this);
+    if (!testMan) {
+        testMan = new TestMan();
+    }
+    testMan->RegisterTest(this);
 }
 
 TestDesc::~TestDesc()
@@ -352,19 +356,19 @@ ut::__ut_user_fault(const char *file, int line, const char *desc, ...)
 void
 ut::__ut_hit_value()
 {
-    ::testMan.HitValue();
+    testMan->HitValue();
 }
 
 void
 ut::__ut_hit_assert()
 {
-    ::testMan.HitAssert();
+    testMan->HitAssert();
 }
 
 void
 ut::__ut_hit_exception()
 {
-    ::testMan.HitException();
+    testMan->HitException();
 }
 
 int
@@ -636,5 +640,6 @@ ut::UtCurTest()
 int
 main()
 {
-    return !::testMan.Run();
+    std::unique_ptr<TestMan> pTestMan(testMan);
+    return !pTestMan->Run();
 }

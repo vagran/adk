@@ -342,6 +342,23 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
         return result
     
     
+    def _BuildObjs(self, e, srcs):
+        objs = list()
+        buildDir = e.Dir('.').path
+        for srcFile in srcs:
+            if os.path.commonprefix([srcFile.path, buildDir]) != buildDir:
+                path = os.path.join('external', srcFile.path)
+                objPath = self._GetObjPath(e, path)
+            else:
+                objPath = self._GetObjPath(e, srcFile.path[len(buildDir) + 1:])
+            if self.IsStatic():
+                obj = e.StaticObject(objPath, srcFile)
+            else:
+                obj = e.SharedObject(objPath, srcFile)
+            objs.append(obj)
+        return objs
+    
+    
     def Build(self):
         '''
         Apply build configuration.
@@ -467,14 +484,7 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
             srcFiles.extend(srcDir.glob('*.S'))
         for src in self._ProcessFilesList(e, self.SRCS):
             srcFiles.append(src)
-        if self.APP_TYPE == 'unit_test':
-            for src in self._ProcessFilesList(e, self.TEST_SRCS):
-                srcFiles.append(src)
-            autoSrc = e.UtAutoSrc('auto/auto_stabs.cpp',
-                                  e.File('SConscript'), # Need some dependency
-                                  ADK_TEST_DESC = self.TEST_DESC)
-            srcFiles.extend(autoSrc)
-    
+                
         resFiles = self._ProcessFilesList(e, self.RES_FILES)
         if self.USE_GUI:
             resFiles += sc.Glob('*.glade')
@@ -495,20 +505,8 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
                                         resHdrs)
         e.Prepend(CPPPATH = e.Dir(hdrsDir).abspath)
         
-        srcObjs = list()
-        buildDir = e.Dir('.').path
-        for srcFile in srcFiles:
-            if os.path.commonprefix([srcFile.path, buildDir]) != buildDir:
-                path = os.path.join('external', srcFile.path)
-                objPath = self._GetObjPath(e, path)
-            else:
-                objPath = self._GetObjPath(e, srcFile.path[len(buildDir) + 1:])
-            if self.IsStatic():
-                obj = e.StaticObject(objPath, srcFile)
-            else:
-                obj = e.SharedObject(objPath, srcFile)
-            srcObjs.append(obj)
-        
+        srcObjs = self._BuildObjs(e, srcFiles)
+            
         gchs = list()
         for pch in pchs:
             fn = os.path.join(hdrsDir, os.path.basename(pch.path) + '.gch')
@@ -518,10 +516,25 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
                 gch = e.GchShared(fn, pch)
             e.Depends(gch, resIndexHdr)
             gchs.append(gch)
-             
+        
         for obj in srcObjs:
             e.Depends(obj, resIndexHdr)
             e.Depends(obj, gchs)
+            
+            
+        if self.APP_TYPE == 'unit_test':
+            testObjs = self._BuildObjs(e, self._ProcessFilesList(e, self.TEST_SRCS))
+            autoSrc = e.UtAutoSrc('auto/auto_stubs.cpp',
+                                  e.File('SConscript'), # Need some dependency
+                                  ADK_TEST_DESC = self.TEST_DESC,
+                                  ADK_TEST_OBJS = testObjs,
+                                  ADK_OBJS = srcObjs,
+                                  ADK_PLATFORM_ID = self.PLATFORM_ID)
+            e.Depends(autoSrc, srcObjs)
+            e.Depends(autoSrc, testObjs)
+            srcObjs.extend(testObjs)
+            srcObjs.extend(self._BuildObjs(e, autoSrc))
+            
 
         if self.APP_TYPE == 'app' or self.APP_TYPE == 'unit_test':
             output = e.Program(self.APP_NAME, srcObjs + resAsms)
@@ -641,10 +654,31 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
 
     @staticmethod
     def _BuildUtAutoSrc(target, source, env):
-        #XXX invoke stabs generator
+        opts = ''
         
-        with open(target[0].abspath, "w") as out:
+        for srcList in env['ADK_OBJS']:
+            for src in srcList:
+                opts += ' --src ' + src.path
+                
+        for srcList in env['ADK_TEST_OBJS']:
+            for src in srcList:
+                opts += ' --test-src ' + src.path
+                
+        for lib in env['LIBS']:
+            opts += ' --lib ' + lib
+        
+        for libPath in env['LIBPATH']:
+            opts += ' --lib-dir ' + libPath.abspath
+        
+#         if env['ADK_PLATFORM_ID'] == Conf.PLATFORM_ID_LINUX64:
+#             opts += ' --lib-dir /usr/lib/debug/lib/x86_64-linux-gnu'
+                
+        a = env.Action('$ADK_ROOT/src/unit_test/ut_stubs_gen.py --result={0} {1}'.
+            format(target[0].abspath, opts))
+        env.Execute(a)
+        with open(target[0].abspath, "a") as out:
             out.write(env.subst('''
+
 namespace ut {
 
 const char *__ut_test_description = "${ADK_TEST_DESC}";

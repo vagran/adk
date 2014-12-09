@@ -32,6 +32,8 @@ defined_syms = dict()
 wanted_syms = dict()
 # Prohibited symbols
 prohibited_syms = {'__dso_handle': 1}
+# List of libraries fetched from ldconfig
+ldconfigCache = list()
 
 def Error(msg, exception = None):
     print('ERROR: ' + msg);
@@ -102,8 +104,28 @@ def ParseFile(filename, isTest, isDynamicLib):
                 
                 wanted_syms[name] = filename
 
+def FetchLdconfig():
+    'Fetch paths from ldconfig'
+    output = Exec('/sbin/ldconfig -p', errorFatal = False)
+    if output.exitcode != 0:
+        return
+    pat = re.compile('^.*=>\\s+(\\S+)')
+    for line in output:
+        m = pat.match(line)
+        if m is None:
+            continue
+        ldconfigCache.append(m.group(1))
+
 def FindLib(libname):
     global opts
+    
+    for path in ldconfigCache:
+        bn = os.path.basename(path)
+        idx = bn.find('.so')
+        if idx == -1:
+            return
+        if bn[:idx] == 'lib' + libname:
+            yield path
     
     for dir in opts.lib_dirs:
         file = '{}/lib{}.so'.format(dir, libname)
@@ -216,6 +238,8 @@ def Main():
     
     if opts.srcs is None:
         Error('Source files of the test not specified')
+        
+    FetchLdconfig()
     
     if opts.test_srcs is not None:
         for file in opts.test_srcs:
