@@ -1,0 +1,14 @@
+# This file is a part of ADK library.
+# Copyright (c) 2012-2014, Artyom Lebedev <artyom.lebedev@gmail.com>
+# All rights reserved.
+# See COPYING file for copyright details.
+
+import adk
+
+conf = adk.Conf(APP_TYPE = 'unit_test',
+                APP_NAME = 'python',
+                TEST_DESC = 'Embedded Python functionality',
+                RES_FILES = 'test_embedding.py test_extending.py',
+                USE_PYTHON = True,
+                USE_GUI = True,
+                TEST_SRCS = Glob('#/src/lib/*.cpp')).Build()

@@ -517,7 +517,7 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
         e['CPPDEFINES'] = DEFS
         
         if self.IsDesktop():
-            self.PKGS += ' glibmm-2.4 giomm-2.4 '
+            self.PKGS += ' expat glibmm-2.4 giomm-2.4 '
         if self.USE_GUI:
             self.PKGS += ' gtkmm-3.0 '
         if self.USE_PYTHON:
