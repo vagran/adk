@@ -39,6 +39,48 @@ sc.AddOption('--adk-run-tests',
              default = False,
              help = 'Run unit tests.')
 
+sc.AddOption('--adk-write-fuses',
+             dest = 'adkWriteFuses',
+             action  ='store_true',
+             default = False,
+             help = 'Write fuses to the connected MCU.')
+
+sc.AddOption('--adk-verify-fuses',
+             dest = 'adkVerifyFuses',
+             action  ='store_true',
+             default = False,
+             help = 'Verify fuses in the connected MCU.')
+
+sc.AddOption('--adk-upload-flash',
+             dest = 'adkUploadFlash',
+             action  ='store_true',
+             default = False,
+             help = 'Upload firmware flash image to the connected MCU.')
+
+sc.AddOption('--adk-verify-flash',
+             dest = 'adkVerifyFlash',
+             action  ='store_true',
+             default = False,
+             help = 'Verify firmware flash image in the connected MCU.')
+
+sc.AddOption('--adk-upload-eeprom',
+             dest = 'adkUploadEeprom',
+             action  ='store_true',
+             default = False,
+             help = 'Upload EEPORM image to the connected MCU.')
+
+sc.AddOption('--adk-verify-eeprom',
+             dest = 'adkVerifyEeprom',
+             action  ='store_true',
+             default = False,
+             help = 'Verify EEPORM image in the connected MCU.')
+
+sc.AddOption('--adk-mcu-reset',
+             dest = 'adkMcuReset',
+             action  ='store_true',
+             default = False,
+             help = 'Reset the connected MCU.')
+
 
 def GetAdkPrefix():
     prefix = sc.GetOption('adkPrefix')
@@ -631,6 +673,85 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
             e.Default(eepromSrec)
             e.Default(eepromBin)
         
+        avrdude = 'avrdude -p {} -c {} -P {}'.format(self.MCU, self.PROGRAMMER,
+                                                     self.PROGRAMMER_BUS)
+        
+        if e.GetOption('adkWriteFuses'):
+            if self.MCU_FUSE is not None:
+                cmd = e.Command('W_FUSE', None,
+                                '%s -U fuse:w:0x%x:m' % (avrdude, self.MCU_FUSE))
+                e.AlwaysBuild(cmd)
+                e.Default(cmd)
+            if self.MCU_LFUSE is not None:
+                cmd = e.Command('W_LFUSE', None,
+                                '%s -U lfuse:w:0x%x:m' % (avrdude, self.MCU_LFUSE))
+                e.AlwaysBuild(cmd)
+                e.Default(cmd)
+            if self.MCU_HFUSE is not None:
+                cmd = e.Command('W_HFUSE', None,
+                                '%s -U hfuse:w:0x%x:m' % (avrdude, self.MCU_HFUSE))
+                e.AlwaysBuild(cmd)
+                e.Default(cmd)
+            if self.MCU_EFUSE is not None:
+                cmd = e.Command('W_EFUSE', None,
+                                '%s -U efuse:w:0x%x:m' % (avrdude, self.MCU_EFUSE))
+                e.AlwaysBuild(cmd)
+                e.Default(cmd)
+                
+        if e.GetOption('adkVerifyFuses'):
+            if self.MCU_FUSE is not None:
+                cmd = e.Command('V_FUSE', None,
+                                '%s -U fuse:v:0x%x:m' % (avrdude, self.MCU_FUSE))
+                e.AlwaysBuild(cmd)
+                e.Default(cmd)
+            if self.MCU_LFUSE is not None:
+                cmd = e.Command('V_LFUSE', None,
+                                '%s -U lfuse:v:0x%x:m' % (avrdude, self.MCU_LFUSE))
+                e.AlwaysBuild(cmd)
+                e.Default(cmd)
+            if self.MCU_HFUSE is not None:
+                cmd = e.Command('V_HFUSE', None,
+                                '%s -U hfuse:v:0x%x:m' % (avrdude, self.MCU_HFUSE))
+                e.AlwaysBuild(cmd)
+                e.Default(cmd)
+            if self.MCU_EFUSE is not None:
+                cmd = e.Command('V_EFUSE', None,
+                                '%s -U efuse:v:0x%x:m' % (avrdude, self.MCU_EFUSE))
+                e.AlwaysBuild(cmd)
+                e.Default(cmd)
+                
+        if e.GetOption('adkUploadFlash'):
+            cmd = e.Command('U_FLASH', None,
+                            '%s -U flash:w:%s:i' % (avrdude, romHex[0].path))
+            e.Depends(cmd, romHex)
+            e.AlwaysBuild(cmd)
+            e.Default(cmd)
+            
+        if e.GetOption('adkVerifyFlash'):
+            cmd = e.Command('V_FLASH', None,
+                            '%s -U flash:v:%s:i' % (avrdude, romHex[0].path))
+            e.Depends(cmd, romHex)
+            e.AlwaysBuild(cmd)
+            e.Default(cmd)
+            
+        if e.GetOption('adkUploadEeprom'):
+            cmd = e.Command('U_EEPROM', None,
+                            '%s -U eeprom:w:%s:i' % (avrdude, eepromHex[0].path))
+            e.Depends(cmd, eepromHex)
+            e.AlwaysBuild(cmd)
+            e.Default(cmd)
+            
+        if e.GetOption('adkVerifyEeprom'):
+            cmd = e.Command('U_EEPROM', None,
+                            '%s -U eeprom:v:%s:i' % (avrdude, eepromHex[0].path))
+            e.Depends(cmd, eepromHex)
+            e.AlwaysBuild(cmd)
+            e.Default(cmd)
+            
+        if e.GetOption('adkMcuReset'):
+            cmd = e.Command('RESET', None, avrdude)
+            e.AlwaysBuild(cmd)
+            e.Default(cmd)
         
     @staticmethod
     def _BuildAvrRomHex(target, source, env):
