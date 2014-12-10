@@ -283,7 +283,43 @@
 {
    Python
    Memcheck:Addr4
+   ...
    fun:Py_Finalize
+}
+
+{
+   Python
+   Memcheck:Value8
+   ...
+   fun:Py_Finalize
+}
+
+{
+   Python
+   Memcheck:Cond
+   ...
+   fun:Py_Finalize
+}
+
+{
+   Python
+   Memcheck:Addr4
+   ...
+   fun:PyRun_StringFlags
+}
+
+{
+   Python
+   Memcheck:Value8
+   ...
+   fun:PyRun_StringFlags
+}
+
+{
+   Python
+   Memcheck:Cond
+   ...
+   fun:PyRun_StringFlags
 }
 
 {
@@ -393,4 +429,67 @@
    fun:free
    ...
    fun:Py_Finalize
+}
+
+{
+   Python
+   Memcheck:Value8
+   ...
+   fun:_PyBytes_Resize
+}
+
+{
+   Python
+   Memcheck:Cond
+   ...
+   fun:_PyBytes_Resize
+}
+
+{
+   Python
+   Memcheck:Addr4
+   ...
+   fun:_PyBytes_Resize
+}
+
+{
+   Python
+   Memcheck:Addr4
+   ...
+   fun:PyEval_EvalFrameEx
+}
+
+{
+   Python
+   Memcheck:Value8
+   ...
+   fun:PyEval_EvalFrameEx
+}
+
+{
+   Python
+   Memcheck:Cond
+   ...
+   fun:PyEval_EvalFrameEx
+}
+
+{
+   Python
+   Memcheck:Addr4
+   ...
+   fun:PyImport_ImportFrozenModuleObject
+}
+
+{
+   Python
+   Memcheck:Value8
+   ...
+   fun:PyImport_ImportFrozenModuleObject
+}
+
+{
+   Python
+   Memcheck:Cond
+   ...
+   fun:PyImport_ImportFrozenModuleObject
 }
