@@ -90,31 +90,28 @@ For unit test target the ''ADK_APP_TYPE'' variable should have ''unit_test'' val
 
 ====== Documentation ======
 
-Documentation standard for ADK is [[http://www.dokuwiki.org/dokuwiki|Dokuwiki]] documentation format. It is well suitable for storing it in source code repository. Specify 
-''ADK_APP_TYPE'' as ''doc'' in the makefile. Additional variables are:
-  * ''ADK_DOC_DIR'' -- directory where the Dokuwiki server runs.
-  * ''ADK_DOC_NAMESPACE'' -- namespace prefix if the documentation server is shared between several projects.
-  * ''ADK_DOC_DEPLOY_DIR'' -- additional paths for documentation deployment.
+Documentation standard for ADK is [[http://www.dokuwiki.org/dokuwiki|Dokuwiki]] documentation format. It is well suitable for storing it in source code repository.
 
-The following make targets are supported:
-  * ''all'' -- copies documentation files from the server directory to the source files directory.
-  * ''update'' -- update documentation files from deployment directory.
-  * ''deploy'' -- copies documentation files from source files directory to the server directory and all specified additional deployment directories if any.
+Setup DokuWiki and make links from ''data'' and ''media'' directories (or subdirectories there if using desired namaespace for a project) to directories with documentation in your project. Then run PHP as server:
+<code bash>
+php -S 127.0.0.1:20080 -t /opt/dokuwiki
+</code>
 
 FIXME doxygen
 
 ====== SCons usage ======
 
 Command line parameters:
-  * ''--adk-build-type'' -- build configuration type. The following values accepted:
+  * ''%%--adk-build-type%%'' -- build configuration type. The following values accepted:
     * ''debug''
     * ''release''
-  * ''--adk-platform'' -- target platform. The following values accepted:
+  * ''%%--adk-platform%%'' -- target platform. The following values accepted:
     * ''native''
     * ''linux''
     * ''avr''
-  * ''--adk_prefix'' -- ADK installation prefix. Taken from ADK_PREFIX
+  * ''%%--adk_prefix%%'' -- ADK installation prefix. Taken from ADK_PREFIX
     environment variable if not specified. "/usr" by default.
+  * ''%%--adk-run-tests%%'' -- build only unit tests and their dependencies. Run all unit tests.
 
 <code python>
 import adk

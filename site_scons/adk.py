@@ -33,6 +33,12 @@ sc.AddOption('--adk-prefix',
              metavar = 'ADK_PREFIX',
              help = 'ADK installation prefix.')
 
+sc.AddOption('--adk-run-tests',
+             dest = 'adkRunTests',
+             action  ='store_true',
+             default = False,
+             help = 'Run unit tests.')
+
 
 def GetAdkPrefix():
     prefix = sc.GetOption('adkPrefix')
@@ -118,6 +124,8 @@ class Conf(object):
             self.PLATFORM = cmdPlatform
     
         self.ADK_PREFIX = GetAdkPrefix()
+        
+        self.runTests = sc.GetOption('adkRunTests')
     
     
     def IsDesktop(self):
@@ -372,6 +380,8 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
         
         e['ADK_ROOT'] = self.ADK_ROOT
         e['ADK_PREFIX'] = self.ADK_PREFIX
+        e['VALGRIND'] = ('valgrind -q --suppressions=${ADK_ROOT}/tools/valgrind.supp ' +
+                         '--error-exitcode=255 --leak-check=full --gen-suppressions=all')
 
         self._HandleSubdirs(e)
         
@@ -497,15 +507,15 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
         for resFile in resFiles:
             fn = os.path.join(hdrsDir, 
                               os.path.basename(resFile.path) + '.res.s')
-            resAsms.append(e.ResAsm(fn, resFile))
-            resHdrs.append(e.ResHdrFile(os.path.join(hdrsDir, 
+            resAsms.extend(e.ResAsm(fn, resFile))
+            resHdrs.extend(e.ResHdrFile(os.path.join(hdrsDir, 
                                                      os.path.basename(resFile.path) + '.res.h'), 
                                         resFile))
         resIndexHdr = e.ResIndexHdrFile(os.path.join(hdrsDir, 'auto_adk_res.h'), 
                                         resHdrs)
         e.Prepend(CPPPATH = e.Dir(hdrsDir).abspath)
         
-        srcObjs = self._BuildObjs(e, srcFiles)
+        srcObjs = self._BuildObjs(e, srcFiles + resAsms)
             
         gchs = list()
         for pch in pchs:
@@ -525,29 +535,29 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
         if self.APP_TYPE == 'unit_test':
             testObjs = self._BuildObjs(e, self._ProcessFilesList(e, self.TEST_SRCS))
             autoSrc = e.UtAutoSrc('auto/auto_stubs.cpp',
-                                  e.File('SConscript'), # Need some dependency
+                                  srcObjs + testObjs,
                                   ADK_TEST_DESC = self.TEST_DESC,
                                   ADK_TEST_OBJS = testObjs,
                                   ADK_OBJS = srcObjs,
-                                  ADK_PLATFORM_ID = self.PLATFORM_ID)
-            e.Depends(autoSrc, srcObjs)
-            e.Depends(autoSrc, testObjs)
+                                  ADK_PLATFORM_ID = self.PLATFORM_ID,
+                                  ADK_LIBS = 'c stdc++')
             srcObjs.extend(testObjs)
             srcObjs.extend(self._BuildObjs(e, autoSrc))
             
 
         if self.APP_TYPE == 'app' or self.APP_TYPE == 'unit_test':
-            output = e.Program(self.APP_NAME, srcObjs + resAsms)
+            output = e.Program(self.APP_NAME, srcObjs)
         elif self.APP_TYPE == 'dynamic_lib':
-            output = e.SharedLibrary(self.APP_NAME, srcObjs + resAsms)
+            output = e.SharedLibrary(self.APP_NAME, srcObjs)
         else:
-            output = e.StaticLibrary(self.APP_NAME, srcObjs + resAsms)
+            output = e.StaticLibrary(self.APP_NAME, srcObjs)
     
         if self.APP_ALIAS is not None:
             e.Alias(self.APP_ALIAS, output)
         else:
             e.Alias(self.APP_NAME, output)
-        e.Default(output)
+        if not self.runTests:
+            e.Default(output)
         
         if self.PLATFORM == 'avr':
             self._HandleAvrBuild(e, output)
@@ -557,6 +567,15 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
             if self.APP_ALIAS is not None:
                 e.Alias(self.APP_ALIAS + '-install', i)
             e.Alias('install', i)
+            
+        if self.runTests and self.APP_TYPE == 'unit_test':
+            libPath = ':'.join(map(str, e['LIBPATH']))
+            if len(libPath) > 0:
+                libPath = 'env LD_LIBRARY_PATH=' + libPath
+            cmd = e.Command('TestResult', output,
+                            '%s $VALGRIND $SOURCE' % libPath)
+            e.AlwaysBuild(cmd)
+            e.Default(cmd)
     
     
     def _HandleSubdirs(self, e):
@@ -598,17 +617,19 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
         e['BUILDERS']['AvrEepromBin'] = e.Builder(action = Conf._BuildAvrEepromBin)
         
         romHex = e.AvrRomHex(output[0].abspath + '_rom.hex', output)
-        e.Default(romHex)
         romSrec = e.AvrRomSrec(output[0].abspath + '_rom.srec', output)
-        e.Default(romSrec)
         romBin = e.AvrRomBin(output[0].abspath + '_rom.bin', output)
-        e.Default(romBin)
         eepromHex = e.AvrEepromHex(output[0].abspath + '_eeprom.hex', output)
-        e.Default(eepromHex)
         eepromSrec = e.AvrEepromSrec(output[0].abspath + '_eeprom.srec', output)
-        e.Default(eepromSrec)
         eepromBin = e.AvrEepromBin(output[0].abspath + '_eeprom.bin', output)
-        e.Default(eepromBin)
+        
+        if not self.runTests:
+            e.Default(romHex)
+            e.Default(romSrec)
+            e.Default(romBin)
+            e.Default(eepromHex)
+            e.Default(eepromSrec)
+            e.Default(eepromBin)
         
         
     @staticmethod
@@ -665,6 +686,8 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
                 opts += ' --test-src ' + src.path
                 
         for lib in env['LIBS']:
+            opts += ' --lib ' + lib
+        for lib in sc.Split(env['ADK_LIBS']):
             opts += ' --lib ' + lib
         
         for libPath in env['LIBPATH']:

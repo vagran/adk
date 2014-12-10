@@ -5,4 +5,4 @@
 
 import adk
 
-conf = adk.Conf(SUBDIRS = 'src samples unittest').Build()
+conf = adk.Conf(SUBDIRS = 'bitmap misc properties').Build()

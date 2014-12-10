@@ -5,4 +5,6 @@
 
 import adk
 
-conf = adk.Conf(SUBDIRS = 'src samples unittest').Build()
+conf = adk.Conf(APP_TYPE = 'unit_test',
+                APP_NAME = 'bitmap',
+                TEST_DESC = 'Bitmap functionality').Build()

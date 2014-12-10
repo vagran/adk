@@ -143,6 +143,14 @@ def ProcessLib(libname):
     for file in FindLib(libname):
         try:
             ParseFile(file, False, True)
+            # Check also debug symbols directory
+            if file.startswith('/usr'):
+                file = file[4:]
+            path = os.path.join('/usr/lib/debug', os.path.dirname(file.lstrip('/')))
+            for dbgFile in glob.iglob('{}/lib{}.so.*'.format(path, libname)):
+                ParseFile(dbgFile, False, False)
+            for dbgFile in glob.iglob('{}/lib{}-*.so'.format(path, libname)):
+                ParseFile(dbgFile, False, False)
             found = True
         except:
             continue
