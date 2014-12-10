@@ -73,3 +73,7 @@ Data ID toggling is not verified in write requests.
 Abbreviations:
   * H2D -- host-to-device direction ''bmRequestType'' field of setup data.
   * D2H -- device-to-host direction ''bmRequestType'' field of setup data.
+
+===== Hardware connection =====
+
+{{ :adk:product:avr:usb.png?400 |}}
