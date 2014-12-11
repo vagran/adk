@@ -226,24 +226,25 @@
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets">
 		<buildTargets>
-			<target name="scons_all" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
+			<target name="all" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>scons</buildCommand>
-				<buildArguments>-j 8</buildArguments>
+				<buildArguments>-j 8 --adk-build-type=debug</buildArguments>
+				<buildTarget/>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>true</useDefaultCommand>
 				<runAllBuilders>true</runAllBuilders>
 			</target>
-			<target name="scons_clean" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
+			<target name="clean" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>scons</buildCommand>
-				<buildArguments>-j 8</buildArguments>
+				<buildArguments>-j 8 --adk-build-type=debug</buildArguments>
 				<buildTarget>-c</buildTarget>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>true</useDefaultCommand>
 				<runAllBuilders>true</runAllBuilders>
 			</target>
-			<target name="scons_install" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
+			<target name="install" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>scons</buildCommand>
-				<buildArguments>-j 8</buildArguments>
+				<buildArguments>-j 8 --adk-build-type=debug</buildArguments>
 				<buildTarget>install</buildTarget>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>true</useDefaultCommand>
@@ -257,15 +258,7 @@
 				<useDefaultCommand>true</useDefaultCommand>
 				<runAllBuilders>true</runAllBuilders>
 			</target>
-			<target name="UT sample (tmp)" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
-				<buildCommand>scons</buildCommand>
-				<buildArguments>-j 8 --adk-build-type=debug</buildArguments>
-				<buildTarget>samples/unit_test</buildTarget>
-				<stopOnError>true</stopOnError>
-				<useDefaultCommand>true</useDefaultCommand>
-				<runAllBuilders>true</runAllBuilders>
-			</target>
-			<target name="Desktop GUI sample (tmp)" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
+			<target name="Desktop GUI sample" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>scons</buildCommand>
 				<buildArguments>-j 8 --adk-build-type=debug</buildArguments>
 				<buildTarget>samples/desktop_gui</buildTarget>
@@ -273,18 +266,10 @@
 				<useDefaultCommand>true</useDefaultCommand>
 				<runAllBuilders>true</runAllBuilders>
 			</target>
-			<target name="scons_test" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
+			<target name="test" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>scons</buildCommand>
 				<buildArguments>-j 8 --adk-build-type=debug</buildArguments>
 				<buildTarget>--adk-run-tests</buildTarget>
-				<stopOnError>true</stopOnError>
-				<useDefaultCommand>true</useDefaultCommand>
-				<runAllBuilders>true</runAllBuilders>
-			</target>
-			<target name="UT properties (tmp)" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
-				<buildCommand>scons</buildCommand>
-				<buildArguments>-j 8 --adk-build-type=debug</buildArguments>
-				<buildTarget>unittest/properties</buildTarget>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>true</useDefaultCommand>
 				<runAllBuilders>true</runAllBuilders>

@@ -6,29 +6,54 @@
 import os, subprocess, platform
 
 import SCons
+from posix import lstat
 sc = SCons.Script
 
 # Project-global default values for some parameters.
-_defConf = dict()
+# Initial values which may be overwritten.
+_defaultInitial = dict()
+# Initial values to which user values are appended.
+_defaultAppend = dict()
 
 
 def DefConf(**kwargs):
-    _defConf.update(kwargs)
+    'Set project-global default initial values for some parameters.'
+    _defaultInitial.update(kwargs)
 
 
 def DefConfAppend(**kwargs):
-    for name in kwargs:
-        if name in _defConf:
-            if isinstance(kwargs[name], str):
-                v = sc.Split(kwargs[name])
-            else:
-                v = kwargs[name]
-            if isinstance(_defConf[name], str):
-                _defConf[name] = sc.Split(_defConf[name]) + v
-            else:
-                _defConf[name].extend(v)
-        else:
-            _defConf[name] = kwargs[name]
+    'Set project-global default initial values to which use values are appended.'
+    _defaultAppend.update(kwargs)
+            
+
+def AppendValue(lst, value):
+    '''
+    Append the provided value to the provided list. It properly handles strings
+    and lists.
+    @return Concatenated values, either string or list depending on input.
+    '''
+    
+    if isinstance(lst, list) or isinstance(value, list):
+        # Handle lists
+        if isinstance(lst, str):
+            lst = sc.Split(lst)
+        if isinstance(value, str):
+            value = sc.Split(value)
+        lst.extend(value)
+    else:
+        # Handle strings
+        lst = lst + ' ' + value
+    return lst
+
+
+def CloneValues(lst):
+    '''
+    Get copy of values list.
+    '''
+    if isinstance(lst, str):
+        # String is immutable so it is safe to return the original instance.
+        return lst
+    return list(lst)
 
 
 sc.AddOption('--adk-build-type',
@@ -169,9 +194,16 @@ class Conf(object):
         
         for paramName in Conf.params:
             if paramName in kwargs:
-                value = kwargs[paramName]
+                if paramName in _defaultAppend:
+                    value = CloneValues(_defaultAppend[paramName])
+                    value = AppendValue(value, kwargs[paramName])
+                else:
+                    value = kwargs[paramName]
             else:
-                value = Conf.params[paramName]
+                if paramName in _defaultInitial:
+                    value = _defaultInitial[paramName]
+                else:
+                    value = Conf.params[paramName]
             setattr(self, paramName, value)
     
         if 'ADK_ROOT' in os.environ:
@@ -635,7 +667,7 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
             libPath = ':'.join(map(str, e['LIBPATH']))
             if len(libPath) > 0:
                 libPath = 'env LD_LIBRARY_PATH=' + libPath
-            cmd = e.Command('TestResult', output,
+            cmd = e.Command('TestResult_' + self.APP_NAME, output,
                             '%s $VALGRIND $SOURCE' % libPath)
             e.AlwaysBuild(cmd)
             e.Default(cmd)

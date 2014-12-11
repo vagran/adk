@@ -1,57 +1,10 @@
 ====== Development environment ======
 
 Linux host is used as development and build environment for ADK-based applications.
+GCC is the main tested compiler.
 
-''adk_env_setup'' script is used to set up ADK environment (see "tools" directory in ADK sources). ''adk_sudo'' script used to raise privileges in ADK environment. 
+===== Eclipse setup =====
 
-===== Build tools =====
-
-The following packages are used:
-  * **binutils** from http://ftp.gnu.org/gnu/binutils/
-  * **gmp** from http://gmplib.org/
-  * **mpfr** from http://www.mpfr.org/
-  * **mpc** from http://www.multiprecision.org/
-  * **flex** from http://flex.sourceforge.net/
-  * **bison** from http://ftp.gnu.org/gnu/bison/
-  * **gcc** from http://gcc.gnu.org/
-  * **doxygen** from http://sourceforge.net/projects/doxygen/files/
-  * **w32api** from https://sourceforge.net/projects/mingw/files/MinGW/Base/w32api/
-  * **mingwrt** from https://sourceforge.net/projects/mingw/files/MinGW/Base/mingw-rt/
-  * **avr-libc** from http://download.savannah.gnu.org/releases/avr-libc/
-
-All environment components are built and installed automatically by ''adk_install.py'' script. Directory with the archived packages should be provided to the script.
-
-===== Required libraries =====
-
-  * freetype2
-  * libffi
-  * libsigc++
-  * glib
-  * pixman
-  * cairo
-  * atk
-  * pango
-  * gdk-pixbuf
-  * gtk+
-  * atkmm
-  * glibmm
-  * pangomm
-  * cairomm
-  * gtkmm
-
-They are also automatically built and installed by ''adk_install.py'' script.
-
-===== System packages =====
-
-Should be installed on build machine via package manager:
-<code bash>
-sudo apt-get install gcc g++ texinfo m4 gawk gcc-multilib linux-libc-dev \
-    libc6-dev-i386 libc6-dbg libfontconfig1-dev libncurses5-dev libdbus-glib-1-dev \
-    libgconf2-dev libgail-dev libxtst-dev intltool libbonobo2-dev
-</code>
-
-===== Other prerequesties =====
-
-<code bash>
-sudo ln -s /usr/lib/x86_64-linux-gnu /usr/lib64
-</code>
+Set the following environment variables in the workspace configuration:
+  * ''ADK_ROOT'' -- ADK source package directory path.
+  * ''ADK_PREFIX'' -- ADK installation directory path.

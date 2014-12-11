@@ -493,3 +493,10 @@
    ...
    fun:PyImport_ImportFrozenModuleObject
 }
+
+{
+   Python
+   Memcheck:Addr4
+   ...
+   fun:PyImport_Cleanup
+}
