@@ -5,5 +5,4 @@
 
 import adk
 
-#conf = adk.Conf(SUBDIRS = 'lib libavr unit_test').Build()
 conf = adk.Conf(SUBDIRS = 'lib').Build()

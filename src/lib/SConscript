@@ -3,7 +3,7 @@
 # All rights reserved.
 # See COPYING file for copyright details.
 
-import adk, os
+import adk
 
 commonParams = {'APP_NAME': 'adk',
                 'USE_GUI': True,

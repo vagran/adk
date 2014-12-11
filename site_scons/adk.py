@@ -488,7 +488,7 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
             raise Exception('Unsupported application type: ' + self.APP_TYPE)
         
         if self.USE_GUI is None and self.IsDesktop():
-            self.USE_GUI = self.APP_TYPE != 'unit_test'
+            self.USE_GUI = self.APP_TYPE == 'app'
         
         self.INCLUDE_DIRS += ' ${ADK_ROOT}/include '
         
