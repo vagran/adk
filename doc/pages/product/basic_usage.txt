@@ -34,6 +34,34 @@ After that run ''scons'' command. You also can specify build configuration using
 scons --adk-build-type=debug
 </code>
 
+When using outside of ADK project, create ''site_scons'' directory in your
+project root directory and place such file inside:
+
+<file python make.py>
+import os, sys
+
+sys.path.append(os.path.join(os.environ['ADK_ROOT'], 'site_scons'))
+
+from adk import *
+
+DefConfAppend(INCLUDE_DIRS = '#/include')
+</file>
+
+''DefConfAppend()'' method sets values for default parameters to which user
+values will be appended. In this example it defines additional include directory
+which will be used for all configurations inside this project. ''DefConf()'' sets
+initial values which may be completely overwritten by particular configuration.
+
+Once done ''make'' module may be used in the same way as ''adk'' module:
+<code python>
+import make
+
+make.Conf(APP_TYPE = 'app',
+          APP_NAME = 'mysample',
+          LIBS = 'samplelib',
+          LIB_DIRS = '../samplelib').Build()
+</code>
+
 Command line parameters:
   * ''%%--adk-build-type%%'' -- build configuration type. The following values accepted:
     * ''debug''
@@ -65,7 +93,7 @@ Build configuration parameters:
   * ''SUBDIRS'' -- string or list with subdirectory names which should be built. The subdirectories should have //SConscript// file inside. Considered as dependencies af the given build configuration.
   *  ''SRC_DIRS'' -- additional directories to search for source files. By default only current directory is inspected.
   * ''SRCS'' -- additional particular source files to include in the build.
-  * '' INCLUDE_DIRS'' -- additional directories to specify as include paths.
+  * ''INCLUDE_DIRS'' -- additional directories to specify as include paths.
   * ''CFLAGS'' -- additional compilation flags for C files.
   * ''CXXFLAGS'' -- additional compilation flags for C++ files.
   * ''CCFLAGS'' -- additional compilation flags for both C and C++ files.
@@ -108,6 +136,7 @@ Currently the following source file types are supported:
 
 FIXME installation packages.
 
+
 ====== Unit tests ======
 
 For unit test target the ''APP_TYPE'' parameter should have ''unit_test'' value. These additional variables should also be defined:
@@ -122,6 +151,8 @@ conf = adk.Conf(APP_TYPE = 'unit_test',
                 TEST_DESC = 'Sample ADK unit test',
                 TEST_SRCS = Glob('component/*.cpp')).Build()
 </code>
+
+
 ====== Documentation ======
 
 Documentation standard for ADK is [[http://www.dokuwiki.org/dokuwiki|Dokuwiki]] documentation format. It is well suitable for storing it in source code repository.

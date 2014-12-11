@@ -202,6 +202,8 @@ class Conf(object):
             else:
                 if paramName in _defaultInitial:
                     value = _defaultInitial[paramName]
+                elif paramName in _defaultAppend:
+                    value = _defaultAppend[paramName]
                 else:
                     value = Conf.params[paramName]
             setattr(self, paramName, value)

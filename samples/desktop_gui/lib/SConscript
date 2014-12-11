@@ -3,7 +3,7 @@
 # All rights reserved.
 # See COPYING file for copyright details.
 
-import adk, os
+import adk
 
 conf = adk.Conf(APP_NAME= 'desktop_sample_gui',
                 APP_TYPE = 'dynamic_lib',
