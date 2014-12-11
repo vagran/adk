@@ -8,6 +8,28 @@ import os, subprocess, platform
 import SCons
 sc = SCons.Script
 
+# Project-global default values for some parameters.
+_defConf = dict()
+
+
+def DefConf(**kwargs):
+    _defConf.update(kwargs)
+
+
+def DefConfAppend(**kwargs):
+    for name in kwargs:
+        if name in _defConf:
+            if isinstance(kwargs[name], str):
+                v = sc.Split(kwargs[name])
+            else:
+                v = kwargs[name]
+            if isinstance(_defConf[name], str):
+                _defConf[name] = sc.Split(_defConf[name]) + v
+            else:
+                _defConf[name].extend(v)
+        else:
+            _defConf[name] = kwargs[name]
+
 
 sc.AddOption('--adk-build-type',
              dest = 'adkBuildType',
@@ -90,7 +112,6 @@ def GetAdkPrefix():
         else:
             prefix = '/usr'
     return prefix
-
 
 class Conf(object):
     
