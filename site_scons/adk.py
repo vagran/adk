@@ -452,7 +452,10 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
         buildDir = e.Dir('.').path
         for srcFile in srcs:
             if os.path.commonprefix([srcFile.path, buildDir]) != buildDir:
-                path = os.path.join('external', srcFile.path)
+                srcPath = srcFile.path
+                if srcPath[0] == '/':
+                    srcPath = srcPath[1:]
+                path = os.path.join('external', srcPath)
                 objPath = self._GetObjPath(e, path)
             else:
                 objPath = self._GetObjPath(e, srcFile.path[len(buildDir) + 1:])
@@ -868,9 +871,6 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
         
         for libPath in env['LIBPATH']:
             opts += ' --lib-dir ' + libPath.abspath
-        
-#         if env['ADK_PLATFORM_ID'] == Conf.PLATFORM_ID_LINUX64:
-#             opts += ' --lib-dir /usr/lib/debug/lib/x86_64-linux-gnu'
                 
         a = env.Action('$ADK_ROOT/src/unit_test/ut_stubs_gen.py --result={0} {1}'.
             format(target[0].abspath, opts))
