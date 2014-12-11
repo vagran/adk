@@ -1,6 +1,4 @@
-/* /ADK/src/unit_test/adk_ut.cpp
- *
- * This file is a part of ADK library.
+/* This file is a part of ADK library.
  * Copyright (c) 2012-2014, Artyom Lebedev <artyom.lebedev@gmail.com>
  * All rights reserved.
  * See COPYING file for copyright details.

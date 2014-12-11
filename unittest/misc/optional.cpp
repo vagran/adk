@@ -1,6 +1,4 @@
-/* /ADK/unittest/misc/optional.cpp
- *
- * This file is a part of 'ADK' project.
+/* This file is a part of 'ADK' project.
  * Copyright (c) 2012-2014, Artyom Lebedev <artyom.lebedev@gmail.com>
  * All rights reserved.
  * See COPYING file for copyright details.

@@ -1,6 +1,6 @@
 # Suppressions for buggy 3rd party components.
 
-# Suppressions for GTK+ and its satelites.
+# Suppressions for GTK+ and its satellites.
 
 {
    GTK+ allocations

@@ -1,6 +1,5 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
-# /ADK/tools/usb_capture_analyzer.py
 #
 # This file is a part of ADK library.
 # Copyright (c) 2012-2014, Artyom Lebedev <artyom.lebedev@gmail.com>
