@@ -724,6 +724,16 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
         eepromBin = e.AvrEepromBin(output[0].abspath + '_eeprom.bin', output)
         
         if not self.runTests:
+            
+            def PrintSize(target, source, env):
+                a = env.Action('@size %s' % source[0].path)
+                print('\n=========================== Image size ===========================')
+                env.Execute(a)
+                print('==================================================================\n')
+                
+            cmd = e.Command('IMG_SIZE', output, PrintSize)
+            e.Default(cmd)
+            
             e.Default(romHex)
             e.Default(romSrec)
             e.Default(romBin)
