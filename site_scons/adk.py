@@ -98,7 +98,7 @@ sc.AddOption('--adk-verify-fuses',
              default = False,
              help = 'Verify fuses in the connected MCU.')
 
-sc.AddOption('--adk-upload-flash',
+sc.AddOption('--adk-upload-flash', '--adk-write-flash',
              dest = 'adkUploadFlash',
              action  ='store_true',
              default = False,
@@ -110,7 +110,7 @@ sc.AddOption('--adk-verify-flash',
              default = False,
              help = 'Verify firmware flash image in the connected MCU.')
 
-sc.AddOption('--adk-upload-eeprom',
+sc.AddOption('--adk-upload-eeprom', '--adk-write-eeprom',
              dest = 'adkUploadEeprom',
              action  ='store_true',
              default = False,

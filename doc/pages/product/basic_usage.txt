@@ -75,9 +75,9 @@ Command line parameters:
   * ''%%--adk-run-tests%%'' -- build only unit tests and their dependencies. Run all unit tests.
   * ''%%--adk-write-fuses%%'' -- Write fuses to the connected MCU.
   * ''%%--adk-verify-fuses%%'' -- Verify fuses in the connected MCU.
-  * ''%%--adk-upload-flash%%'' -- Upload firmware flash image to the connected MCU.
+  * ''%%--adk-upload-flash%%'', ''%%--adk-write-flash%%'' -- Upload firmware flash image to the connected MCU.
   * ''%%--adk-verify-flash%%'' -- Verify firmware flash image in the connected MCU.
-  * ''%%--adk-upload-eeprom%%'' -- Upload EEPROM image to the connected MCU.
+  * ''%%--adk-upload-eeprom%%'', ''%%--adk-write--epprom%%'' -- Upload EEPROM image to the connected MCU.
   * ''%%--adk-verify-eeprom%%'' -- Verify EEPROM image in the connected MCU.
   * ''%%--adk-mcu-reset%%'' -- Reset the connected MCU.
 
