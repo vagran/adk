@@ -137,7 +137,7 @@ Currently the following source file types are supported:
 FIXME installation packages.
 
 
-====== Unit tests ======
+===== Unit tests =====
 
 For unit test target the ''APP_TYPE'' parameter should have ''unit_test'' value. These additional variables should also be defined:
   * ''TEST_DESC'' -- free-form description of the test. The value may have spaces.
@@ -153,7 +153,7 @@ conf = adk.Conf(APP_TYPE = 'unit_test',
 </code>
 
 
-====== Documentation ======
+===== Documentation =====
 
 Documentation standard for ADK is [[http://www.dokuwiki.org/dokuwiki|Dokuwiki]] documentation format. It is well suitable for storing it in source code repository.
 
@@ -165,11 +165,19 @@ php -S 127.0.0.1:20080 -t /opt/dokuwiki
 FIXME doxygen
 
 
+===== Project management =====
+
+FIXME Trac standalone deployment
+
+<code bash>
+tracd -p 8000 --basic-auth="*,var/trac/conf/trac.htpasswd,Trac" var/trac
+</code>
+
 ===== Required packages =====
 
-  * libgtkmm-3.0-dev
-  * gcc-avr (for AVR target support)
-  * avr-libc ((for AVR target support)
-  * libusb-dev (for AVR USB devices support on desktop platforms)
-  * valgrind (for running unit tests)
-  * avrdude (for AVR target firmware uploading)
+  * ''libgtkmm-3.0-dev''
+  * ''gcc-avr'' (for AVR target support)
+  * ''avr-libc'' ((for AVR target support)
+  * ''libusb-dev'' (for AVR USB devices support on desktop platforms)
+  * ''valgrind'' (for running unit tests)
+  * ''avrdude'' (for AVR target firmware uploading)
