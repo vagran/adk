@@ -29,7 +29,7 @@ conf = adk.Conf(APP_NAME= 'desktop_console',
                 USE_GUI = False).Build()
 </code>
 
-After that run ''scons'' command. You also can specify build configuration using ''%%--adk-build-type%%'' option (default is ''release'').
+After that run ''scons'' command. You also can specify build configuration using ''%%--adk-build-type%%'' option (default is ''release'' if ''ADK_BUILD_TYPE'' environment variable is not set).
 <code bash>
 scons --adk-build-type=debug
 </code>
@@ -63,15 +63,14 @@ make.Conf(APP_TYPE = 'app',
 </code>
 
 Command line parameters:
-  * ''%%--adk-build-type%%'' -- build configuration type. The following values accepted:
+  * ''%%--adk-build-type%%'' -- build configuration type. If not specifed ''ADK_BUILD_TYPE'' environment variable is checked. If it is not set the ''release'' value is used. The following values accepted:
     * ''debug''
     * ''release''
   * ''%%--adk-platform%%'' -- target platform. The following values accepted:
     * ''native''
     * ''linux''
     * ''avr''
-  * ''%%--adk_prefix%%'' -- ADK installation prefix. Taken from ADK_PREFIX
-    environment variable if not specified. "/usr" by default.
+  * ''%%--adk_prefix%%'' -- ADK installation prefix. Taken from ''ADK_PREFIX'' environment variable if not specified. "/usr" by default.
   * ''%%--adk-run-tests%%'' -- build only unit tests and their dependencies. Run all unit tests.
   * ''%%--adk-write-fuses%%'' -- Write fuses to the connected MCU.
   * ''%%--adk-verify-fuses%%'' -- Verify fuses in the connected MCU.

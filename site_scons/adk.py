@@ -62,7 +62,7 @@ sc.AddOption('--adk-build-type',
              action  ='store',
              metavar = 'ADK_BUILD_TYPE',
              choices = ['debug', 'release'],
-             default = 'release',
+             default = None,
              help = 'Build configuration type.')
 
 sc.AddOption('--adk-platform',
@@ -215,6 +215,15 @@ class Conf(object):
                 raise Exception('ADK_ROOT environment variable should point to ADK source')
             else:
                 self.ADK_ROOT = ''
+                
+        self.adkBuildType = sc.GetOption('adkBuildType')
+        if self.adkBuildType is None:
+            if 'ADK_BUILD_TYPE' in os.environ:
+                self.adkBuildType = os.environ['ADK_BUILD_TYPE']
+            else:
+                self.adkBuildType = 'release'
+        if self.adkBuildType != 'debug' and self.adkBuildType != 'release':
+            raise Exception('Invalid build type specified: ' + self.adkBuildType)
     
         cmdPlatform = sc.GetOption('adkPlatform')
         if cmdPlatform is not None:
@@ -520,7 +529,7 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
             e['BUILDERS']['UtAutoSrc'] = e.Builder(action = Conf._BuildUtAutoSrc)
         
         adkFlags = '-Wall -Werror -Wextra '
-        if e.GetOption('adkBuildType') == 'debug' or self.APP_TYPE == 'unit_test':
+        if self.adkBuildType == 'debug' or self.APP_TYPE == 'unit_test':
             adkFlags += ' -ggdb3 '
             self.DEFS += ' DEBUG '
             if self.DEBUG_OPT_FLAGS is None:
@@ -575,7 +584,7 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
         e['CPPDEFINES'] = DEFS
         
         if self.IsDesktop():
-            self.PKGS += ' expat glibmm-2.4 giomm-2.4 '
+            self.PKGS += ' glibmm-2.4 giomm-2.4 expat '
         if self.USE_GUI:
             self.PKGS += ' gtkmm-3.0 '
         if self.USE_PYTHON:
@@ -688,7 +697,7 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
         
         if sc.Dir('.').path == '.':
             buildDirName = os.path.join('build', '%s-%s' % (self.PLATFORM,
-                                                            sc.GetOption('adkBuildType')))
+                                                            self.adkBuildType))
         else:
             buildDirName = ''
         
