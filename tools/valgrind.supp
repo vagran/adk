@@ -500,3 +500,17 @@
    ...
    fun:PyImport_Cleanup
 }
+
+{
+   Python
+   Memcheck:Cond
+   ...
+   fun:PyImport_Cleanup
+}
+
+{
+   Python
+   Memcheck:Value8
+   ...
+   fun:PyImport_Cleanup
+}
