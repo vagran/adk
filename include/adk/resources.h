@@ -73,8 +73,8 @@ public:
  * @param __end End address of the resource data.
  */
 #define ADK_DECL_RESOURCE(__id, __name, __start, __end) \
-    static internal::ResourceDeclarator __CONCAT(__res_decl_, __id) \
-        (__name, __start, __end);
+    namespace { internal::ResourceDeclarator __CONCAT(__res_decl_, __id) \
+        (__name, __start, __end); }
 
 #else /* ADK_PLATFORM_AVR */
 //XXX not implemented
