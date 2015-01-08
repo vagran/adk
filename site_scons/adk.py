@@ -543,7 +543,7 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
                 adkFlags += ' %s ' % self.RELEASE_OPT_FLAGS
         
         self.CCFLAGS = adkFlags + self.CCFLAGS
-        self.CXXFLAGS += ' -std=c++11 '
+        self.CXXFLAGS += ' -std=c++1y '
         self.CFLAGS += ' -std=c99 '
         
         self.DEFS += ' ADK_PLATFORM_ID=%d ' % self.PLATFORM_ID
