@@ -66,9 +66,11 @@
 #define SIZEOF_ARRAY(array)         (sizeof(array) / sizeof((array)[0]))
 #endif
 
+#define __UID2(str, counter)        __CONCAT(str, counter)
+
 /** Generate file-scope unique identifier with a given prefix. */
 #ifndef __UID
-#define __UID(str)                  __CONCAT(str, __COUNTER__)
+#define __UID(str)                  __UID2(str, __COUNTER__)
 #endif
 
 /** Give a hint for the compiler that a given conditional statement is likely to
