@@ -27,12 +27,7 @@
 #define ADK_PLATFORM_IS_WINDOWS(id) \
     ((id) == ADK_PLATFORM_ID_WIN32 || (id) == ADK_PLATFORM_ID_WIN64)
 
-//XXX should be removed after Eclipse will have c++11 supported
-#ifdef __CDT_PARSER__
-#define constexpr
-#define nullptr 0
-#define noexcept
-#endif /* __CDT_PARSER__ */
+#define __NOP(x)                    x
 
 #ifndef __CONCAT2
 #define __CONCAT2(x, y)             x##y
