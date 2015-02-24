@@ -86,13 +86,14 @@ def ParseFile(filename, isTest, isDynamicLib):
             cmd = '{} -D {}'.format(opts.nm, filename)
         output = Exec(cmd)
     
-    pat = re.compile('^\\s*[0-9a-fA-F]*\\s+([TDRUBWVi])\\s+(.*)$')
+    globalTypes = 'TDRBWViu'
+    pat = re.compile('^\\s*[0-9a-fA-F]*\\s+([{}U])\\s+(.*)$'.format((globalTypes)))
     for line in output:
         m = pat.match(line)
         if m is None:
             continue
         name = m.group(2)
-        if m.group(1) in 'TDRBWVi':
+        if m.group(1) in globalTypes:
             if '@' in name:
                 name = name[:name.index('@')]
             defined_syms[name] = filename
