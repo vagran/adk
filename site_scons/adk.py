@@ -519,7 +519,7 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
         if self.AVR_USE_USB:
             self.DEFS += ' ADK_AVR_USE_USB '
             if self.IsDesktop():
-                self.PKGS += ' libusb '
+                self.PKGS += ' libusb-1.0 '
         
         if self.APP_TYPE == 'unit_test':
             if self.TEST_DESC is None:

@@ -5,5 +5,4 @@
 
 import adk
 
-#XXX include "client" after libusb adaptations
-conf = adk.Conf(SUBDIRS = 'firmware').Build()
+conf = adk.Conf(SUBDIRS = 'firmware client').Build()

@@ -8,6 +8,7 @@ import adk
 commonParams = {'APP_NAME': 'adk',
                 'USE_GUI': True,
                 'USE_PYTHON': True,
+                'AVR_USE_USB': True,
                 'NO_ADK_LIB': True,
                 'INSTALL_DIR': '${ADK_PREFIX}/lib'}
 
