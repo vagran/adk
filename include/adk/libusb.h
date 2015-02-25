@@ -21,10 +21,7 @@ public:
     LibusbExceptionParam(int code): _code(code) {}
 
     void
-    ToString(std::stringstream &ss) const
-    {
-        ss << libusb_error_name(_code) << "(" << _code << ")";
-    }
+    ToString(std::stringstream &ss) const;
 
     operator int() const
     {
@@ -53,24 +50,17 @@ class LibusbDevice {
 public:
     typedef std::shared_ptr<LibusbDevice> Handle;
 
-    ~LibusbDevice()
-    {
-        libusb_close(_hDevice);
-    }
+    LibusbDevice(libusb_device_handle *hDevice);
+
+    ~LibusbDevice();
 
     /** Get address assigned to the device. */
     u8
-    GetAddress()
-    {
-        return libusb_get_device_address(_device);
-    }
+    GetAddress();
 
     /** Reset the device. */
     void
-    Reset()
-    {
-        libusb_reset_device(_hDevice);
-    }
+    Reset();
 
     /** Write data to device.
      *
@@ -80,17 +70,7 @@ public:
      * @return Number of bytes actually transferred.
      */
     size_t
-    Write(const void *data, size_t size, int timeout = 0)
-    {
-        int ec = libusb_control_transfer(_hDevice,
-            LIBUSB_RECIPIENT_DEVICE | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_OUT,
-            ADK_USB_REQ_ADK_WRITE, 0, 0,
-            const_cast<u8 *>(static_cast<const u8 *>(data)), size, timeout);
-        if (ec < 0) {
-            ADK_USB_EXCEPTION(ec, "Failed to write to device");
-        }
-        return ec;
-    }
+    Write(const void *data, size_t size, int timeout = 0);
 
     /** Read data from device.
      * @param data Data buffer.
@@ -99,64 +79,27 @@ public:
      * @return Number of bytes actually transferred.
      */
     size_t
-    Read(void *data, size_t size, int timeout = 0)
-    {
-        int ec = libusb_control_transfer(_hDevice,
-            LIBUSB_RECIPIENT_DEVICE | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_IN,
-            ADK_USB_REQ_ADK_READ, 0, 0,
-            const_cast<u8 *>(static_cast<const u8 *>(data)), size, timeout);
-        if (ec < 0) {
-            ADK_USB_EXCEPTION(ec, "Failed to read from device");
-        }
-        return ec;
-    }
+    Read(void *data, size_t size, int timeout = 0);
 
 private:
     friend class LibusbCtx;
 
     libusb_device_handle *_hDevice;
     libusb_device *_device;
-
-    LibusbDevice(libusb_device_handle *hDevice): _hDevice(hDevice)
-    {
-        _device = libusb_get_device(hDevice);
-    }
 };
 
 /** Wrapper class for libusb context. Should be used for all USB operations. */
 class LibusbCtx {
 public:
-    LibusbCtx()
-    {
-        int ec;
-        if ((ec = libusb_init(&_ctx))) {
-            ADK_USB_EXCEPTION(ec, "Failed to initialize libusb context");
-        }
-#       ifdef DEBUG
-        libusb_set_debug(_ctx, 3);
-#       endif /* DEBUG */
-    }
+    LibusbCtx();
 
-    ~LibusbCtx()
-    {
-        if (_ctx) {
-            libusb_exit(_ctx);
-        }
-    }
+    ~LibusbCtx();
 
     /** Open device by vendor and product ID.
      * @return Pointer to the device. @a nullptr if opening failed.
      */
     LibusbDevice::Handle
-    OpenDeviceByPid(u16 vendorId, u16 productId)
-    {
-        libusb_device_handle *hDevice =
-            libusb_open_device_with_vid_pid(_ctx, vendorId, productId);
-        if (!hDevice) {
-            return LibusbDevice::Handle(nullptr);
-        }
-        return LibusbDevice::Handle(new LibusbDevice(hDevice));
-    }
+    OpenDeviceByPid(u16 vendorId, u16 productId);
 
 private:
     libusb_context *_ctx = nullptr;
