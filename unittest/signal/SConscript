@@ -9,4 +9,5 @@ conf = adk.Conf(APP_TYPE = 'unit_test',
                 APP_NAME = 'signal',
                 TEST_DESC = 'Signals and slots',
                 TEST_SRCS = Glob('#/src/lib/*.cpp'),
+                AVR_USE_USB = True,
                 USE_GUI = True).Build()
