@@ -563,6 +563,9 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
         if self.IsDesktop() and not self.NO_ADK_LIB:
             self.LIBS += ' adk '
             self.LIB_DIRS += ' %s ' % os.path.join(self.ADK_PREFIX, 'lib')
+            
+        if self.IsDesktop():
+            self.CCFLAGS += ' -pthread '
         
         # Include directories
         e['CPPPATH'] = self._ProcessFilesList(e, self.INCLUDE_DIRS, e.Dir, True)
@@ -887,7 +890,7 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
             opts += ' --lib ' + lib
         for lib in sc.Split(env['ADK_LIBS']):
             opts += ' --lib ' + lib
-        
+        opts += ' --lib pthread'
         for libPath in env['LIBPATH']:
             opts += ' --lib-dir ' + libPath.abspath
                 
