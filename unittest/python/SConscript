@@ -11,5 +11,4 @@ conf = adk.Conf(APP_TYPE = 'unit_test',
                 RES_FILES = 'test_embedding.py test_extending.py',
                 USE_PYTHON = True,
                 USE_GUI = True,
-                AVR_USE_USB = True,
                 TEST_SRCS = Glob('#/src/lib/*.cpp')).Build()

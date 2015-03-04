@@ -10,5 +10,4 @@ conf = adk.Conf(APP_TYPE = 'unit_test',
                 TEST_DESC = 'XML manipulation functionality',
                 RES_FILES = 'test.xml',
                 TEST_SRCS = Glob('#/src/lib/*.cpp'),
-                AVR_USE_USB = True,
                 USE_GUI = True).Build()
