@@ -8,6 +8,8 @@
  * libusb wrapper implementation.
  */
 
+#ifdef ADK_AVR_USE_USB
+
 #include <adk.h>
 
 using namespace adk;
@@ -95,3 +97,5 @@ LibusbCtx::OpenDeviceByPid(u16 vendorId, u16 productId)
     }
     return LibusbDevice::Handle(std::make_shared<LibusbDevice>(hDevice));
 }
+
+#endif /* ADK_AVR_USE_USB */
