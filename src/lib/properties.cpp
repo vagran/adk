@@ -2213,6 +2213,8 @@ Properties::ReformatText(const std::string &text)
             }
             numNewLines = 0;
             skipping = false;
+        } else {
+            numNewLines = 0;
         }
         out += c;
     }

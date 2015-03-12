@@ -13,8 +13,7 @@ See COPYING file for copyright details.
         Root element description.
     </description>
     <item name="Item1" type="integer" maxValue="30" minValue="20">
-        <description>
-            Optional long description.
+        <description>Optional long description.
         </description>
         <value>25</value>
     </item>
