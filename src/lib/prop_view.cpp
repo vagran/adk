@@ -200,6 +200,7 @@ PropView::Category::Category(PropView &propView):
 {
     wdgList.set_sort_func(sigc::mem_fun(propView, &PropView::CategorySortFunc));
     wdgExpander.add(wdgList);
+    wdgExpander.set_expanded(true);
 }
 
 PropView::Node *
