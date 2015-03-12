@@ -164,6 +164,45 @@
 }
 
 {
+   GTK+
+   Memcheck:Leak
+   match-leak-kinds: possible
+   ...
+   fun:g_output_stream_flush_async
+}
+
+{
+   GTK+
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:calloc
+   fun:allocate_dtv
+   fun:_dl_allocate_tls
+   fun:allocate_stack
+   ...
+   fun:g_bus_get_sync
+}
+
+{
+   GTK+
+   Memcheck:Leak
+   match-leak-kinds: definite
+   ...
+   fun:FcFontRenderPrepare
+   fun:FcFontMatch
+}
+
+{
+   GTK+
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:realloc
+   ...
+   fun:FcPatternAddInteger
+}
+
+
+{
    Cairo
    Memcheck:Cond
    fun:sse2_combine_over_u
