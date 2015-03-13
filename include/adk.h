@@ -28,6 +28,7 @@
 /* Desktop applications. */
 
 #include <list>
+#include <queue>
 #include <set>
 #include <map>
 #include <cstring>

@@ -5,4 +5,4 @@
 
 import adk
 
-conf = adk.Conf(SUBDIRS = 'bitmap misc properties python signal xml').Build()
+conf = adk.Conf(SUBDIRS = 'bitmap misc properties python signal xml multithreading').Build()
