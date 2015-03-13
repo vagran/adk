@@ -61,10 +61,11 @@
 #include <adk/exception.h>
 #include <adk/logging.h>
 #include <adk/debug.h>
-#include <adk/spinlock.h>
-
 #include <adk/utils.h>
+
+#include <adk/spinlock.h>
 #include <adk/optional.h>
+#include <adk/message_queue.h>
 #include <adk/bitmap.h>
 #include <adk/hash.h>
 #include <adk/rb_tree.h>
