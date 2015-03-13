@@ -36,3 +36,17 @@ UT_TEST("Message queue")
     UT(lastItem) == UT(42);
     UT(numItems) == UT(2);
 }
+
+UT_TEST("Thread pool executor")
+{
+    ThreadPoolExecutor ex(5);
+
+    std::atomic<int> counter(0);
+
+    for (int i = 0; i < 2000; i++) {
+        ex.Submit([&](){ counter++; });
+    }
+    ex.WaitQueueEmpty();
+    ex.Terminate();
+    UT(counter.load()) == UT(2000);
+}
