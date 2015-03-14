@@ -187,6 +187,17 @@ public:
         return true;
     }
 
+    /** Try to pop message without blocking.
+     *
+     * @param msg Message object to assign.
+     * @return true if message popped, false otherwise.
+     */
+    bool
+    TryPop(T &msg, QueueLock &&lock = QueueLock())
+    {
+        return Pop(msg, std::chrono::milliseconds(0), std::move(lock));
+    }
+
     /** Wait until queue is empty. */
     void
     WaitEmpty(QueueLock &&lock = QueueLock())

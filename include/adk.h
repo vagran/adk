@@ -81,6 +81,7 @@
 #ifdef ADK_USE_GUI
 #include <adk/glade.h>
 #include <adk/prop_view.h>
+#include <adk/gui_thread_executor.h>
 #endif /* ADK_USE_GUI */
 
 #ifdef ADK_USE_PYTHON
