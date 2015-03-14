@@ -14,12 +14,11 @@ using namespace adk;
 
 PropView::Item::Item(PropView &propView):
     Node(propView),
-    wdgBox(Gtk::ORIENTATION_HORIZONTAL, 2),
-    wdgNameAlign(1.0, 0.5, 0.0, 1.0)
+    wdgBox(Gtk::ORIENTATION_HORIZONTAL, 2)
 {
     wdgBox.set_homogeneous();
-    wdgNameAlign.add(wdgName);
-    wdgBox.pack_start(wdgNameAlign, true, true);
+    wdgName.set_halign(Gtk::Align::ALIGN_END);
+    wdgBox.pack_start(wdgName, true, true);
     wdgBox.pack_end(wdgValue, true, true);
 
     if (propView.readOnly) {

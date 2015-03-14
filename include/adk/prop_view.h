@@ -77,7 +77,6 @@ private:
     class Item: public Node {
     public:
         Gtk::Box wdgBox;
-        Gtk::Alignment wdgNameAlign;
         Gtk::Label wdgName;
         Gtk::Entry wdgValue;
         Gtk::CheckButton wdgCheck;
