@@ -586,6 +586,13 @@ public:
     {
         return EmitMap(VoidResultMapper(), std::forward<Args>(args)...);
     }
+
+    template <typename... Args>
+    typename BaseType::ResultType
+    operator()(Args &&...args)
+    {
+        return Emit(std::forward<Args>(args)...);
+    }
 };
 
 template <typename Signature>
@@ -603,6 +610,13 @@ public:
         for (auto &slot: slots) {
             slot(args...);
         }
+    }
+
+    template <typename... Args>
+    void
+    operator()(Args ... args)
+    {
+        Emit(std::forward<Args>(args)...);
     }
 };
 
