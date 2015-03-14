@@ -1,5 +1,16 @@
 # Suppressions for buggy 3rd party components.
 
+{
+   pthread
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:allocate_dtv
+   fun:_dl_allocate_tls
+   fun:allocate_stack
+   fun:pthread_create@@GLIBC_2.2.5
+}
+
 # Suppressions for GTK+ and its satellites.
 
 {
@@ -315,6 +326,20 @@
    match-leak-kinds: possible
    fun:_Znwm
    fun:_ZN3Gtk11Application6createERiRPPcRKN4Glib7ustringEN3Gio16ApplicationFlagsE
+}
+
+{
+   GTK+
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znwm
+   fun:_ZN3Atk12Object_Class8wrap_newEP8_GObject
+   fun:_ZN4Glib9wrap_autoEP8_GObjectb
+   fun:_ZN4Glib4wrapEP10_AtkObjectb
+   fun:_ZN3Gtk6Widget20get_accessible_vfuncEv
+   fun:_ZN3Gtk12Widget_Class29get_accessible_vfunc_callbackEP10_GtkWidget
+   ...
+   fun:g_main_context_dispatch
 }
 
 # Python library
