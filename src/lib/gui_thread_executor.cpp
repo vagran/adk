@@ -16,11 +16,6 @@ GuiThreadExecutor::GuiThreadExecutor(size_t queueSize):
     dispatcher.connect(sigc::mem_fun(*this, &GuiThreadExecutor::OnSubmit));
 }
 
-GuiThreadExecutor::~GuiThreadExecutor()
-{
-    //XXX
-}
-
 void
 GuiThreadExecutor::Submit(const Action &action)
 {

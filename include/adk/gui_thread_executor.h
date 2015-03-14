@@ -16,9 +16,12 @@ class GuiThreadExecutor {
 public:
     typedef std::function<void()> Action;
 
-    GuiThreadExecutor(size_t queueSize);
-
-    ~GuiThreadExecutor();
+    /** Create the executor.
+     *
+     * @param queueSize Maximal size of the actions queue. Zero for unlimited.
+     *      Submission is blocked if the limit is reached.
+     */
+    GuiThreadExecutor(size_t queueSize = 0);
 
     void
     Submit(const Action &action);
