@@ -197,7 +197,6 @@ PropView::Item::Parse(const std::string &s)
 PropView::Category::Category(PropView &propView):
     Node(propView)
 {
-    wdgList.set_sort_func(sigc::mem_fun(propView, &PropView::CategorySortFunc));
     wdgExpander.add(wdgList);
     wdgExpander.set_expanded(true);
 }
@@ -216,6 +215,17 @@ PropView::Category::FindChild(Properties::Node node)
 void
 PropView::Category::Update()
 {
+    switch (node.Sorting()) {
+    case Properties::SortingMode::NONE:
+        wdgList.set_sort_func(sigc::mem_fun(propView, &PropView::CategoryNoneSortFunc));
+        break;
+    case Properties::SortingMode::ASC:
+        wdgList.set_sort_func(sigc::mem_fun(propView, &PropView::CategoryAscSortFunc));
+        break;
+    case Properties::SortingMode::DESC:
+        wdgList.set_sort_func(sigc::mem_fun(propView, &PropView::CategoryDescSortFunc));
+        break;
+    }
     wdgExpander.set_label(node.DispName());
     std::string desc(node.Description());
     if (desc.empty()) {
@@ -335,14 +345,13 @@ PropView::UpdateCategory(Category &catNode)
     catNode.Update();
 
     for (Node *node: catNode.children) {
-        node->order = -1;
+        node->visited = false;
     }
 
-    int order = 0;
     for (Properties::Node node: catNode.node) {
         Node *vnode = catNode.FindChild(node);
         if (vnode) {
-            vnode->order = order;
+            vnode->visited = true;
         } else {
             /* New node. */
             auto value = node.Val();
@@ -354,21 +363,20 @@ PropView::UpdateCategory(Category &catNode)
             catNode.children.push_back(vnode);
             IndexNode(vnode);
             vnode->node = node;
-            vnode->order = order;
+            vnode->visited = true;
             catNode.wdgList.add(*vnode->GetWidget());
 
             props.Modify(node.GetPath(), Properties::NodeOptions().Listener(
                 Properties::NodeHandler::Make(&PropView::OnNodeChanged,
                                               this, vnode, std::placeholders::_2)));
         }
-        order++;
     }
     catNode.wdgList.show_all();
 
     /* Delete non visited. */
     for (auto it = catNode.children.begin(); it != catNode.children.end();) {
         Node *node = *it;
-        if (node->order == -1) {
+        if (!node->visited) {
             DeleteNode(catNode, node);
             it = catNode.children.erase(it);
             UnindexNode(node);
@@ -395,11 +403,27 @@ PropView::DeleteNode(Category &parent, Node *node)
 }
 
 int
-PropView::CategorySortFunc(Gtk::ListBoxRow* row1, Gtk::ListBoxRow* row2)
+PropView::CategoryAscSortFunc(Gtk::ListBoxRow* row1, Gtk::ListBoxRow* row2)
 {
     Node *node1 = nodes[row1->get_child()].get();
     Node *node2 = nodes[row2->get_child()].get();
-    return node1->order - node2->order;
+    return node1->node.DispName().compare(node2->node.DispName());
+}
+
+int
+PropView::CategoryDescSortFunc(Gtk::ListBoxRow* row1, Gtk::ListBoxRow* row2)
+{
+    Node *node1 = nodes[row1->get_child()].get();
+    Node *node2 = nodes[row2->get_child()].get();
+    return node2->node.DispName().compare(node1->node.DispName());
+}
+
+int
+PropView::CategoryNoneSortFunc(Gtk::ListBoxRow* row1, Gtk::ListBoxRow* row2)
+{
+    Node *node1 = nodes[row1->get_child()].get();
+    Node *node2 = nodes[row2->get_child()].get();
+    return node1->node.Order() - node2->node.Order();
 }
 
 void

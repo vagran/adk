@@ -12,6 +12,8 @@ See COPYING file for copyright details.
     <description>
         Sample of properties sheet
     </description>
+    <sorting>asc</sorting>
+    
     <item name="Item1" type="integer" maxValue="30" minValue="20">
         <description>
             Optional long description.

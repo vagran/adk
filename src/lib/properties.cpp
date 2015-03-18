@@ -746,6 +746,12 @@ Properties::_Node::ApplyOptions(NodeOptions &options)
     if (options.units) {
         units = options.units;
     }
+    if (options.sortingMode) {
+        sortingMode = options.sortingMode;
+    }
+    if (options.order) {
+        order = options.order;
+    }
     for (NodeOptions::HandlerEntry &e: options.validators) {
         auto con = _validators.Connect(e.handler);
         if (e.con) {
@@ -908,6 +914,20 @@ Properties::NodeOptions::Units(Optional<std::string> units)
 }
 
 Properties::NodeOptions &
+Properties::NodeOptions::Sorting(SortingMode sortingMode)
+{
+    this->sortingMode = sortingMode;
+    return *this;
+}
+
+Properties::NodeOptions &
+Properties::NodeOptions::Order(int order)
+{
+    this->order = order;
+    return *this;
+}
+
+Properties::NodeOptions &
 Properties::NodeOptions::Validator(const NodeHandler &validator,
                                    NodeHandlerConnection *con)
 {
@@ -951,7 +971,7 @@ Properties::Node::Type() const
 {
     ASSERT(_node);
     Lock lock = _node->LockProps();
-    if (_node->HasTransaction()) {
+    if (_HasTransaction()) {
         _Node *propsNode, *transNode;
         if (_node->_isTransaction) {
             transNode = _node.get();
@@ -973,7 +993,7 @@ Properties::Node::Val() const
 {
     ASSERT(_node);
     Lock lock = _node->LockProps();
-    if (_node->HasTransaction()) {
+    if (_HasTransaction()) {
         _Node *propsNode, *transNode;
         if (_node->_isTransaction) {
             transNode = _node.get();
@@ -1026,6 +1046,35 @@ Properties::Node::Units() const
     Lock lock = _node->LockProps();
     //XXX transaction
     return _node->units ? *_node->units : std::string();
+}
+
+Properties::SortingMode
+Properties::Node::Sorting() const
+{
+    ASSERT(_node);
+    Lock lock = _node->LockProps();
+    //XXX transaction
+    /* Check parent if not set. */
+    _Node::Ptr node = _node;
+    while (node) {
+        if (node->sortingMode) {
+            return *node->sortingMode;
+        }
+        node = node->Parent();
+    }
+    /* Default is ascending for root category. */
+    return SortingMode::ASC;
+}
+
+int
+Properties::Node::Order() const
+{
+    ASSERT(_node);
+    Lock lock = _node->LockProps();
+    if (!_node->order) {
+        return 0;
+    }
+    return *_node->order;
 }
 
 bool
@@ -1707,13 +1756,14 @@ Properties::Load(const Xml &xml)
 {
     Transaction::Ptr trans = OpenTransaction();
     trans->DeleteAll();
-    _LoadCategory(trans, xml.Root(), Path(), true);
+    int order = 0;
+    _LoadCategory(trans, xml.Root(), Path(), order, true);
     trans->Commit();
 }
 
 void
 Properties::_LoadCategory(Transaction::Ptr trans, Xml::Element catEl,
-                          const Path &path, bool isRoot)
+                          const Path &path, int &order, bool isRoot)
 {
     std::string name;
     NodeOptions opts;
@@ -1743,20 +1793,28 @@ Properties::_LoadCategory(Transaction::Ptr trans, Xml::Element catEl,
         opts.Description(ReformatText(e.Value()));
     }
 
+    e = catEl.Child("sorting");
+    if (e) {
+        opts.Sorting(ParseSortingMode(e.Value()));
+    }
+
+    opts.Order(order);
+    order++;
+
     trans->Add(isRoot ? Path() : path + name, opts);
 
     for (Xml::Element e: catEl.Children("item")) {
-        _LoadItem(trans, e, isRoot ? Path() : path + name);
+        _LoadItem(trans, e, isRoot ? Path() : path + name, order);
     }
 
     for (Xml::Element e: catEl.Children("category")) {
-        _LoadCategory(trans, e, isRoot ? Path() : path + name);
+        _LoadCategory(trans, e, isRoot ? Path() : path + name, order);
     }
 }
 
 void
 Properties::_LoadItem(Transaction::Ptr trans, Xml::Element itemEl,
-                      const Path &path)
+                      const Path &path, int &order)
 {
     NodeOptions opts;
 
@@ -1782,6 +1840,9 @@ Properties::_LoadItem(Transaction::Ptr trans, Xml::Element itemEl,
     if (e) {
         opts.Description(ReformatText(e.Value()));
     }
+
+    opts.Order(order);
+    order++;
 
     a = itemEl.Attr("type");
     if (!a) {
@@ -2219,6 +2280,21 @@ Properties::ReformatText(const std::string &text)
         out += c;
     }
     return out;
+}
+
+Properties::SortingMode
+Properties::ParseSortingMode(const std::string &modeStr)
+{
+    if (modeStr == "none") {
+        return SortingMode::NONE;
+    }
+    if (modeStr == "asc") {
+        return SortingMode::ASC;
+    }
+    if (modeStr == "desc") {
+        return SortingMode::DESC;
+    }
+    ADK_EXCEPTION(ParseException, "Invalid sorting mode specified: " << modeStr);
 }
 
 void

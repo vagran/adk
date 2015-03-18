@@ -246,6 +246,13 @@ public:
         CHILD = 0x10
     };
 
+    /** Items sorting mode. */
+    enum class SortingMode {
+        NONE,
+        ASC,
+        DESC
+    };
+
     /** Properties change notification handler slot. */
     typedef Slot<void(Properties &)> ChangedHandler;
 
@@ -534,6 +541,8 @@ public:
         Optional<std::string> dispName,
                               description,
                               units;
+        Optional<SortingMode> sortingMode;
+        Optional<int> order;
 
         class HandlerEntry {
         public:
@@ -556,6 +565,15 @@ public:
 
         NodeOptions &
         Units(Optional<std::string> units);
+
+        NodeOptions &
+        Sorting(SortingMode sortingMode);
+
+        /** Order used to sort items when sorting mode is NONE. For items loaded
+         * from XML this order value corresponds to definition order in XML.
+         */
+        NodeOptions &
+        Order(int order);
 
         /** Add validator. It should throw ValidationException if the validation
          * fails. If connection pointer is provided the object is associated
@@ -599,6 +617,9 @@ private:
                               description,
         /** Units string, empty if no units specified. */
                               units;
+        /** Items sorting mode. Used only for category. */
+        Optional<SortingMode> sortingMode;
+        Optional<int> order;
 
         static Ptr
         Create(Properties *props);
@@ -749,6 +770,14 @@ public:
         /** Get units string. */
         std::string
         Units() const;
+
+        /** Get sorting mode. */
+        SortingMode
+        Sorting() const;
+
+        /** Get positioning order. */
+        int
+        Order() const;
 
         bool
         operator ==(const Node &node);
@@ -1180,20 +1209,23 @@ private:
      * @param trans Target transaction.
      * @param catEl XML element with category description.
      * @param path Preceding path.
+     * @param order Items order is counted in this variable.
      * @param isRoot Is it root category.
      */
     void
     _LoadCategory(Transaction::Ptr trans, Xml::Element catEl, const Path &path,
-                  bool isRoot = false);
+                  int &order, bool isRoot = false);
 
     /** Load item from XML element.
      *
      * @param trans Target transaction.
      * @param itemEl XML element with item description.
      * @param path Preceding path.
+     * @param order Items order is counted in this variable.
      */
     void
-    _LoadItem(Transaction::Ptr trans, Xml::Element itemEl, const Path &path);
+    _LoadItem(Transaction::Ptr trans, Xml::Element itemEl, const Path &path,
+              int &order);
 
     /** Transaction is committed. All data validated and either InvalidOpException
      * or ValidationException is thrown.
@@ -1244,6 +1276,10 @@ private:
      */
     std::string
     ReformatText(const std::string &text);
+
+    /** Parse sorting mode from string. */
+    SortingMode
+    ParseSortingMode(const std::string &modeStr);
 
     void
     _Validator_StringMaxLen(Node node, size_t maxLen);

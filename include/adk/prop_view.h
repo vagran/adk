@@ -37,8 +37,7 @@ private:
     public:
         PropView &propView;
         Properties::Node node;
-        /** Order value, nodes in list sorted by this  value. */
-        int order;
+        bool visited;
 
         Node(PropView &propView):
             propView(propView)
@@ -200,7 +199,13 @@ private:
     UnindexNode(Node *node);
 
     int
-    CategorySortFunc(Gtk::ListBoxRow* row1, Gtk::ListBoxRow* row2);
+    CategoryAscSortFunc(Gtk::ListBoxRow* row1, Gtk::ListBoxRow* row2);
+
+    int
+    CategoryDescSortFunc(Gtk::ListBoxRow* row1, Gtk::ListBoxRow* row2);
+
+    int
+    CategoryNoneSortFunc(Gtk::ListBoxRow* row1, Gtk::ListBoxRow* row2);
 
     void
     DeleteNode(Category &parent, Node *node);
