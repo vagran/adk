@@ -167,27 +167,36 @@ PropView::Item::Parse(const std::string &s)
     /* Strip units if present. */
     std::string units = node.Units();
     buf = s;
-    if (!units.empty()) {
-        if (s.size() >= units.size()) {
-            size_t unitsStart = s.size() - units.size();
-            bool matched = true;
-            for (size_t i = 0; i < units.size(); i++) {
-                if (s[unitsStart + i] != units[i]) {
-                    matched = false;
-                    break;
-                }
-            }
-            if (matched) {
-                /* Strip also spaces between value and units. */
-                for (size_t i = unitsStart; i > 0; i--) {
-                    if (s[i - 1] == ' ') {
-                        unitsStart = i - 1;
-                    }
-                }
-                buf = s.substr(0, unitsStart);
+    do {
+        if (units.empty()) {
+            break;
+        }
+        if (s.size() < units.size()) {
+            break;
+        }
+        size_t pos = s.rfind(units);
+        if (pos == std::string::npos) {
+            break;
+        }
+        /* Strip trailing spaces if there are only spaces. */
+        bool nonSpaceFound = false;
+        for (size_t i = pos + units.size(); i < s.size(); i++) {
+            if (!isspace(s[i])) {
+                nonSpaceFound = true;
+                break;
             }
         }
-    }
+        if (nonSpaceFound) {
+            break;
+        }
+        /* Strip leading spaces before units. */
+        for (; pos > 0; pos--) {
+            if (!isspace(s[pos - 1])) {
+                break;
+            }
+        }
+        buf = s.substr(0, pos);
+    } while (false);
 
     return Properties::Value::FromString(node.Type(), buf);
 }

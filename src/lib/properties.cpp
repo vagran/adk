@@ -1803,12 +1803,12 @@ Properties::_LoadCategory(Transaction::Ptr trans, Xml::Element catEl,
 
     trans->Add(isRoot ? Path() : path + name, opts);
 
-    for (Xml::Element e: catEl.Children("item")) {
-        _LoadItem(trans, e, isRoot ? Path() : path + name, order);
-    }
-
-    for (Xml::Element e: catEl.Children("category")) {
-        _LoadCategory(trans, e, isRoot ? Path() : path + name, order);
+    for (Xml::Element e: catEl.Children()) {
+        if (e.Name() == "item") {
+            _LoadItem(trans, e, isRoot ? Path() : path + name, order);
+        } else if (e.Name() == "category") {
+            _LoadCategory(trans, e, isRoot ? Path() : path + name, order);
+        }
     }
 }
 
