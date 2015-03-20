@@ -23,6 +23,13 @@ template <typename T>
 inline constexpr T
 Max(T x, T y) { return MAX(x, y); }
 
+/** Sign function.
+ * @return -1 if x is negative, 1 if x is positive, 0 otherwise.
+ */
+template <typename T>
+inline constexpr int
+Sign(T x) { return SIGN(x); }
+
 /** Round up the value with specified alignment. */
 template <typename T, typename Tal>
 inline constexpr T

@@ -129,6 +129,11 @@
 #define MAX(x, y)                   ((x) > (y) ? (x) : (y))
 #endif
 
+/** Sign function. */
+#ifndef SIGN
+#define SIGN(x)                     ((x) > 0 ? 1 : ((x) < 0 ? -1 : 0))
+#endif
+
 /** Round up the value with specified alignment. */
 #ifndef ROUND_UP
 #define ROUND_UP(size, align)      (((size) + (align) - 1) / (align) * (align))
@@ -139,7 +144,7 @@
 #endif
 /** Check if value is power of 2. */
 #ifndef IS_POWER_OF_2
-#define IS_POWER_OF_2(value)       (value && (((value) - 1) & (value)) == 0)
+#define IS_POWER_OF_2(value)       ((value) && (((value) - 1) & (value)) == 0)
 #endif
 
 /** Round up the value with specified alignment. Alignment must be an integer
