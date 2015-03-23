@@ -11,10 +11,8 @@
 
 namespace adk {
 
-class ThreadPoolExecutor {
+class ThreadPoolExecutor: public Executor {
 public:
-    typedef std::function<void()> Action;
-
     /** Create the executor.
      *
      * @param numThreads Maximal number of threads to create.
@@ -27,11 +25,11 @@ public:
 
     /** Submit action for execution in the worker threads. */
     void
-    Submit(const Action &action);
+    Submit(const Action &action) override;
 
     /** Submit action for execution in the worker threads. */
     void
-    Submit(Action &&action);
+    Submit(Action &&action) override;
 
     /** Wait until pending actions queue is empty. This however does not
      * guarantee that the peeked tasks are already completed.

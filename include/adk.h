@@ -67,6 +67,7 @@
 #include <adk/spinlock.h>
 #include <adk/optional.h>
 #include <adk/message_queue.h>
+#include <adk/executor.h>
 #include <adk/thread_pool_executor.h>
 #include <adk/bitmap.h>
 #include <adk/hash.h>

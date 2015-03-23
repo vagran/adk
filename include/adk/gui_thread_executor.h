@@ -12,10 +12,8 @@
 namespace adk {
 
 /** Executes action in GUI thread. Should be constructed in GUI thread. */
-class GuiThreadExecutor {
+class GuiThreadExecutor: public Executor {
 public:
-    typedef std::function<void()> Action;
-
     /** Create the executor.
      *
      * @param queueSize Maximal size of the actions queue. Zero for unlimited.
@@ -24,10 +22,10 @@ public:
     GuiThreadExecutor(size_t queueSize = 0);
 
     void
-    Submit(const Action &action);
+    Submit(const Action &action) override;
 
     void
-    Submit(Action &&action);
+    Submit(Action &&action) override;
 
 private:
     MessageQueue<Action> queue;
