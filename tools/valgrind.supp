@@ -578,3 +578,25 @@
    ...
    fun:PyImport_Cleanup
 }
+
+# SOCI
+
+{
+   SOCI
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   ...
+   fun:_ZN4soci7session4openERKNS_21connection_parametersE
+   fun:_ZN4soci7sessionC1ERKSs
+}
+
+{
+   SOCI
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:calloc
+   ...
+   fun:_ZN4soci7session4openERKNS_21connection_parametersE
+   fun:_ZN4soci7sessionC1ERKSs
+}

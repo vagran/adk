@@ -24,6 +24,7 @@ public:
     virtual void
     Submit(Action &&action)
     {
+        /* Fall-back to copy version. */
         Submit(action);
     }
 };
