@@ -166,10 +166,21 @@ FIXME doxygen
 
 ===== Project management =====
 
-FIXME Trac standalone deployment
-
+Initialize Trac environment:
 <code bash>
-tracd -p 8000 --basic-auth="*,var/trac/conf/trac.htpasswd,Trac" var/trac
+trac-admin /path/to/project initenv
+</code>
+
+Authentication setup:
+(''htpasswd'' is part of ''apache2-utils'' package)
+<code bash>
+htpasswd -c conf/trac.htpasswd admin
+trac-admin /path/to/project permission add admin TRAC_ADMIN
+</code>
+
+Run:
+<code bash>
+tracd -p 20088 --basic-auth="*,var/trac/conf/trac.htpasswd,Trac" var/trac
 </code>
 
 ===== Required packages =====
