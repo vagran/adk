@@ -451,6 +451,8 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
                 if isSrc:
                     node = node.srcnode()
                 result.append(node)
+            elif isinstance(file, list):
+                result.extend(self._ProcessFilesList(e, file, factory, isSrc))
             else:
                 result.append(file)
         return result
