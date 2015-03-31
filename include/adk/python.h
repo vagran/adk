@@ -236,51 +236,39 @@ public:
         _obj = PyUnicode_FromString(value);
     }
 
-    /** Assignment is always treated as borrowed reference. If it is not, the
-     * following pattern can be used:
-     * @code
-     * myobj = py::Object(SomeObjectCreationFunction());
-     * @endcode
-     * which will lead to move assignment operator invocation.
-     *
-     * @param obj Target object.
-     * @return Self reference.
-     */
-    Object &
-    operator =(PyObject *obj)
-    {
-        if (_obj) {
-            Py_DECREF(_obj);
-        }
-        _obj = obj;
-        Py_INCREF(_obj);
-        return *this;
-    }
-
     Object &
     operator =(const Object &obj)
     {
+        if (UNLIKELY(_obj == obj._obj)) {
+            return *this;
+        }
         if (_obj) {
             Py_DECREF(_obj);
         }
+        if (obj._obj) {
+            Py_INCREF(_obj);
+        }
         _obj = obj._obj;
-        Py_INCREF(_obj);
         return *this;
     }
 
     Object &
     operator =(Object &&obj)
     {
+        if (UNLIKELY(&obj == this)) {
+            return *this;
+        }
         if (_obj) {
             Py_DECREF(_obj);
         }
         _obj = obj._obj;
+        obj._obj = nullptr;
         return *this;
     }
 
     ~Object()
     {
-        if (_obj) {
+        if (LIKELY(_obj)) {
             Py_DECREF(_obj);
         }
     }
@@ -293,7 +281,7 @@ public:
         va_start(args, fmt);
         Object obj(Py_VaBuildValue(fmt, args));
         va_end(args);
-        if (!obj) {
+        if (UNLIKELY(!obj)) {
             /* Exception occurred. */
             ADK_PY_CHECK_EXCEPTION();
         }
@@ -356,7 +344,7 @@ public:
     GetAttr(const char *attrName) const
     {
         Object res(PyObject_GetAttrString(_obj, attrName));
-        if (!res) {
+        if (UNLIKELY(!res)) {
             ADK_PY_CHECK_EXCEPTION();
         }
         return res;
@@ -508,11 +496,11 @@ public:
     {
         ASSERT(PyCallable_Check(_obj));
         Object argsObj(PyTuple_Pack(sizeof...(Args), args.Get()...));
-        if (!argsObj) {
+        if (UNLIKELY(!argsObj)) {
             ADK_PY_CHECK_EXCEPTION();
         }
         Object res(PyObject_CallObject(_obj, argsObj.Get()));
-        if (!res) {
+        if (UNLIKELY(!res)) {
             ADK_PY_CHECK_EXCEPTION();
         }
         return res;
@@ -552,7 +540,7 @@ public:
     {
         ASSERT(PyTuple_Check(_obj));
         Py_ssize_t size = PyTuple_Size(_obj);
-        if (minArgs != -1 && size < minArgs) {
+        if (UNLIKELY(minArgs != -1 && size < minArgs)) {
             if (func) {
                 PyErr_Format(PyExc_TypeError,
                              "[%s:%d] Function '%s()' expects at least %d arguments (%d given)",
@@ -564,7 +552,7 @@ public:
             }
             return std::vector<Object>();
         }
-        if (maxArgs != -1 && size > maxArgs) {
+        if (UNLIKELY(maxArgs != -1 && size > maxArgs)) {
             if (file) {
                 PyErr_Format(PyExc_TypeError,
                              "[%s:%d] Function '%s()' expects at most %d arguments (%d given)",
@@ -578,7 +566,7 @@ public:
         }
         std::vector<Object> result(size);
         for (Py_ssize_t i = 0; i < size; i++) {
-            result[i] = PyTuple_GetItem(_obj, i);
+            result[i] = Object(PyTuple_GetItem(_obj, i), false);
         }
         return result;
     }
