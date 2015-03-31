@@ -133,6 +133,60 @@ public:
     {
         return 0;
     }
+
+    /** Parse arguments tuple.
+     *
+     * @param args Tuple with positional arguments.
+     * @param func Name of calling function.
+     * @param file Source file name.
+     * @param line Line number in source file.
+     * @param maxArgs Maximal number of arguments.
+     * @param minArgs Minimal number of arguments.
+     * @return Vector with arguments.
+     * @throws TypeError Python exception is raised in case of error.
+     */
+    static std::vector<Object>
+    ParseArguments(Object args, const char *func, const char *file, int line,
+                   int maxArgs = -1, int minArgs = -1) const
+    {
+        ASSERT(PyTuple_Check(args.Get()));
+        Py_ssize_t size = PyTuple_Size(args.Get());
+        if (UNLIKELY(minArgs != -1 && size < minArgs)) {
+            if (func) {
+                PyErr_Format(PyExc_TypeError,
+                             "[%s:%d] Function '%s()' expects at least %d arguments (%d given)",
+                             file, line, func, minArgs, size);
+            } else {
+                PyErr_Format(PyExc_TypeError,
+                             "The function expects at least %d arguments (%d given)",
+                             minArgs, size);
+            }
+            return std::vector<Object>();
+        }
+        if (UNLIKELY(maxArgs != -1 && size > maxArgs)) {
+            if (file) {
+                PyErr_Format(PyExc_TypeError,
+                             "[%s:%d] Function '%s()' expects at most %d arguments (%d given)",
+                             file, line, func, maxArgs, size);
+            } else {
+                PyErr_Format(PyExc_TypeError,
+                             "The function expects at most %d arguments (%d given)",
+                             maxArgs, size);
+            }
+            return std::vector<Object>();
+        }
+        std::vector<Object> result(size);
+        for (Py_ssize_t i = 0; i < size; i++) {
+            result[i] = Object(PyTuple_GetItem(args.Get(), i), false);
+        }
+        return result;
+    }
+
+    std::vector<Object>
+    ParseArguments(int maxArgs = -1, int minArgs = -1) const
+    {
+        return ParseArguments(nullptr, nullptr, 0, maxArgs, minArgs);
+    }
 };
 
 template <class TDerived>
@@ -180,6 +234,39 @@ public:
     }
 };
 
+/** Wrapper for particular Python exception type. */
+class ExpException: public std::exception {
+public:
+    ExpException(const std::string &msg, PyObject *excType = PyExc_RuntimeError):
+        msg(msg), excType(excType)
+    {}
+
+    ExpException(const schar *msg, PyObject *excType = PyExc_RuntimeError):
+        msg(msg), excType(excType)
+    {}
+
+    /** Set Python error. */
+    void
+    SetError()
+    {
+        PyErr_SetString(excType, msg.c_str());
+    }
+private:
+    std::string msg;
+    PyObject *excType;
+}
+
+/** Catch exceptions after exposed method call.
+ * @param __catchAction Code to execute if exception caught.
+ */
+#define _ADK_PY_CATCH(__catchAction) \
+    catch (const ExpException &e) { \
+        e.SetError(); \
+    } catch (const std::exception &__e) { \
+        PyErr_SetString(PyExc_RuntimeError, __e.what()); \
+        __catchAction; \
+    }
+
 namespace internal {
 
 /** Helper class for modules registration. */
@@ -201,10 +288,7 @@ private:
     {
         try {
             return func(Object(self, false)).Steal();
-        } catch (const std::exception &e) {
-            PyErr_SetString(PyExc_RuntimeError, e.what());
-            return nullptr;
-        }
+        } _ADK_PY_CATCH(return nullptr)
     }
 
     template <TVarArgsFunc func>
@@ -213,10 +297,7 @@ private:
     {
         try {
             return func(Object(self, false), Object(args, false)).Steal();
-        } catch (const std::exception &e) {
-            PyErr_SetString(PyExc_RuntimeError, e.what());
-            return nullptr;
-        }
+        } _ADK_PY_CATCH(return nullptr)
     }
 
     template <TKwArgsFunc func>
@@ -226,10 +307,7 @@ private:
         try {
             return func(Object(self, false), Object(args, false),
                         Object(kwArgs, false)).Steal();
-        } catch (const std::exception &e) {
-            PyErr_SetString(PyExc_RuntimeError, e.what());
-            return nullptr;
-        }
+        } _ADK_PY_CATCH(return nullptr)
     }
 
 protected:
@@ -304,10 +382,7 @@ protected:
             Cls *pCls = ExposedClassBase<Cls>::GetClassObject(self);
             try {
                 return pCls->Init(Object(args, false), Object(kwArgs, false));
-            } catch (const std::exception &e) {
-                PyErr_SetString(PyExc_RuntimeError, e.what());
-                return -1;
-            }
+            } _ADK_PY_CATCH(return -1)
         }
 
         /** Wrapper for __repr__ method. */
@@ -317,10 +392,7 @@ protected:
             Cls *pCls = ExposedClassBase<Cls>::GetClassObject(self);
             try {
                 return pCls->Repr().Steal();
-            } catch (const std::exception &e) {
-                PyErr_SetString(PyExc_RuntimeError, e.what());
-                return nullptr;
-            }
+            } _ADK_PY_CATCH(return nullptr)
         }
 
         /** Wrapper for __str__ method. */
@@ -330,10 +402,7 @@ protected:
             Cls *pCls = ExposedClassBase<Cls>::GetClassObject(self);
             try {
                 return pCls->Str().Steal();
-            } catch (const std::exception &e) {
-                PyErr_SetString(PyExc_RuntimeError, e.what());
-                return nullptr;
-            }
+            } _ADK_PY_CATCH(return nullptr)
         }
 
         /** Wrapper for __hash__ method. */
@@ -343,10 +412,7 @@ protected:
             Cls *pCls = ExposedClassBase<Cls>::GetClassObject(self);
             try {
                 return pCls->Hash();
-            } catch (const std::exception &e) {
-                PyErr_SetString(PyExc_RuntimeError, e.what());
-                return 0;
-            }
+            } _ADK_PY_CATCH(return 0)
         }
 
         /** Wrapper for __call__ method. */
@@ -356,10 +422,7 @@ protected:
             Cls *pCls = ExposedClassBase<Cls>::GetClassObject(self);
             try {
                 return ((*pCls)(Object(args, false), Object(kwArgs, false))).Steal();
-            } catch (const std::exception &e) {
-                PyErr_SetString(PyExc_RuntimeError, e.what());
-                return nullptr;
-            }
+            } _ADK_PY_CATCH(return nullptr)
         }
 
         static PyObject *
@@ -373,10 +436,7 @@ protected:
             Cls *pCls = ExposedClassBase<Cls>::GetClassObject(self);
             try {
                 new (pCls) Cls(Object(args, false), Object(kwArgs, false));
-            } catch (const std::exception &e) {
-                PyErr_SetString(PyExc_RuntimeError, e.what());
-                return nullptr;
-            }
+            } _ADK_PY_CATCH(return nullptr)
             return self;
         }
 
@@ -387,9 +447,7 @@ protected:
             Cls *pCls = ExposedClassBase<Cls>::GetClassObject(ptr);
             try {
                 pCls->~Cls();
-            } catch (const std::exception &e) {
-                PyErr_SetString(PyExc_RuntimeError, e.what());
-            }
+            } _ADK_PY_CATCH({})
             Py_TYPE(ptr)->tp_free(ptr);
         }
 
@@ -399,10 +457,7 @@ protected:
             Cls *pCls = ExposedClassBase<Cls>::GetClassObject(self);
             try {
                 return pCls->Print(fp, flags);
-            } catch (const std::exception &e) {
-                PyErr_SetString(PyExc_RuntimeError, e.what());
-                return -1;
-            }
+            } _ADK_PY_CATCH(return -1)
         }
 
         static PyObject *
@@ -411,10 +466,7 @@ protected:
             Cls *pCls = ExposedClassBase<Cls>::GetClassObject(self);
             try {
                 return pCls->GetAttr(Object(attrName, false)).Steal();
-            } catch (const std::exception &e) {
-                PyErr_SetString(PyExc_RuntimeError, e.what());
-                return nullptr;
-            }
+            } _ADK_PY_CATCH(return nullptr)
         }
 
         static int
@@ -423,10 +475,7 @@ protected:
             Cls *pCls = ExposedClassBase<Cls>::GetClassObject(self);
             try {
                 return pCls->SetAttr(Object(attrName, false), Object(attrValue, false));
-            } catch (const std::exception &e) {
-                PyErr_SetString(PyExc_RuntimeError, e.what());
-                return -1;
-            }
+            } _ADK_PY_CATCH(return -1)
         }
 
         /** Set all built-in methods for a class. */
@@ -474,10 +523,7 @@ protected:
         {
             try {
                 return (Cls::GetClassObject(self)->*method)().Steal();
-            } catch (const std::exception &e) {
-                PyErr_SetString(PyExc_RuntimeError, e.what());
-                return nullptr;
-            }
+            } _ADK_PY_CATCH(return nullptr)
         }
 
         template <T_VarArgsMethod method>
@@ -487,10 +533,7 @@ protected:
             try {
                 return (Cls::GetClassObject(self)->*method)
                     (Object(args, false)).Steal();
-            } catch (const std::exception &e) {
-                PyErr_SetString(PyExc_RuntimeError, e.what());
-                return nullptr;
-            }
+            } _ADK_PY_CATCH(return nullptr)
         }
 
         template <T_KwArgsMethod method>
@@ -500,10 +543,7 @@ protected:
             try {
                 return (Cls::GetClassObject(self)->*method)
                     (Object(args, false), Object(kwArgs, false)).Steal();
-            } catch (const std::exception &e) {
-                PyErr_SetString(PyExc_RuntimeError, e.what());
-                return nullptr;
-            }
+            } _ADK_PY_CATCH(return nullptr)
         }
 
         /** Add new exposed method to the class. */
