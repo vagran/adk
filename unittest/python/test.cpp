@@ -138,6 +138,12 @@ public:
     {
         return py::Object(base);
     }
+
+    py::Object
+    TestMethodException()
+    {
+        throw Exception("test exception");
+    }
 };
 
 /* Exposed module description. */
@@ -147,27 +153,29 @@ ADK_PYTHON_MODULE(test_module)
     DefFunc<TestFuncSum>("TestFuncSum", "Sample test function");
     DefClass<TestClass>("TestClass", "Sample test class").
         DefMethod<&TestClass::TestMethod>("TestMethod", "Sample test method").
-        DefMethod<&TestClass::TestMethodNoArgs>("TestMethodNoArgs");
+        DefMethod<&TestClass::TestMethodNoArgs>("TestMethodNoArgs").
+        DefMethod<&TestClass::TestMethodException>("TestMethodException");
 }
 
 UT_TEST("Extension by C++")
 {
     py::Interpreter interpreter;
-//    py::ObjectDict locals = py::ObjectDict::New();
-//    py::Object res = py::Run(ADK_PY_FILE(test_extending), locals);
-//    UT(res.IsNone()) == UT_TRUE;
-//    CheckValueInt(locals["result"], 237);
-//    CheckValueString(locals["mod_help"], "Sample test module");
-//    CheckValueString(locals["func_help"], "Sample test function");
-//    CheckValueString(locals["class_help"], "Sample test class");
-//    CheckValueInt(locals["obj_hash"], 300);
-//    CheckValueString(locals["obj_str"], "TestClass::Str 300");
-//    CheckValueString(locals["obj_repr"], "TestClass::Repr 300");
-//    CheckValueInt(locals["obj_call"], 325);
-//    CheckValueString(locals["meth_help"], "Sample test method");
-//    CheckValueInt(locals["meth_call"], 342);
-//    CheckValueInt(locals["meth2_call"], 300);
-//    /* Call object from C++ via Python layer (C++ => Python => C++)*/
-//    res = locals["obj"](py::Object(30), py::Object(40));
-//    CheckValueInt(res, 370);
+    py::ObjectDict locals = py::ObjectDict::New();
+    py::Object res = py::Run(ADK_PY_FILE(test_extending), locals);
+    UT(res.IsNone()) == UT_TRUE;
+    CheckValueInt(locals["result"], 237);
+    CheckValueString(locals["mod_help"], "Sample test module");
+    CheckValueString(locals["func_help"], "Sample test function");
+    CheckValueString(locals["class_help"], "Sample test class");
+    CheckValueInt(locals["obj_hash"], 300);
+    CheckValueString(locals["obj_str"], "TestClass::Str 300");
+    CheckValueString(locals["obj_repr"], "TestClass::Repr 300");
+    CheckValueInt(locals["obj_call"], 325);
+    CheckValueString(locals["meth_help"], "Sample test method");
+    CheckValueInt(locals["meth_call"], 342);
+    CheckValueInt(locals["meth2_call"], 300);
+    CheckValueString(locals["exception_catched"], "test exception");
+    /* Call object from C++ via Python layer (C++ => Python => C++)*/
+    res = locals["obj"](py::Object(30), py::Object(40));
+    CheckValueInt(res, 370);
 }

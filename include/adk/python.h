@@ -216,6 +216,15 @@ public:
         obj._obj = nullptr;
     }
 
+    Object(std::nullptr_t):
+        _obj(nullptr)
+    {}
+
+    Object(bool value)
+    {
+        _obj = PyBool_FromLong(value);
+    }
+
     Object(int value)
     {
         _obj = PyLong_FromLong(value);
@@ -234,6 +243,11 @@ public:
     Object(const char *value)
     {
         _obj = PyUnicode_FromString(value);
+    }
+
+    Object(const std::string &value)
+    {
+        _obj = PyUnicode_FromString(value.c_str());
     }
 
     Object &
@@ -371,6 +385,14 @@ public:
 
     std::string
     Repr() const;
+
+    bool
+    Bool() const
+    {
+        bool res = PyObject_IsTrue(_obj) != 0;
+        ADK_PY_CHECK_EXCEPTION();
+        return res;
+    }
 
     long
     Int() const

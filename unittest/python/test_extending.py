@@ -19,3 +19,8 @@ obj_call = obj(10, 15)
 meth_help = test_module.TestClass.TestMethod.__doc__
 meth_call = obj.TestMethod(42)
 meth2_call = obj.TestMethodNoArgs()
+exception_catched = None
+try:
+    obj.TestMethodException()
+except Exception as e:
+    exception_catched = str(e)

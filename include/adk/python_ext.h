@@ -105,7 +105,7 @@ public:
     Py_hash_t
     Hash()
     {
-        return Object();
+        return 0;
     }
 
     /** Calling operator automatically exposed to Python as '__call__' method. */
@@ -199,22 +199,37 @@ private:
     static PyObject *
     _MethodWrapper(PyObject *self)
     {
-        return func(Object(self, false)).Steal();
+        try {
+            return func(Object(self, false)).Steal();
+        } catch (const std::exception &e) {
+            PyErr_SetString(PyExc_RuntimeError, e.what());
+            return nullptr;
+        }
     }
 
     template <TVarArgsFunc func>
     static PyObject *
     _MethodWrapper(PyObject *self, PyObject *args)
     {
-        return func(Object(self, false), Object(args, false)).Steal();
+        try {
+            return func(Object(self, false), Object(args, false)).Steal();
+        } catch (const std::exception &e) {
+            PyErr_SetString(PyExc_RuntimeError, e.what());
+            return nullptr;
+        }
     }
 
     template <TKwArgsFunc func>
     static PyObject *
     _MethodWrapper(PyObject *self, PyObject *args, PyObject *kwArgs)
     {
-        return func(Object(self, false), Object(args, false),
-                    Object(kwArgs, false)).Steal();
+        try {
+            return func(Object(self, false), Object(args, false),
+                        Object(kwArgs, false)).Steal();
+        } catch (const std::exception &e) {
+            PyErr_SetString(PyExc_RuntimeError, e.what());
+            return nullptr;
+        }
     }
 
 protected:
@@ -287,7 +302,12 @@ protected:
         _Init(PyObject *self, PyObject *args, PyObject *kwArgs)
         {
             Cls *pCls = ExposedClassBase<Cls>::GetClassObject(self);
-            return pCls->Init(Object(args, false), Object(kwArgs, false));
+            try {
+                return pCls->Init(Object(args, false), Object(kwArgs, false));
+            } catch (const std::exception &e) {
+                PyErr_SetString(PyExc_RuntimeError, e.what());
+                return -1;
+            }
         }
 
         /** Wrapper for __repr__ method. */
@@ -295,7 +315,12 @@ protected:
         _Repr(PyObject *self)
         {
             Cls *pCls = ExposedClassBase<Cls>::GetClassObject(self);
-            return pCls->Repr().Steal();
+            try {
+                return pCls->Repr().Steal();
+            } catch (const std::exception &e) {
+                PyErr_SetString(PyExc_RuntimeError, e.what());
+                return nullptr;
+            }
         }
 
         /** Wrapper for __str__ method. */
@@ -303,7 +328,12 @@ protected:
         _Str(PyObject *self)
         {
             Cls *pCls = ExposedClassBase<Cls>::GetClassObject(self);
-            return pCls->Str().Steal();
+            try {
+                return pCls->Str().Steal();
+            } catch (const std::exception &e) {
+                PyErr_SetString(PyExc_RuntimeError, e.what());
+                return nullptr;
+            }
         }
 
         /** Wrapper for __hash__ method. */
@@ -311,7 +341,12 @@ protected:
         _Hash(PyObject *self)
         {
             Cls *pCls = ExposedClassBase<Cls>::GetClassObject(self);
-            return pCls->Hash();
+            try {
+                return pCls->Hash();
+            } catch (const std::exception &e) {
+                PyErr_SetString(PyExc_RuntimeError, e.what());
+                return 0;
+            }
         }
 
         /** Wrapper for __call__ method. */
@@ -319,7 +354,12 @@ protected:
         _Call(PyObject *self, PyObject *args, PyObject *kwArgs)
         {
             Cls *pCls = ExposedClassBase<Cls>::GetClassObject(self);
-            return ((*pCls)(Object(args, false), Object(kwArgs, false))).Steal();
+            try {
+                return ((*pCls)(Object(args, false), Object(kwArgs, false))).Steal();
+            } catch (const std::exception &e) {
+                PyErr_SetString(PyExc_RuntimeError, e.what());
+                return nullptr;
+            }
         }
 
         static PyObject *
@@ -331,7 +371,12 @@ protected:
             }
             /* Call constructor. */
             Cls *pCls = ExposedClassBase<Cls>::GetClassObject(self);
-            new (pCls) Cls(Object(args, false), Object(kwArgs, false));
+            try {
+                new (pCls) Cls(Object(args, false), Object(kwArgs, false));
+            } catch (const std::exception &e) {
+                PyErr_SetString(PyExc_RuntimeError, e.what());
+                return nullptr;
+            }
             return self;
         }
 
@@ -340,7 +385,11 @@ protected:
         {
             /* Call destructor and free memory. */
             Cls *pCls = ExposedClassBase<Cls>::GetClassObject(ptr);
-            pCls->~Cls();
+            try {
+                pCls->~Cls();
+            } catch (const std::exception &e) {
+                PyErr_SetString(PyExc_RuntimeError, e.what());
+            }
             Py_TYPE(ptr)->tp_free(ptr);
         }
 
@@ -348,21 +397,36 @@ protected:
         _Print(PyObject *self, FILE *fp, int flags)
         {
             Cls *pCls = ExposedClassBase<Cls>::GetClassObject(self);
-            return pCls->Print(fp, flags);
+            try {
+                return pCls->Print(fp, flags);
+            } catch (const std::exception &e) {
+                PyErr_SetString(PyExc_RuntimeError, e.what());
+                return -1;
+            }
         }
 
         static PyObject *
         _GetAttr(PyObject *self, PyObject *attrName)
         {
             Cls *pCls = ExposedClassBase<Cls>::GetClassObject(self);
-            return pCls->GetAttr(Object(attrName, false)).Steal();
+            try {
+                return pCls->GetAttr(Object(attrName, false)).Steal();
+            } catch (const std::exception &e) {
+                PyErr_SetString(PyExc_RuntimeError, e.what());
+                return nullptr;
+            }
         }
 
         static int
         _SetAttr(PyObject *self, PyObject *attrName, PyObject *attrValue)
         {
             Cls *pCls = ExposedClassBase<Cls>::GetClassObject(self);
-            return pCls->SetAttr(Object(attrName, false), Object(attrValue, false));
+            try {
+                return pCls->SetAttr(Object(attrName, false), Object(attrValue, false));
+            } catch (const std::exception &e) {
+                PyErr_SetString(PyExc_RuntimeError, e.what());
+                return -1;
+            }
         }
 
         /** Set all built-in methods for a class. */
@@ -408,23 +472,38 @@ protected:
         static PyObject *
         _MethodWrapper(PyObject *self)
         {
-            return (Cls::GetClassObject(self)->*method)().Steal();
+            try {
+                return (Cls::GetClassObject(self)->*method)().Steal();
+            } catch (const std::exception &e) {
+                PyErr_SetString(PyExc_RuntimeError, e.what());
+                return nullptr;
+            }
         }
 
         template <T_VarArgsMethod method>
         static PyObject *
         _MethodWrapper(PyObject *self, PyObject *args)
         {
-            return (Cls::GetClassObject(self)->*method)
-                (Object(args, false)).Steal();
+            try {
+                return (Cls::GetClassObject(self)->*method)
+                    (Object(args, false)).Steal();
+            } catch (const std::exception &e) {
+                PyErr_SetString(PyExc_RuntimeError, e.what());
+                return nullptr;
+            }
         }
 
         template <T_KwArgsMethod method>
         static PyObject *
         _MethodWrapper(PyObject *self, PyObject *args, PyObject *kwArgs)
         {
-            return (Cls::GetClassObject(self)->*method)
-                (Object(args, false), Object(kwArgs, false)).Steal();
+            try {
+                return (Cls::GetClassObject(self)->*method)
+                    (Object(args, false), Object(kwArgs, false)).Steal();
+            } catch (const std::exception &e) {
+                PyErr_SetString(PyExc_RuntimeError, e.what());
+                return nullptr;
+            }
         }
 
         /** Add new exposed method to the class. */
