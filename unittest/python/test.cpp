@@ -83,9 +83,6 @@ public:
     Init(py::Object args, py::Object kwArgs __UNUSED)
     {
         std::vector<py::Object> argsObj = ADK_PY_PARSE_ARGUMENTS(args, 1, 1);
-        if (PyErr_Occurred()) {
-            return -1;
-        }
         base = argsObj[0].Int();
         return 0;
     }
@@ -117,9 +114,6 @@ public:
     operator()(py::Object args, py::Object kwArgs __UNUSED)
     {
         std::vector<py::Object> argsObj = ADK_PY_PARSE_ARGUMENTS(args, 2, 2);
-        if (PyErr_Occurred()) {
-            return py::Object();
-        }
         return py::Object(base + argsObj[0].Int() + argsObj[1].Int());
     }
 
@@ -127,9 +121,6 @@ public:
     TestMethod(py::Object args)
     {
         std::vector<py::Object> argsObj = ADK_PY_PARSE_ARGUMENTS(args, 1, 1);
-        if (PyErr_Occurred()) {
-            return py::Object();
-        }
         return py::Object(argsObj[0].Int() + base);
     }
 

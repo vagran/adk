@@ -102,4 +102,48 @@ py::internal::ModuleRegistrator::_AddMethod(const char *name, PyCFunction func,
     def->ml_doc = doc;
 }
 
+std::vector<Object>
+adk::py::ParseArguments(Object args, const char *func, const char *file, int line,
+                        int maxArgs, int minArgs)
+{
+    ASSERT(maxArgs == -1 || minArgs == -1 || maxArgs >= minArgs);
+    ASSERT(PyTuple_Check(args.Get()));
+    Py_ssize_t size = PyTuple_Size(args.Get());
+    if (UNLIKELY(minArgs != -1 && size < minArgs)) {
+        std::stringstream ss;
+        if (func) {
+            ss << "[" << file << ":" << line << "] Function '" << func <<
+                "()' expects at least " << minArgs << " arguments (" <<
+                size << " given)";
+        } else {
+            ss << "The function expects at least " << minArgs <<
+                " arguments (" << size << " given)";
+        }
+        throw ExpException(ss.str().c_str(), PyExc_TypeError);
+    }
+    if (UNLIKELY(maxArgs != -1 && size > maxArgs)) {
+        std::stringstream ss;
+        if (file) {
+            ss << "[" << file << ":" << line << "] Function '" << func <<
+                "()' expects at most " << maxArgs << " arguments (" <<
+                size << " given)";
+        } else {
+            ss << "The function expects at most " << maxArgs <<
+                " arguments (" << size << " given)";
+        }
+        throw ExpException(ss.str().c_str(), PyExc_TypeError);
+    }
+    std::vector<Object> result(size);
+    for (Py_ssize_t i = 0; i < size; i++) {
+        result[i] = Object(PyTuple_GetItem(args.Get(), i), false);
+    }
+    return result;
+}
+
+std::vector<Object>
+adk::py::ParseArguments(Object args, int maxArgs, int minArgs)
+{
+    return ParseArguments(args, nullptr, nullptr, 0, maxArgs, minArgs);
+}
+
 #endif /* ADK_USE_PYTHON */

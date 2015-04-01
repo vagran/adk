@@ -16,6 +16,28 @@ namespace adk {
 
 namespace py {
 
+/** Wrapper for particular Python exception type. */
+class ExpException: public std::exception {
+public:
+    ExpException(const std::string &msg, PyObject *excType = PyExc_RuntimeError):
+        msg(msg), excType(excType)
+    {}
+
+    ExpException(const char *msg, PyObject *excType = PyExc_RuntimeError):
+        msg(msg), excType(excType)
+    {}
+
+    /** Set Python error. */
+    void
+    SetError() const
+    {
+        PyErr_SetString(excType, msg.c_str());
+    }
+private:
+    std::string msg;
+    PyObject *excType;
+};
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 
@@ -133,64 +155,33 @@ public:
     {
         return 0;
     }
-
-    /** Parse arguments tuple.
-     *
-     * @param args Tuple with positional arguments.
-     * @param func Name of calling function.
-     * @param file Source file name.
-     * @param line Line number in source file.
-     * @param maxArgs Maximal number of arguments.
-     * @param minArgs Minimal number of arguments.
-     * @return Vector with arguments.
-     * @throws TypeError Python exception is raised in case of error.
-     */
-    static std::vector<Object>
-    ParseArguments(Object args, const char *func, const char *file, int line,
-                   int maxArgs = -1, int minArgs = -1) const
-    {
-        ASSERT(PyTuple_Check(args.Get()));
-        Py_ssize_t size = PyTuple_Size(args.Get());
-        if (UNLIKELY(minArgs != -1 && size < minArgs)) {
-            if (func) {
-                PyErr_Format(PyExc_TypeError,
-                             "[%s:%d] Function '%s()' expects at least %d arguments (%d given)",
-                             file, line, func, minArgs, size);
-            } else {
-                PyErr_Format(PyExc_TypeError,
-                             "The function expects at least %d arguments (%d given)",
-                             minArgs, size);
-            }
-            return std::vector<Object>();
-        }
-        if (UNLIKELY(maxArgs != -1 && size > maxArgs)) {
-            if (file) {
-                PyErr_Format(PyExc_TypeError,
-                             "[%s:%d] Function '%s()' expects at most %d arguments (%d given)",
-                             file, line, func, maxArgs, size);
-            } else {
-                PyErr_Format(PyExc_TypeError,
-                             "The function expects at most %d arguments (%d given)",
-                             maxArgs, size);
-            }
-            return std::vector<Object>();
-        }
-        std::vector<Object> result(size);
-        for (Py_ssize_t i = 0; i < size; i++) {
-            result[i] = Object(PyTuple_GetItem(args.Get(), i), false);
-        }
-        return result;
-    }
-
-    std::vector<Object>
-    ParseArguments(int maxArgs = -1, int minArgs = -1) const
-    {
-        return ParseArguments(nullptr, nullptr, 0, maxArgs, minArgs);
-    }
 };
+
+/** Parse arguments tuple.
+ *
+ * @param args Tuple with positional arguments.
+ * @param func Name of calling function.
+ * @param file Source file name.
+ * @param line Line number in source file.
+ * @param maxArgs Maximal number of arguments.
+ * @param minArgs Minimal number of arguments.
+ * @return Vector with arguments.
+ * @throws TypeError Python exception is raised in case of error.
+ */
+std::vector<Object>
+ParseArguments(Object args, const char *func, const char *file, int line,
+               int maxArgs = -1, int minArgs = -1);
+
+std::vector<Object>
+ParseArguments(Object args, int maxArgs = -1, int minArgs = -1);
 
 template <class TDerived>
 PyTypeObject *adk::py::ExposedClassBase<TDerived>::pTypeObject;
+
+/** Parse positional arguments. See @ref ExposedClassBase::ParseArguments(). */
+#define ADK_PY_PARSE_ARGUMENTS(__obj, ...) \
+    adk::py::ParseArguments(__obj, __FUNCTION__, __FILE__, __LINE__, \
+                            ## __VA_ARGS__)
 
 /** Wrapper object pointer class similar to @ref Object class but used for
  * exposed objects.
@@ -234,34 +225,13 @@ public:
     }
 };
 
-/** Wrapper for particular Python exception type. */
-class ExpException: public std::exception {
-public:
-    ExpException(const std::string &msg, PyObject *excType = PyExc_RuntimeError):
-        msg(msg), excType(excType)
-    {}
-
-    ExpException(const schar *msg, PyObject *excType = PyExc_RuntimeError):
-        msg(msg), excType(excType)
-    {}
-
-    /** Set Python error. */
-    void
-    SetError()
-    {
-        PyErr_SetString(excType, msg.c_str());
-    }
-private:
-    std::string msg;
-    PyObject *excType;
-}
-
 /** Catch exceptions after exposed method call.
  * @param __catchAction Code to execute if exception caught.
  */
 #define _ADK_PY_CATCH(__catchAction) \
     catch (const ExpException &e) { \
         e.SetError(); \
+        __catchAction; \
     } catch (const std::exception &__e) { \
         PyErr_SetString(PyExc_RuntimeError, __e.what()); \
         __catchAction; \
