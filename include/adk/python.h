@@ -551,17 +551,23 @@ class ObjectSequence: public Object {
 public:
     ObjectSequence(PyObject *obj = nullptr, bool isNew = true): Object(obj, isNew)
     {
-        ASSERT(!_obj || PySequence_Check(_obj));
+        if (UNLIKELY(_obj && !PySequence_Check(_obj))) {
+            ADK_EXCEPTION(adk::Exception, "Not a sequence type");
+        }
     }
 
     ObjectSequence(const Object &obj): Object(obj)
     {
-        ASSERT(!_obj || PySequence_Check(_obj));
+        if (UNLIKELY(_obj && !PySequence_Check(_obj))) {
+            ADK_EXCEPTION(adk::Exception, "Not a sequence type");
+        }
     }
 
     ObjectSequence(Object &&obj): Object(std::move(obj))
     {
-        ASSERT(!_obj || PySequence_Check(_obj));
+        if (UNLIKELY(_obj && !PySequence_Check(_obj))) {
+            ADK_EXCEPTION(adk::Exception, "Not a sequence type");
+        }
     }
 
     class Iterator {
@@ -615,17 +621,23 @@ class ObjectUnicode: public ObjectSequence {
 public:
     ObjectUnicode(PyObject *obj = nullptr, bool isNew = true): ObjectSequence(obj, isNew)
     {
-        ASSERT(!_obj || PyUnicode_Check(_obj));
+        if (UNLIKELY(_obj && !PyUnicode_Check(_obj))) {
+            ADK_EXCEPTION(adk::Exception, "Not convertible to Unicode");
+        }
     }
 
     ObjectUnicode(const Object &obj): ObjectSequence(obj)
     {
-        ASSERT(!_obj || PyUnicode_Check(_obj));
+        if (UNLIKELY(_obj && !PyUnicode_Check(_obj))) {
+            ADK_EXCEPTION(adk::Exception, "Not convertible to Unicode");
+        }
     }
 
     ObjectUnicode(Object &&obj): ObjectSequence(std::move(obj))
     {
-        ASSERT(!_obj || PyUnicode_Check(_obj));
+        if (UNLIKELY(_obj && !PyUnicode_Check(_obj))) {
+            ADK_EXCEPTION(adk::Exception, "Not convertible to Unicode");
+        }
     }
 
     ObjectUnicode(const char *s): ObjectSequence(PyUnicode_FromString(s))
@@ -645,17 +657,23 @@ class ObjectDict: public Object {
 public:
     ObjectDict(PyObject *obj = nullptr, bool isNew = true): Object(obj, isNew)
     {
-        ASSERT(!_obj || PyDict_Check(_obj));
+        if (UNLIKELY(_obj && !PyDict_Check(_obj))) {
+            ADK_EXCEPTION(adk::Exception, "Not convertible to dictionary");
+        }
     }
 
     ObjectDict(const Object &obj): Object(obj)
     {
-        ASSERT(!_obj || PyDict_Check(_obj));
+        if (UNLIKELY(_obj && !PyDict_Check(_obj))) {
+            ADK_EXCEPTION(adk::Exception, "Not convertible to dictionary");
+        }
     }
 
     ObjectDict(Object &&obj): Object(std::move(obj))
     {
-        ASSERT(!_obj || PyDict_Check(_obj));
+        if (UNLIKELY(_obj && !PyDict_Check(_obj))) {
+            ADK_EXCEPTION(adk::Exception, "Not convertible to dictionary");
+        }
     }
 
     /** Create and return new empty dictionary. */
