@@ -48,6 +48,13 @@ UT_TEST("Variables")
         /* Static class property. */
         res = locals["TestClass"].GetAttr("prop");
         CheckValueInt(res, 10);
+
+        std::unordered_set<std::string> keys = {"a", "b", "c"};
+        py::ObjectDict testDict = locals["testDict"];
+        for (py::ObjectUnicode k: testDict.Keys()) {
+            keys.erase(k.GetString());
+        }
+        UT(keys.size()) == UT_SIZE(0);
     }
 }
 

@@ -547,7 +547,8 @@ public:
 /** Wrapper for Python sequence protocol API. */
 class ObjectSequence: public Object {
 public:
-    ObjectSequence(PyObject *obj = nullptr, bool isNew = true): Object(obj, isNew)
+    ObjectSequence(PyObject *obj = nullptr, bool isNew = true):
+        Object(obj, isNew)
     {
         if (UNLIKELY(_obj && !PySequence_Check(_obj))) {
             ADK_EXCEPTION(adk::Exception, "Not a sequence type");
@@ -617,7 +618,8 @@ public:
 
 class ObjectUnicode: public ObjectSequence {
 public:
-    ObjectUnicode(PyObject *obj = nullptr, bool isNew = true): ObjectSequence(obj, isNew)
+    ObjectUnicode(PyObject *obj = nullptr, bool isNew = true):
+        ObjectSequence(obj, isNew)
     {
         if (UNLIKELY(_obj && !PyUnicode_Check(_obj))) {
             ADK_EXCEPTION(adk::Exception, "Not convertible to Unicode");
@@ -653,7 +655,8 @@ public:
 
 class ObjectDict: public Object {
 public:
-    ObjectDict(PyObject *obj = nullptr, bool isNew = true): Object(obj, isNew)
+    ObjectDict(PyObject *obj = nullptr, bool isNew = true):
+        Object(obj, isNew)
     {
         if (UNLIKELY(_obj && !PyDict_Check(_obj))) {
             ADK_EXCEPTION(adk::Exception, "Not convertible to dictionary");
@@ -692,6 +695,36 @@ public:
     {
         int res = PyDict_Contains(_obj, key.Get());
         if (UNLIKELY(res == -1)) {
+            ADK_PY_CHECK_EXCEPTION();
+        }
+        return res;
+    }
+
+    ObjectSequence
+    Keys()
+    {
+        ObjectSequence res = PyDict_Keys(_obj);
+        if (UNLIKELY(!res)) {
+            ADK_PY_CHECK_EXCEPTION();
+        }
+        return res;
+    }
+
+    ObjectSequence
+    Values()
+    {
+        ObjectSequence res = PyDict_Values(_obj);
+        if (UNLIKELY(!res)) {
+            ADK_PY_CHECK_EXCEPTION();
+        }
+        return res;
+    }
+
+    ObjectSequence
+    Items()
+    {
+        ObjectSequence res = PyDict_Items(_obj);
+        if (UNLIKELY(!res)) {
             ADK_PY_CHECK_EXCEPTION();
         }
         return res;

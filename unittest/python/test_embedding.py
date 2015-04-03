@@ -21,3 +21,5 @@ class TestClass:
        return self.base + x
 
 testObj = TestClass(20)
+
+testDict = {'a': 1, 'b': 2, 'c': 3}
