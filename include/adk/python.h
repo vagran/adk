@@ -240,14 +240,14 @@ public:
         _obj = PyFloat_FromDouble(value);
     }
 
-    Object(const char *value)
-    {
-        _obj = PyUnicode_FromString(value);
-    }
-
     Object(const std::string &value)
     {
         _obj = PyUnicode_FromString(value.c_str());
+    }
+
+    Object(const char *value)
+    {
+        _obj = PyUnicode_FromString(value);
     }
 
     Object &
@@ -348,16 +348,16 @@ public:
     }
 
     bool
-    HasAttr(const char *attrName) const
+    HasAttr(const std::string &attrName) const
     {
-        return PyObject_HasAttrString(_obj, attrName);
+        return PyObject_HasAttrString(_obj, attrName.c_str());
     }
 
     /** Get object attribute by its name. */
     Object
-    GetAttr(const char *attrName) const
+    GetAttr(const std::string &attrName) const
     {
-        Object res(PyObject_GetAttrString(_obj, attrName));
+        Object res(PyObject_GetAttrString(_obj, attrName.c_str()));
         if (UNLIKELY(!res)) {
             ADK_PY_CHECK_EXCEPTION();
         }
@@ -365,17 +365,18 @@ public:
     }
 
     void
-    SetAttr(const char *attrName, const Object &attrValue)
+    SetAttr(const std::string &attrName, const Object &attrValue)
     {
-        if (UNLIKELY(PyObject_SetAttrString(_obj, attrName, attrValue.Get()) == -1)) {
+        if (UNLIKELY(PyObject_SetAttrString(_obj, attrName.c_str(),
+                                            attrValue.Get()) == -1)) {
             ADK_PY_CHECK_EXCEPTION();
         }
     }
 
     void
-    DelAttr(const char *attrName)
+    DelAttr(const std::string &attrName)
     {
-        if (UNLIKELY(PyObject_DelAttrString(_obj, attrName) == -1)) {
+        if (UNLIKELY(PyObject_DelAttrString(_obj, attrName.c_str()) == -1)) {
             ADK_PY_CHECK_EXCEPTION();
         }
     }
@@ -431,9 +432,6 @@ public:
     }
 
     Object
-    GetItem(const char *key) const;
-
-    Object
     operator [](const Object &key) const
     {
         return GetItem(key);
@@ -442,7 +440,7 @@ public:
     Object
     operator [](const char *key) const
     {
-        return GetItem(key);
+        return GetItem(Object(key));
     }
 
     void
@@ -454,7 +452,7 @@ public:
     }
 
     void
-    DetItem(const Object &key)
+    DelItem(const Object &key)
     {
         if (UNLIKELY(PyObject_DelItem(_obj, key.Get()) == -1)) {
             ADK_PY_CHECK_EXCEPTION();
@@ -473,7 +471,7 @@ public:
     }
 
     /** Get name of the object type. */
-    const char *
+    std::string
     TypeName() const
     {
         Object type = Type();
@@ -483,7 +481,7 @@ public:
 
     /** Check if object type name is the specified one. */
     bool
-    CheckType(std::string typeName) const
+    CheckType(const std::string &typeName) const
     {
         return typeName == TypeName();
     }
@@ -536,7 +534,7 @@ public:
      */
     template <class... Args>
     Object
-    CallMethod(const char *name, const Args&... args)
+    CallMethod(const std::string &name, const Args&... args)
     {
         Object method(GetAttr(name));
         if (UNLIKELY(!method)) {
@@ -640,9 +638,9 @@ public:
         }
     }
 
-    ObjectUnicode(const char *s): ObjectSequence(PyUnicode_FromString(s))
-    {
-    }
+    ObjectUnicode(const std::string &s):
+        ObjectSequence(PyUnicode_FromString(s.c_str()))
+    {}
 
     std::string
     GetString() const
@@ -714,8 +712,8 @@ public:
     }
 
     /** The constructor imports the module with the specified name. */
-    ObjectModule(const char *name):
-        Object(PyImport_ImportModule(name))
+    ObjectModule(const std::string &name):
+        Object(PyImport_ImportModule(name.c_str()))
     {
 
     }
@@ -729,9 +727,9 @@ public:
 
     /** Add object to the module. */
     void
-    AddObject(const char *name, const Object &obj)
+    AddObject(const std::string &name, const Object &obj)
     {
-        if (UNLIKELY(PyModule_AddObject(_obj, name, obj.Get(true)) == -1)) {
+        if (UNLIKELY(PyModule_AddObject(_obj, name.c_str(), obj.Get(true)) == -1)) {
             ADK_PY_CHECK_EXCEPTION();
         }
     }

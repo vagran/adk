@@ -56,13 +56,6 @@ py::Object::Repr() const
 }
 
 Object
-py::Object::GetItem(const char *key) const
-{
-    ObjectUnicode s(key);
-    return GetItem(s);
-}
-
-Object
 py::Run(const std::string &s, Object locals, Object globals, int start,
         PyCompilerFlags *flags)
 {
