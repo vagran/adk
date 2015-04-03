@@ -268,7 +268,7 @@
 			<target name="test" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>scons</buildCommand>
 				<buildArguments>-j 8 --adk-build-type=debug</buildArguments>
-				<buildTarget>--adk-run-tests unittest/python</buildTarget>
+				<buildTarget>--adk-run-tests unittest</buildTarget>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>true</useDefaultCommand>
 				<runAllBuilders>true</runAllBuilders>
