@@ -48,16 +48,16 @@ public:
  * @param __VA_ARSG__ parameters for the object constructor.
  */
 #define ADK_STATIC_INIT_DECL(__name, __objPtr, ...) \
-    class __name: public adk::StaticInitializer<typename std::remove_reference<decltype(*(__objPtr))>::type> { \
-    private: \
-        static int __counter; \
-    public: \
-        template <typename... TArgs> \
-        __name(ObjType **__ppObj, TArgs &&... args): \
-            StaticInitializer(__counter, __ppObj, std::forward<TArgs>(args)...) \
-        {} \
-    }; \
     namespace { \
+        class __name: public adk::StaticInitializer<typename std::remove_reference<decltype(*(__objPtr))>::type> { \
+            private: \
+                static int __counter; \
+            public: \
+                template <typename... TArgs> \
+                __name(ObjType **__ppObj, TArgs &&... args): \
+                    StaticInitializer(__counter, __ppObj, std::forward<TArgs>(args)...) \
+                {} \
+        }; \
         __name __UID(static_init_) {&(__objPtr), ## __VA_ARGS__ }; \
     }
 
