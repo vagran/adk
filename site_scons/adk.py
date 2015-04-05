@@ -560,7 +560,8 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
         elif self.PLATFORM_ID == Conf.PLATFORM_ID_WINDOWS64:
             self.DEFS += ' ADK_PLATFORM_WINDOWS64 '
             
-        self.PCHS += ' %s ' % os.path.join(self.ADK_ROOT, 'include', 'adk.h')
+        if len(self.PCHS) == 0:
+            self.PCHS = ' %s ' % os.path.join(self.ADK_ROOT, 'include', 'adk.h')
         
         if self.IsDesktop() and not self.NO_ADK_LIB:
             self.LIBS += ' adk '
