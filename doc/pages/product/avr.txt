@@ -10,9 +10,17 @@ Bus 003 Device 002: ID 0403:6001 Future Technology Devices International, Ltd FT
 </code>
 Corresponding driver is present by default in Ubuntu 12.10 so that after the programmer attach, the serial device is created as ''/dev/ttyUSB0''. However the device is in group "dialout" so the required user should added to this group.
 
+==== Persistent name ====
+
+Persistent name can be created for the programmer to make more convenient usage. Check vendor ID, product ID and device serial number in ''dmesg'' output. After that create file ''/etc/udev/rules.d/99-avrisp.rules'' with the following content:
+<file bash 99-avrisp.rules>
+SUBSYSTEM=="tty", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", ATTRS{serial}=="A6008isP", SYMLINK+="avrisp"
+</file>
 ==== Uploading firmware ====
+
+//See [[adk:product:basic_usage|"Basic usage"]] page for AVR-specific make targets for firmware management.//
 
 Use "avrdude" with the following options:
 <code bash>
-avrdude -P /dev/ttyUSB0 -c avrisp2 -p <your_part_name,e.g. attiny2313>
+avrdude -P /dev/avrisp -c avrisp2 -p <your_part_name,e.g. attiny2313>
 </code>
