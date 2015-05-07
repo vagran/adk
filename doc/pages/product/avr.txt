@@ -14,7 +14,7 @@ Corresponding driver is present by default in Ubuntu 12.10 so that after the pro
 
 Persistent name can be created for the programmer to make more convenient usage. Check vendor ID, product ID and device serial number in ''dmesg'' output. After that create file ''/etc/udev/rules.d/99-avrisp.rules'' with the following content:
 <file bash 99-avrisp.rules>
-SUBSYSTEM=="tty", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", ATTRS{serial}=="A6008isP", SYMLINK+="avrisp"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", ATTRS{serial}=="A900a4mN", SYMLINK+="avrisp"
 </file>
 ==== Uploading firmware ====
 
