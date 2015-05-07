@@ -170,6 +170,7 @@ class Conf(object):
         'LIB_DIRS': '',
         'RELEASE_OPT_FLAGS': None,
         'DEBUG_OPT_FLAGS': None,
+        'LINKFLAGS': '',
         'TEST_DESC': None,
         'TEST_SRCS': '',
         
@@ -301,6 +302,7 @@ class Conf(object):
         self.CCFLAGS += ' -mmcu=%s -fshort-wchar ' % self.MCU
         self.DEFS += ' ADK_MCU=%s ADK_MCU_FREQ=%d' % (self.MCU, self.MCU_FREQ)
         self.ASFLAGS += ' -mmcu=%s ' % self.MCU
+        self.LINKFLAGS += ' -mmcu=%s ' % self.MCU
         
         if self.MCU_FUSE is not None:
             self.DEFS += ' ADK_MCU_FUSE=0x%x ' % self.MCU_FUSE
@@ -578,6 +580,7 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
         e['CXXFLAGS'] = self.CXXFLAGS
         e['CCFLAGS'] = self.CCFLAGS
         e['ASFLAGS'] = self.ASFLAGS
+        e['LINKFLAGS'] = self.LINKFLAGS
         
         # Preprocessor macros
         defs = sc.Split(self.DEFS)
