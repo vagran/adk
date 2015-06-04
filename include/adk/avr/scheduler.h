@@ -56,6 +56,14 @@ public:
     void
     Run() __NORETURN;
 
+    /** Make scheduler tick. Should be called from interrupt. */
+    void
+    Tick()
+    {
+        ticks++;
+        pollPending = true;
+    }
+
 private:
     /** Task descriptor. */
     struct Task {
@@ -75,7 +83,6 @@ private:
          */
         u8 pollPending:1;
     };
-
 
     /** Process scheduled tasks. */
     void
