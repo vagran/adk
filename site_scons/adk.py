@@ -185,7 +185,8 @@ class Conf(object):
         
         'USE_GUI': None,
         'USE_PYTHON': False,
-        'AVR_USE_USB': False
+        'AVR_USE_USB': False,
+        'AVR_USE_COMMON_LIB': True
     }
     
     
@@ -300,6 +301,7 @@ class Conf(object):
             raise Exception('MCU clock frequency must be set for AVR target')
         
         self.CCFLAGS += ' -mmcu=%s -fshort-wchar -fshort-enums ' % self.MCU
+        self.CXXFLAGS += ' -fno-exceptions -fno-rtti ';
         self.DEFS += ' ADK_MCU=%s ADK_MCU_FREQ=%d' % (self.MCU, self.MCU_FREQ)
         self.ASFLAGS += ' -mmcu=%s ' % self.MCU
         self.LINKFLAGS += ' -mmcu=%s ' % self.MCU
@@ -317,7 +319,11 @@ class Conf(object):
             self.RELEASE_OPT_FLAGS = '-Os -mcall-prologues'
         if self.DEBUG_OPT_FLAGS is None:
             self.DEBUG_OPT_FLAGS = '-Os -mcall-prologues'
-            
+        
+        if self.AVR_USE_COMMON_LIB:
+            self.SRC_DIRS += ' ${ADK_ROOT}/src/libavr/common '
+            self.DEFS += ' ADK_AVR_USE_COMMON_LIB '
+        
         if self.AVR_USE_USB:
             self.SRC_DIRS += ' ${ADK_ROOT}/src/libavr/usb '
     

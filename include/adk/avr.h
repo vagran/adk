@@ -67,4 +67,8 @@
 /** Get PIN register name by port letter. */
 #define AVR_REG_PIN(__port)                 __CONCAT(PIN, __port)
 
+#ifdef __cplusplus
+#include <adk/avr/avr_cpp.h>
+#endif
+
 #endif /* AVR_H_ */

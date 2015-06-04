@@ -117,6 +117,7 @@ Optional flag variables -- they can have values ''True'' or ''False'' to enable 
   * ''USE_GUI'' -- use GUI components (based on Gtk+ library). ''True'' by default for desktop targets, ''False'' for the rest ones.
   * ''USE_PYTHON'' -- embedded Python support. ''False'' by default.
   * ''AVR_USE_USB'' -- use USB interface software implementation. ''False'' by default.
+  * ''AVR_USE_COMMON_LIB'' -- use common library code for AVR. ''True'' by default.
 
 Platform specific variables:
   - For ''avr'' platform:
