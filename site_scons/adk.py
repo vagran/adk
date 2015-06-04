@@ -299,7 +299,7 @@ class Conf(object):
         if self.MCU_FREQ is None:
             raise Exception('MCU clock frequency must be set for AVR target')
         
-        self.CCFLAGS += ' -mmcu=%s -fshort-wchar ' % self.MCU
+        self.CCFLAGS += ' -mmcu=%s -fshort-wchar -fshort-enums ' % self.MCU
         self.DEFS += ' ADK_MCU=%s ADK_MCU_FREQ=%d' % (self.MCU, self.MCU_FREQ)
         self.ASFLAGS += ' -mmcu=%s ' % self.MCU
         self.LINKFLAGS += ' -mmcu=%s ' % self.MCU
