@@ -11,13 +11,6 @@
 #ifndef AVR_CPP_H_
 #define AVR_CPP_H_
 
-/* Make Eclipse happy. */
-#ifdef __CDT_PARSER__
-#ifndef ISR
-#define ISR(name) void name()
-#endif
-#endif
-
 namespace adk {
 
 /** Disable interrupts in scope of this class instance. Restores previous state
