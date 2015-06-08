@@ -9,6 +9,8 @@ conf = adk.Conf(
     APP_NAME= 'avr_sample_1',
     APP_TYPE = 'app',
     PLATFORM = 'avr',
+    
+    AVR_USE_COMMON_LIB = False,
                 
     # MCU code name
     MCU = 'attiny2313',
