@@ -78,6 +78,8 @@
 
 #ifdef __cplusplus
 #include <adk/avr/avr_cpp.h>
+
+#include <adk/utils.h>
 #endif
 
 #endif /* AVR_H_ */
