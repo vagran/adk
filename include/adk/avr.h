@@ -70,9 +70,15 @@
 
 /* Make Eclipse happy. */
 #ifdef __CDT_PARSER__
+
 #ifndef ISR
 #define ISR(name) void name()
 #endif
+
+#ifndef PROGMEM
+#define PROGMEM
+#endif
+
 #endif
 
 
