@@ -21,9 +21,9 @@ adk.Conf(
     # MCU clock frequency in Hz
     MCU_FREQ = 20000000,
     
-    # L 0b11011111 H 0b11011111- 20MHz, BOD 2.7V
-    MCU_LFUSE = 0xdf,
-    MCU_HFUSE = 0xdb,
+    # 20MHz, BOD 2.7V
+    MCU_LFUSE = 0b11011111,
+    MCU_HFUSE = 0b11011111,
 
     # Make USB device
     AVR_USE_USB = True,
