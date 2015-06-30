@@ -5,9 +5,9 @@
 
 import adk
 
-conf = adk.Conf(APP_NAME= 'desktop_gui',
-                APP_TYPE = 'app',
-                APP_ALIAS = 'desktop_gui_sample',
-                LIBS = 'desktop_sample_gui',
-                RES_FILES = 'props.xml',
-                SUBDIRS = 'lib').Build()
+adk.Conf(APP_NAME= 'desktop_gui',
+         APP_TYPE = 'app',
+         APP_ALIAS = 'desktop_gui_sample',
+         LIBS = 'desktop_sample_gui',
+         RES_FILES = 'props.xml',
+         SUBDIRS = 'lib').Build()

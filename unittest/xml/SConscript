@@ -5,9 +5,9 @@
 
 import adk
 
-conf = adk.Conf(APP_TYPE = 'unit_test',
-                APP_NAME = 'xml',
-                TEST_DESC = 'XML manipulation functionality',
-                RES_FILES = 'test.xml',
-                TEST_SRCS = Glob('#/src/lib/*.cpp'),
-                USE_GUI = True).Build()
+adk.Conf(APP_TYPE = 'unit_test',
+         APP_NAME = 'xml',
+         TEST_DESC = 'XML manipulation functionality',
+         RES_FILES = 'test.xml',
+         TEST_SRCS = Glob('#/src/lib/*.cpp'),
+         USE_GUI = True).Build()

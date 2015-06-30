@@ -5,10 +5,10 @@
 
 import adk
 
-conf = adk.Conf(APP_TYPE = 'unit_test',
-                APP_NAME = 'python',
-                TEST_DESC = 'Embedded Python functionality',
-                RES_FILES = 'test_embedding.py test_extending.py',
-                USE_PYTHON = True,
-                USE_GUI = True,
-                TEST_SRCS = Glob('#/src/lib/*.cpp')).Build()
+adk.Conf(APP_TYPE = 'unit_test',
+         APP_NAME = 'python',
+         TEST_DESC = 'Embedded Python functionality',
+         RES_FILES = 'test_embedding.py test_extending.py',
+         USE_PYTHON = True,
+         USE_GUI = True,
+         TEST_SRCS = Glob('#/src/lib/*.cpp')).Build()

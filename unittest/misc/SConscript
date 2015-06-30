@@ -5,8 +5,8 @@
 
 import adk
 
-conf = adk.Conf(APP_TYPE = 'unit_test',
-                APP_NAME = 'miscelaneous',
-                TEST_DESC = 'Miscelaneous features',
-                TEST_SRCS = Glob('#/src/lib/*.cpp'),
-                USE_GUI = True).Build()
+adk.Conf(APP_TYPE = 'unit_test',
+         APP_NAME = 'miscelaneous',
+         TEST_DESC = 'Miscelaneous features',
+         TEST_SRCS = Glob('#/src/lib/*.cpp'),
+         USE_GUI = True).Build()
