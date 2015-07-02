@@ -5,7 +5,7 @@
 
 import adk
 
-conf = adk.Conf(
+adk.Conf(
     APP_NAME= 'avr_sample_1',
     APP_TYPE = 'app',
     PLATFORM = 'avr',

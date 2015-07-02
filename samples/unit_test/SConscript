@@ -5,7 +5,7 @@
 
 import adk
 
-conf = adk.Conf(APP_TYPE = 'unit_test',
-                APP_NAME = 'sample_test',
-                TEST_DESC = 'Sample ADK unit test',
-                TEST_SRCS = Glob('component/*.cpp')).Build()
+adk.Conf(APP_TYPE = 'unit_test',
+         APP_NAME = 'sample_test',
+         TEST_DESC = 'Sample ADK unit test',
+         TEST_SRCS = Glob('component/*.cpp')).Build()

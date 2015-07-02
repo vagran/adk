@@ -5,4 +5,4 @@
 
 import adk
 
-conf = adk.Conf(SUBDIRS = 'src samples unittest').Build()
+adk.Conf(SUBDIRS = 'src samples unittest').Build()

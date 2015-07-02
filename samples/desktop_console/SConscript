@@ -5,7 +5,7 @@
 
 import adk
 
-conf = adk.Conf(APP_NAME= 'desktop_console',
-                APP_TYPE = 'app',
-                APP_ALIAS = 'desktop_console_sample',
-                USE_GUI = False).Build()
+adk.Conf(APP_NAME= 'desktop_console',
+        APP_TYPE = 'app',
+        APP_ALIAS = 'desktop_console_sample',
+        USE_GUI = False).Build()

@@ -5,8 +5,8 @@
 
 import adk
 
-conf = adk.Conf(APP_NAME= 'avr_usb_sample',
-                APP_TYPE = 'app',
-                USE_GUI = False,
-                AVR_USE_USB = True,
-                INCLUDE_DIRS = '../include').Build()
+adk.Conf(APP_NAME= 'avr_usb_sample',
+         APP_TYPE = 'app',
+         USE_GUI = False,
+         AVR_USE_USB = True,
+         INCLUDE_DIRS = '../include').Build()

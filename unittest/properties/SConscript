@@ -5,9 +5,9 @@
 
 import adk
 
-conf = adk.Conf(APP_TYPE = 'unit_test',
-                APP_NAME = 'properties',
-                TEST_DESC = 'Properties framework',
-                RES_FILES = 'test_props.xml',
-                TEST_SRCS = Glob('#/src/lib/*.cpp'),
-                USE_GUI = True).Build()
+adk.Conf(APP_TYPE = 'unit_test',
+         APP_NAME = 'properties',
+         TEST_DESC = 'Properties framework',
+         RES_FILES = 'test_props.xml',
+         TEST_SRCS = Glob('#/src/lib/*.cpp'),
+         USE_GUI = True).Build()
