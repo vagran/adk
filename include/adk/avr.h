@@ -79,6 +79,10 @@
 #define PROGMEM
 #endif
 
+#ifndef EEMEM
+#define EEMEM
+#endif
+
 #endif
 
 
