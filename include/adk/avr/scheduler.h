@@ -77,12 +77,10 @@ private:
     /** Number of scheduler ticks passed from previous tasks run. */
     u16 ticks;
 
-    struct {
-        /** Any interrupt can set this flag to indicate that scheduler polling
-         * round should be executed.
-         */
-        u8 pollPending:1;
-    };
+    /** Any interrupt can set this flag to indicate that scheduler polling
+     * round should be executed.
+     */
+    u8 pollPending:1;
 
     /** Process scheduled tasks. */
     void
