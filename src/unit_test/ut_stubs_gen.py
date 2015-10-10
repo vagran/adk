@@ -5,7 +5,7 @@
 # This file is a part of ADK library.
 # Copyright (c) 2012-2015, Artyom Lebedev <artyom.lebedev@gmail.com>
 # All rights reserved.
-# See COPYING file for copyright details.
+# See LICENSE file for copyright details.
 
 # This tool automatically generates stubs for all unreferenced symbols in order
 # satisfy unit tests linking.
