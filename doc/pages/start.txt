@@ -1,6 +1,6 @@
-====== AST Applications Development Kit library ======
+====== Applications Development Kit library ======
 
-ADK ((Applications Development Kit)) is a cross-platform application development framework intended to develop GUI applications for Linux and Windows platforms in Linux development environment. The ADK is an official standard for AST applications development.
+ADK ((Applications Development Kit)) is a cross-platform application development framework intended to develop GUI applications for Linux and Windows platforms in Linux development environment.
 
 The following features are provided:
   * Low-level system services provided by glib and its C++ wrapper glibmm -- http://www.gtkmm.org/.
