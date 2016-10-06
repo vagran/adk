@@ -154,17 +154,6 @@ public:
     }
 };
 
-template <>
-class PropValueGet<const char *> {
-public:
-    template <class Props>
-    static const char *
-    Get(Props &&prop)
-    {
-        return std::forward<Props>(prop).GetString().c_str();
-    }
-};
-
 /** Helper class for setting value of necessary type. */
 template <typename T>
 class PropValueSet;

@@ -614,6 +614,13 @@
    fun:PyAST_CompileObject
 }
 
+{
+   Python
+   Memcheck:Addr4
+   ...
+   fun:_PyObject_GC_Malloc
+}
+
 # SOCI
 
 {

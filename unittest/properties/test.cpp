@@ -111,7 +111,6 @@ UT_TEST("Properties::Value class")
     {
         Properties::Value v("test");
         UT(v.Get<std::string>().c_str()) == UT("test");
-        UT(v.Get<const char *>()) == UT("test");
         UT_THROWS(v.Get<long>(), InternalErrorException);
         UT(v.GetType() == Properties::Value::Type::STRING) == UT_TRUE;
     }
