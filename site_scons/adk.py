@@ -22,7 +22,7 @@ def DefConf(**kwargs):
 
 
 def DefConfAppend(**kwargs):
-    'Set project-global default initial values to which use values are appended.'
+    'Set project-global default initial values to which user values are appended.'
     _defaultAppend.update(kwargs)
             
 
@@ -700,6 +700,8 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
                             '%s $VALGRIND $SOURCE' % libPath)
             e.AlwaysBuild(cmd)
             e.Default(cmd)
+            
+        #XXX return binary node
     
     
     def _HandleSubdirs(self, e):
@@ -710,7 +712,8 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
         dirs = self._ProcessFilesList(e, self.SUBDIRS, e.Dir)
         result = list()
         
-        if sc.Dir('.').path == '.':
+        # Build prefix for top-level directory
+        if sc.Dir('.').abspath == sc.Dir('#').abspath:
             buildDirName = os.path.join('build', '%s-%s' % (self.PLATFORM,
                                                             self.adkBuildType))
         else:
@@ -727,6 +730,8 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
                 result.extend(res)
             else:
                 result.append(res)
+                 
+        return result
 
     
     def _HandleAvrBuild(self, e, output):
