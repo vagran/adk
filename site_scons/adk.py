@@ -3,7 +3,7 @@
 # All rights reserved.
 # See LICENSE file for copyright details.
 
-import os, subprocess, platform
+import os, subprocess, platform, ConfigParser
 
 import SCons
 from posix import lstat
@@ -129,15 +129,6 @@ sc.AddOption('--adk-mcu-reset',
              help = 'Reset the connected MCU.')
 
 
-def GetAdkPrefix():
-    prefix = sc.GetOption('adkPrefix')
-    if prefix is None:
-        if 'ADK_PREFIX' in os.environ:
-            prefix = os.environ['ADK_PREFIX']
-        else:
-            prefix = '/usr'
-    return prefix
-
 class Conf(object):
     
     (PLATFORM_ID_AVR,
@@ -209,10 +200,12 @@ class Conf(object):
                 else:
                     value = Conf.params[paramName]
             setattr(self, paramName, value)
+            
+        self.config = ConfigParser.SafeConfigParser({'home': os.path.expanduser('~')})
+        self.config.readfp(open(os.path.expanduser('~/.adk/adk.conf')))
     
-        if 'ADK_ROOT' in os.environ:
-            self.ADK_ROOT = os.environ['ADK_ROOT']
-        else:
+        self.ADK_ROOT = self.GetParameter('ADK_ROOT', 'paths', None)
+        if self.ADK_ROOT is None:
             if not sc.GetOption('help'):
                 raise Exception('ADK_ROOT environment variable should point to ADK source')
             else:
@@ -231,11 +224,20 @@ class Conf(object):
         if cmdPlatform is not None:
             self.PLATFORM = cmdPlatform
     
-        self.ADK_PREFIX = GetAdkPrefix()
+        self.ADK_PREFIX = self.GetParameter('ADK_PREFIX', 'paths', '/usr')
         
         self.runTests = sc.GetOption('adkRunTests')
     
     
+    def GetParameter(self, name, section, default):
+        if name in os.environ:
+            return os.environ[name]
+        name = name.lower()
+        if self.config.has_option(section, name):
+            return self.config.get(section, name)
+        return default
+
+
     def IsDesktop(self):
         return self.PLATFORM != 'avr'
     
