@@ -8,3 +8,10 @@ GCC is the main tested compiler.
 Set the following environment variables in the workspace configuration:
   * ''ADK_ROOT'' -- ADK source package directory path.
   * ''ADK_PREFIX'' -- ADK installation directory path.
+
+These variables also can be set in configuration file ''~/.adk/adk.conf''. Example:
+<file adk.conf>
+[paths]
+ADK_ROOT: %(home)s/projects/adk/source/ADK
+ADK_PREFIX: %(home)s/opt/adk
+</file>
