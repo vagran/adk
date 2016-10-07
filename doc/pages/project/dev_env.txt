@@ -13,5 +13,5 @@ These variables also can be set in configuration file ''~/.adk/adk.conf''. Examp
 <file adk.conf>
 [paths]
 ADK_ROOT: %(home)s/projects/adk/source/ADK
-ADK_PREFIX: %(home)s/opt/adk
+ADK_PREFIX: /opt/adk
 </file>
