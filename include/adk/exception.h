@@ -53,13 +53,7 @@ protected:
 private:
 
     void
-    _StrFileLine()
-    {
-        std::stringstream ss;
-        ss << "[" << _file << ":" << _line << "]: ";
-        ss << _msg;
-        _msg = ss.str();
-    }
+    _StrFileLine();
 };
 
 #define __ADK_THROW_EXCEPTION(__exception, __msg, ...) \

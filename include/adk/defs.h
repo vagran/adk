@@ -11,6 +11,12 @@
 #ifndef ADK_DEFS_H_
 #define ADK_DEFS_H_
 
+/* Define DEBUG macro to itself so that it can be used as identifier. */
+#ifdef DEBUG
+#undef DEBUG
+#define DEBUG DEBUG
+#endif
+
 /* ADK platform numeric identifiers to use in preprocessor directives. */
 #define ADK_PLATFORM_ID_AVR         0
 #define ADK_PLATFORM_ID_LINUX32     1
@@ -102,6 +108,11 @@
 #define __PACKED                    __attribute__((packed))
 #define __NORETURN                  __attribute__ ((noreturn))
 #define __NOINLINE                  __attribute__ ((noinline))
+
+/** Indicate format string in function arguments. */
+#define __FORMAT(type, fmt_idx, arg_idx)    \
+    __attribute__ ((format(type, fmt_idx, arg_idx)))
+
 
 /** Provide binary constants in the code. */
 #ifndef BIN

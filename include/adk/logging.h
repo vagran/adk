@@ -17,16 +17,58 @@
 
 namespace adk {
 
-/** Get error code for the last system error. */
-int
-GetSystemErrorCode();
+class Log {
+public:
+    enum class Level {
+        CRITICAL,
+        ERROR,
+        WARNING,
+        INFO,
+        DEBUG
+    };
 
-/** Get description for last system error. */
-std::string
-GetSystemError();
+    using LogFunc = std::function<void(Level, const char *, va_list)>;
 
-std::string
-GetSystemTime();
+    static void
+    Write(Level level, const char *fmt, ...) __FORMAT(printf, 2, 3);
+
+    static void
+    WriteV(Level level, const char *fmt, va_list args) __FORMAT(printf, 2, 0);
+
+    static LogFunc
+    GetLogFunc();
+
+    static void
+    SetLogFunc(LogFunc logFunc);
+
+    static void
+    SetLevel(Level level);
+
+    /** Get error code for the last system error. */
+    static int
+    GetSystemErrorCode();
+
+    /** Get description for last system error. */
+    static std::string
+    GetSystemError();
+
+    static std::string
+    GetSystemTime();
+
+    static const char *
+    GetFileBasename(const char *path);
+
+private:
+    static Log instance;
+
+    LogFunc logFunc;
+    Level level = Level::DEBUG;
+
+    Log();
+};
+
+/** Log function backed by g_log(). */
+extern Log::LogFunc GLogFunc;
 
 } /* namespace adk */
 
@@ -47,16 +89,29 @@ GetSystemTime();
 
 #else /* ADK_PLATFORM_AVR */
 
-#define ADK_CRITICAL(msg, ...) g_critical("[%s] %s:%d: " msg, \
-        adk::GetSystemTime().c_str(), __FILE__, __LINE__, ## __VA_ARGS__)
-#define ADK_ERROR(msg, ...) g_error("[%s] %s:%d: " msg, \
-        adk::GetSystemTime().c_str(), __FILE__, __LINE__, ## __VA_ARGS__)
-#define ADK_WARNING(msg, ...) g_warning("[%s] %s:%d: " msg, \
-        adk::GetSystemTime().c_str(), __FILE__, __LINE__, ## __VA_ARGS__)
-#define ADK_INFO(msg, ...) g_message("[%s] %s:%d: " msg, \
-        adk::GetSystemTime().c_str(), __FILE__, __LINE__, ## __VA_ARGS__)
-//XXX
-#define ADK_DEBUG(...)  ADK_INFO(__VA_ARGS__)
+#define ADK_CRITICAL(__msg, ...) adk::Log::Write( \
+    adk::Log::Level::CRITICAL, "%s:%d: " __msg, \
+    adk::Log::GetFileBasename(__FILE__), __LINE__, ## __VA_ARGS__)
+
+#define ADK_ERROR(__msg, ...) adk::Log::Write( \
+    adk::Log::Level::ERROR, "%s:%d: " __msg, \
+    adk::Log::GetFileBasename(__FILE__), __LINE__, ## __VA_ARGS__)
+
+#define ADK_WARNING(__msg, ...) adk::Log::Write( \
+    adk::Log::Level::WARNING, "%s:%d: " __msg, \
+    adk::Log::GetFileBasename(__FILE__), __LINE__, ## __VA_ARGS__)
+
+#define ADK_INFO(__msg, ...) adk::Log::Write( \
+    adk::Log::Level::INFO, "%s:%d: " __msg, \
+    adk::Log::GetFileBasename(__FILE__), __LINE__, ## __VA_ARGS__)
+
+#define ADK_DEBUG(__msg, ...) adk::Log::Write( \
+    adk::Log::Level::DEBUG, "%s:%d: " __msg, \
+    adk::Log::GetFileBasename(__FILE__), __LINE__, ## __VA_ARGS__)
+
+#define ADK_LOG(__level, __msg, ...) adk::Log::Write( \
+    (__level), "%s:%d: " __msg, \
+    adk::Log::GetFileBasename(__FILE__), __LINE__, ## __VA_ARGS__)
 
 #endif /* ADK_PLATFORM_AVR */
 
