@@ -93,6 +93,10 @@
 #include <adk/python_ext.h>
 #endif /* ADK_USE_PYTHON */
 
+#ifdef ADK_USE_JAVA
+#include <adk/java.h>
+#endif /* ADK_USE_JAVA */
+
 #endif /* ADK_PLATFORM_AVR */
 
 #ifdef ADK_AVR_USE_USB

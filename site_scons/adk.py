@@ -164,6 +164,8 @@ class Conf(object):
         'LINKFLAGS': '',
         'TEST_DESC': None,
         'TEST_SRCS': '',
+        'JAVA_CP': None,
+        'JAVA_NATIVE_CLASSES': None,
         
         'MCU': None,
         'PROGRAMMER': None,
@@ -176,6 +178,7 @@ class Conf(object):
         
         'USE_GUI': None,
         'USE_PYTHON': False,
+        'USE_JAVA': False,
         'AVR_USE_USB': False,
         'AVR_USE_COMMON_LIB': True
     }
@@ -244,6 +247,11 @@ class Conf(object):
     
     def IsStatic(self):
         return self.APP_TYPE != 'dynamic_lib'
+    
+    
+    def IsLinux(self):
+        return (self.PLATFORM_ID == Conf.PLATFORM_ID_LINUX32 or
+                self.PLATFORM_ID == Conf.PLATFORM_ID_LINUX64)
     
     
     def _SetupNativePlatform(self, e):
@@ -414,6 +422,22 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
         e['BUILDERS']['ResAsm'] = e.Builder(action = Conf._BuildResAsm)
         e['BUILDERS']['ResHdrFile'] = e.Builder(action = Conf._BuildResHdr)
         e['BUILDERS']['ResIndexHdrFile'] = e.Builder(action = Conf._BuildResIndexHdr)
+    
+    
+    @staticmethod
+    def _BuildJavaHdr(target, source, env):
+        a = env.Action('{} -cp {} -o {} {}'
+            .format(env['ADK_JAVAH'], 
+                    ':'.join(map(lambda cp: cp.abspath, env['ADK_JAVA_CP'])),
+                    target[0].abspath,
+                    ' '.join(env['ADK_JAVA_NATIVE_CLASSES'])))
+        env.Execute(a)
+    
+        
+    def _CreateJavaBuilder(self, e):
+        'Create builders for JNI support'
+        
+        e['BUILDERS']['JavaHdr'] = e.Builder(action = Conf._BuildJavaHdr)
         
     
     @staticmethod
@@ -498,6 +522,7 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
         
         self._CreateResBuilder(e)
         self._CreatePchBuilder(e)
+        self._CreateJavaBuilder(e)
         
         e['ADK_ROOT'] = self.ADK_ROOT
         e['ADK_PREFIX'] = self.ADK_PREFIX
@@ -518,15 +543,20 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
         
         self.INCLUDE_DIRS += ' ${ADK_ROOT}/include '
         
+        self._SetupCrossCompiling(e)  
         
         if self.USE_GUI:
             self.DEFS += ' ADK_USE_GUI '
         if self.USE_PYTHON:
             self.DEFS += ' ADK_USE_PYTHON '
-        
-        
-        self._SetupCrossCompiling(e)
-        
+        if self.USE_JAVA:
+            self.DEFS += ' ADK_USE_JAVA '
+            javaInc = os.path.join(self.USE_JAVA, 'include')
+            if self.IsLinux():
+                javaPlatformInc = os.path.join(javaInc, 'linux')
+            else:
+                raise Exception('Unsupported platform for JNI')
+            self.INCLUDE_DIRS += ' ' + javaInc + ' ' + javaPlatformInc + ' '
         
         if self.AVR_USE_USB:
             self.DEFS += ' ADK_AVR_USE_USB '
@@ -627,6 +657,7 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
             
         pchs = self._ProcessFilesList(e, self.PCHS)
         
+        # Embedded resources
         resHdrs = list()
         resAsms = list()
         hdrsDir = 'auto_include_' + self.APP_TYPE
@@ -641,8 +672,17 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
                                         resHdrs)
         e.Prepend(CPPPATH = e.Dir(hdrsDir).abspath)
         
+        # JNI header
+        if self.USE_JAVA:
+            jniHdr = e.JavaHdr(os.path.join(hdrsDir, 'auto_adk_jni.h'),
+                               None,
+                               ADK_JAVAH = os.path.join(self.USE_JAVA, 'bin', 'javah'),
+                               ADK_JAVA_CP = self._ProcessFilesList(e, self.JAVA_CP, e.Dir),
+                               ADK_JAVA_NATIVE_CLASSES = self._ProcessFilesList(e, self.JAVA_NATIVE_CLASSES, str))
+        
         srcObjs = self._BuildObjs(e, srcFiles + resAsms)
             
+        # Precompiled headers
         gchs = list()
         for pch in pchs:
             fn = os.path.join(hdrsDir, os.path.basename(pch.path) + '.gch')
@@ -651,13 +691,17 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
             else:
                 gch = e.GchShared(fn, pch)
             e.Depends(gch, resIndexHdr)
+            if self.USE_JAVA:
+                e.Depends(gch, jniHdr)
             gchs.append(gch)
         
         for obj in srcObjs:
             e.Depends(obj, resIndexHdr)
             e.Depends(obj, gchs)
+            if self.USE_JAVA:
+                e.Depends(obj, jniHdr)
             
-            
+        # Auto-stubs for unit tests
         if self.APP_TYPE == 'unit_test':
             testObjs = self._BuildObjs(e, self._ProcessFilesList(e, self.TEST_SRCS))
             autoSrc = e.UtAutoSrc('auto/auto_stubs.cpp',
@@ -703,7 +747,7 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
             e.AlwaysBuild(cmd)
             e.Default(cmd)
             
-        #XXX return binary node
+        return output
     
     
     def _HandleSubdirs(self, e):
