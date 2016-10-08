@@ -16,11 +16,12 @@ namespace adk {
 /** Base class for all ADK and its client code exceptions. */
 class Exception: public std::exception {
 public:
-    Exception(const char *msg): _msg(msg) {}
+    Exception(const char *msg): _msg(msg)
+    {}
 
-    Exception(const std::string &msg): _msg(msg) {}
+    Exception(const std::string &msg): _msg(msg)
+    {}
 
-#   ifdef DEBUG
     Exception(const char *file, int line, const char *msg):
         _file(file), _line(line), _msg(msg)
     {
@@ -32,7 +33,6 @@ public:
     {
         _StrFileLine();
     }
-#   endif /* DEBUG */
 
     virtual
     ~Exception() noexcept
@@ -44,17 +44,14 @@ public:
         return _msg.c_str();
     }
 protected:
-#   ifdef DEBUG
     /** Source file where the exception occurred. */
-    const char *_file;
+    const char *_file = nullptr;
     /** Line number in the source file where the exception occurred. */
-    int _line;
-#   endif /* DEBUG */
+    int _line = 0;
     /** Exception message. */
     std::string _msg;
 private:
 
-#   ifdef DEBUG
     void
     _StrFileLine()
     {
@@ -63,16 +60,10 @@ private:
         ss << _msg;
         _msg = ss.str();
     }
-#   endif /* DEBUG */
 };
 
-#ifdef DEBUG
 #define __ADK_THROW_EXCEPTION(__exception, __msg, ...) \
     throw __exception(__FILE__, __LINE__, __msg, ## __VA_ARGS__)
-#else /* DEBUG */
-#define __ADK_THROW_EXCEPTION(__exception, __msg, ...) \
-    throw __exception(__msg, ## __VA_ARGS__)
-#endif /* DEBUG */
 
 /** Throw ADK exception. Standard ADK exceptions can be easily extended by user
  * defined exception. See example @ref ADK_USB_EXCEPTION and @ref LibusbException.
@@ -165,7 +156,6 @@ public:
         _AppendParamStr();
     }
 
-#   ifdef DEBUG
     template<class TParamArg>
     ParamException(const char *file, int line, const char *msg, TParamArg &&param):
         Base(file, line, msg), _param(std::forward<TParamArg>(param))
@@ -179,7 +169,6 @@ public:
     {
         _AppendParamStr();
     }
-#   endif /* DEBUG */
 
     /** Get associated parameter. */
     const TParam &
@@ -204,15 +193,6 @@ private:
     }
 };
 
-#ifdef DEBUG
-#define __ADK_DEFINE_EXC_DBG_CONSTR(__clsName) \
-    __clsName(const char *file, int line, const char *msg): \
-        adk::Exception(file, line, msg) {} \
-    __clsName(const char *file, int line, const std::string &msg): \
-        adk::Exception(file, line, msg) {}
-#else /* DEBUG */
-#define __ADK_DEFINE_EXC_DBG_CONSTR(__clsName)
-#endif /* DEBUG */
 
 /** Define custom exception which is just another subclass from adk::Exception
  * with the same functionality.
@@ -223,7 +203,10 @@ private:
     public: \
         __clsName(const char *msg): adk::Exception(msg) {} \
         __clsName(const std::string &msg): adk::Exception(msg) {} \
-        __ADK_DEFINE_EXC_DBG_CONSTR(__clsName) \
+        __clsName(const char *file, int line, const char *msg): \
+            adk::Exception(file, line, msg) {} \
+        __clsName(const char *file, int line, const std::string &msg): \
+            adk::Exception(file, line, msg) {} \
     };
 
 /** Define custom exception derived from another exception class. */
@@ -233,18 +216,6 @@ private:
         using __baseCls::__baseCls; \
     };
 
-#ifdef DEBUG
-#define __ADK_DEFINE_PARAM_EXC_DBG_CONSTR(__clsName, __baseCls, __paramType) \
-    template<class TParamArg> \
-    __clsName(const char *file, int line, const char *msg, TParamArg &&param): \
-        adk::ParamException<__baseCls, __paramType>(file, line, msg, std::forward<TParamArg>(param)) {} \
-    \
-    template<class TParamArg> \
-    __clsName(const char *file, int line, const std::string &msg, TParamArg &&param): \
-        adk::ParamException<__baseCls, __paramType>(file, line, msg, std::forward<TParamArg>(param)) {}
-#else /* DEBUG */
-#define __ADK_DEFINE_PARAM_EXC_DBG_CONSTR(__clsName, __baseCls, __paramType)
-#endif /* DEBUG */
 
 /** Define custom exception with parameter. See @ref ParamException. See @ref
  * LibusbException for example.
@@ -262,7 +233,13 @@ private:
         __clsName(const std::string &msg, TParamArg &&param): \
             adk::ParamException<adk::Exception, __paramType>(msg, std::forward<TParamArg>(param)) {} \
         \
-        __ADK_DEFINE_PARAM_EXC_DBG_CONSTR(__clsName, adk::Exception, __paramType) \
+        template<class TParamArg> \
+        __clsName(const char *file, int line, const char *msg, TParamArg &&param): \
+            adk::ParamException<adk::Exception, __paramType>(file, line, msg, std::forward<TParamArg>(param)) {} \
+        \
+        template<class TParamArg> \
+        __clsName(const char *file, int line, const std::string &msg, TParamArg &&param): \
+            adk::ParamException<adk::Exception, __paramType>(file, line, msg, std::forward<TParamArg>(param)) {} \
     };
 
 #define ADK_DEFINE_DERIVED_PARAM_EXCEPTION(__clsName, __baseCls, __paramType) \
@@ -276,7 +253,13 @@ private:
         __clsName(const std::string &msg, TParamArg &&param): \
             adk::ParamException<__baseCls, __paramType>(msg, std::forward<TParamArg>(param)) {} \
         \
-        __ADK_DEFINE_PARAM_EXC_DBG_CONSTR(__clsName, __baseCls, __paramType) \
+        template<class TParamArg> \
+        __clsName(const char *file, int line, const char *msg, TParamArg &&param): \
+            adk::ParamException<__baseCls, __paramType>(file, line, msg, std::forward<TParamArg>(param)) {} \
+        \
+        template<class TParamArg> \
+        __clsName(const char *file, int line, const std::string &msg, TParamArg &&param): \
+            adk::ParamException<__baseCls, __paramType>(file, line, msg, std::forward<TParamArg>(param)) {} \
     };
 
 /** Generic exception thrown when invalid parameter is specified. */

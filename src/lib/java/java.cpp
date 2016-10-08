@@ -75,18 +75,18 @@ JavaPendingException::Throw()
 }
 
 JavaException::JavaException(const char *file, int line, jclass excClass,
-                             std::string msg):
+                             const std::string &msg):
     Exception(file, line, msg), excClass(excClass)
 {
     ADK_WARNING("Exception in native code: %s", this->_msg.c_str());
 }
 
-JavaException::JavaException(const char *file, int line, std::string msg):
+JavaException::JavaException(const char *file, int line, const std::string &msg):
     JavaException(file, line, "com/ast/utils/NativeComponent$NativeException", msg)
 {}
 
 JavaException::JavaException(const char *file, int line,
-                             const char *excClassName, std::string msg):
+                             const char *excClassName, const std::string &msg):
     JavaException(file, line, ADK_JNI_CALL(FindClass, excClassName), msg)
 {}
 

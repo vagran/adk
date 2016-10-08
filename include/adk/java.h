@@ -40,14 +40,15 @@ private:
 class JavaException: public Exception {
 public:
     /** Throws Java RuntimeException. */
-    JavaException(const char *file, int line, std::string msg);
+    JavaException(const char *file, int line, const std::string &msg);
 
     /** Throws exception with the specified class name. */
     JavaException(const char *file, int line, const char *excClassName,
-                  std::string msg);
+                  const std::string &msg);
 
     /** Throws exception with the specified class. */
-    JavaException(const char *file, int line, jclass excClass, std::string msg);
+    JavaException(const char *file, int line, jclass excClass,
+                  const std::string &msg);
 
     /** Raise Java exception in the current Java environment. It does not throw
      * C++ exception so the function returns normally.
