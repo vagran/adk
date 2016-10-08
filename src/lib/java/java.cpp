@@ -190,7 +190,7 @@ JavaException::Throw()
     }
 }
 
-void JNICALL
+JNIEXPORT void JNICALL
 Java_com_ast_utils_NativeComponent_Initialize
     (JNIEnv *env, jobject ifaceObj, jstring logLevel)
 ADK_JNI_METHOD_START(env) {
