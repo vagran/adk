@@ -23,7 +23,7 @@ namespace adk {
  * @endcode
  */
 #define ADK_GLADE_XML(__fileName) ({ \
-    adk::ResourceDesc res = adk::GetResource(__STR(__fileName) ".glade"); \
+    adk::ResourceDesc res = adk::GetResource(ADK_STR(__fileName) ".glade"); \
     Glib::ustring(static_cast<const char *>(res.GetData()), res.GetSize()); \
 })
 

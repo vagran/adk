@@ -643,9 +643,9 @@ protected:
 };
 
 #define __ADK_PYTHON_MODULE_REG_CLASS(moduleName) \
-    __CONCAT(__adk_py_mod_reg_cls_, __CONCAT(moduleName, __LINE__))
+    ADK_CONCAT(__adk_py_mod_reg_cls_, ADK_CONCAT(moduleName, __LINE__))
 #define __ADK_PYTHON_MODULE_REG_OBJ(moduleName) \
-    __CONCAT(__adk_py_mod_reg_obj_, __CONCAT(moduleName, __LINE__))
+    ADK_CONCAT(__adk_py_mod_reg_obj_, ADK_CONCAT(moduleName, __LINE__))
 
 #define ADK_PYTHON_MODULE(moduleName) \
     class __ADK_PYTHON_MODULE_REG_CLASS(moduleName): \
@@ -663,7 +663,7 @@ protected:
         { \
             _regObj  = this; \
             Build(); \
-            Register(__STR(moduleName), &__ADK_PYTHON_MODULE_REG_CLASS(moduleName)::Init); \
+            Register(ADK_STR(moduleName), &__ADK_PYTHON_MODULE_REG_CLASS(moduleName)::Init); \
         } \
     }; \
     __ADK_PYTHON_MODULE_REG_CLASS(moduleName) *__ADK_PYTHON_MODULE_REG_CLASS(moduleName)::_regObj; \

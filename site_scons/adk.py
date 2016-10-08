@@ -650,6 +650,9 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
             srcFiles.extend(srcDir.glob('*.S'))
         for src in self._ProcessFilesList(e, self.SRCS):
             srcFiles.append(src)
+            
+        if self.USE_JAVA:
+            srcFiles.extend(e.Dir(os.path.join(self.ADK_ROOT, 'src', 'lib', 'java')).glob('*.cpp'))
                 
         resFiles = self._ProcessFilesList(e, self.RES_FILES)
         if self.USE_GUI:

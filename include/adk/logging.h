@@ -11,6 +11,8 @@
 #ifndef ADK_LOGGING_H_
 #define ADK_LOGGING_H_
 
+//XXX needs redesign
+
 #ifndef ADK_PLATFORM_AVR
 
 namespace adk {
@@ -53,6 +55,8 @@ GetSystemTime();
         adk::GetSystemTime().c_str(), __FILE__, __LINE__, ## __VA_ARGS__)
 #define ADK_INFO(msg, ...) g_message("[%s] %s:%d: " msg, \
         adk::GetSystemTime().c_str(), __FILE__, __LINE__, ## __VA_ARGS__)
+//XXX
+#define ADK_DEBUG(...)  ADK_INFO(__VA_ARGS__)
 
 #endif /* ADK_PLATFORM_AVR */
 

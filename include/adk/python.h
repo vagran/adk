@@ -27,7 +27,7 @@ namespace adk {
  * @endcode
  */
 #define ADK_PY_FILE(__fileName) ({ \
-    adk::ResourceDesc res = adk::GetResource(__STR(__fileName) ".py"); \
+    adk::ResourceDesc res = adk::GetResource(ADK_STR(__fileName) ".py"); \
     res.GetString(); \
 })
 

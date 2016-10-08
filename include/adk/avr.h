@@ -61,11 +61,11 @@
 #define AVR_BIT_GET8(__src, __bit)          ((__src) & (u8)_BV(__bit))
 
 /** Get PORT register name by port letter. */
-#define AVR_REG_PORT(__port)                __CONCAT(PORT, __port)
+#define AVR_REG_PORT(__port)                ADK_CONCAT(PORT, __port)
 /** Get DDR register name by port letter. */
-#define AVR_REG_DDR(__port)                 __CONCAT(DDR, __port)
+#define AVR_REG_DDR(__port)                 ADK_CONCAT(DDR, __port)
 /** Get PIN register name by port letter. */
-#define AVR_REG_PIN(__port)                 __CONCAT(PIN, __port)
+#define AVR_REG_PIN(__port)                 ADK_CONCAT(PIN, __port)
 
 
 /* Make Eclipse happy. */

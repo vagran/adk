@@ -29,22 +29,13 @@
 
 #define __NOP(x)                    x
 
-#ifndef __CONCAT2
-#define __CONCAT2(x, y)             x##y
-#endif
 /** Macro for concatenating identifiers. */
-#ifdef __CONCAT
-#undef __CONCAT
-#endif
-#define __CONCAT(x, y)              __CONCAT2(x, y)
+#define ADK_CONCAT2(x, y)            x##y
+#define ADK_CONCAT(x, y)             ADK_CONCAT2(x, y)
 
-#ifndef __STR2
-#define __STR2(x)                   # x
-#endif
 /** Macro for stringifying identifiers. */
-#ifndef __STR
-#define __STR(x)                    __STR2(x)
-#endif
+#define ADK_STR2(x)                 # x
+#define ADK_STR(x)                  ADK_STR2(x)
 
 #ifndef TRUE
 #define TRUE    1
@@ -66,7 +57,7 @@
 #define SIZEOF_ARRAY(array)         (sizeof(array) / sizeof((array)[0]))
 #endif
 
-#define __UID2(str, counter)        __CONCAT(str, counter)
+#define __UID2(str, counter)        ADK_CONCAT(str, counter)
 
 /** Generate file-scope unique identifier with a given prefix. */
 #ifndef __UID
