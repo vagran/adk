@@ -205,12 +205,15 @@ class Conf(object):
             setattr(self, paramName, value)
             
         self.config = ConfigParser.SafeConfigParser({'home': os.path.expanduser('~')})
-        self.config.readfp(open(os.path.expanduser('~/.adk/adk.conf')))
+        confPath = os.path.expanduser('~/.adk/adk.conf')
+        if os.path.exists(confPath):
+            self.config.readfp(open())
     
         self.ADK_ROOT = self.GetParameter('ADK_ROOT', 'paths', None)
         if self.ADK_ROOT is None:
             if not sc.GetOption('help'):
-                raise Exception('ADK_ROOT environment variable should point to ADK source')
+                raise Exception('ADK_ROOT environment variable (or entry in ' +
+                                'ADK configuration file) should point to ADK source')
             else:
                 self.ADK_ROOT = ''
                 
@@ -227,7 +230,9 @@ class Conf(object):
         if cmdPlatform is not None:
             self.PLATFORM = cmdPlatform
     
-        self.ADK_PREFIX = self.GetParameter('ADK_PREFIX', 'paths', '/usr')
+        self.ADK_PREFIX = sc.GetOption('adkPrefix')
+        if self.ADK_PREFIX is None:
+            self.ADK_PREFIX = self.GetParameter('ADK_PREFIX', 'paths', '/usr')
         
         self.runTests = sc.GetOption('adkRunTests')
     
@@ -570,7 +575,7 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
             self.SRC_DIRS += ' ${ADK_ROOT}/src/unit_test '
             e['BUILDERS']['UtAutoSrc'] = e.Builder(action = Conf._BuildUtAutoSrc)
         
-        adkFlags = '-Wall -Werror -Wextra '
+        adkFlags = '-Wall -Werror -Wextra -Wno-terminate'
         if self.adkBuildType == 'debug' or self.APP_TYPE == 'unit_test':
             adkFlags += ' -ggdb3 '
             self.DEFS += ' DEBUG '
@@ -635,7 +640,7 @@ ADK_DECL_RESOURCE({0}, "{1}", \\
         if self.USE_GUI:
             self.PKGS += ' gtkmm-3.0 '
         if self.USE_PYTHON:
-            self.PKGS += ' python3 '
+            self.PKGS += ' python-3.5 '
         self._SetupPackages(e)
         
         # Libraries
