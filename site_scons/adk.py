@@ -207,7 +207,7 @@ class Conf(object):
         self.config = ConfigParser.SafeConfigParser({'home': os.path.expanduser('~')})
         confPath = os.path.expanduser('~/.adk/adk.conf')
         if os.path.exists(confPath):
-            self.config.readfp(open())
+            self.config.readfp(open(confPath))
     
         self.ADK_ROOT = self.GetParameter('ADK_ROOT', 'paths', None)
         if self.ADK_ROOT is None:
