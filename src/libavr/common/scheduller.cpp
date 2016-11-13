@@ -94,10 +94,10 @@ Scheduler::Run()
             && SCHEDULER_CHECK_SLEEPING_ALLOWED()
 #endif
             ) {
-            AVR_BIT_SET8(MCUCR, SE);
+            sleep_enable();
             /* Atomic sleeping. */
-            __asm__ volatile ("sei; sleep");
-            AVR_BIT_CLR8(MCUCR, SE);
+            __asm__ volatile ("sei \n sleep");
+            sleep_disable();
             cli();
         }
     }
