@@ -95,6 +95,8 @@ private:
 void
 PollFunc();
 
+} /* namespace adk */
+
 /** The application may define callback which is called atomically with sleep
  * entering by the scheduler. The callback may prevent from sleeping when it is
  * not desired (e.g. during ADC conversion). To use this feature the application
@@ -106,7 +108,5 @@ PollFunc();
 bool
 SCHEDULER_CHECK_SLEEPING_ALLOWED();
 #endif
-
-} /* namespace adk */
 
 #endif /* SCHEDULER_H_ */
