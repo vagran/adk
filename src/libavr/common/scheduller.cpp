@@ -94,6 +94,10 @@ Scheduler::Run()
             && SCHEDULER_CHECK_SLEEPING_ALLOWED()
 #endif
             ) {
+            /* Disable ADC otherwise it will start conversion unexpectedly and
+             * will generate interrupt which is AVR design fault.
+             */
+            AVR_BIT_CLR8(ADCSRA, ADEN);
             sleep_enable();
             /* Atomic sleeping. */
             __asm__ volatile ("sei \n sleep");
